@@ -9,7 +9,7 @@ Packages:
 - `Avalonia.RemoteControl.Server` - embeddable server SDK for debuggee applications.
 - `Avalonia.RemoteControl.Tool` - .NET tool that launches the remote-control client through `avalonia-remote`.
 
-Running `avalonia-remote` with no arguments opens the desktop client. `avalonia-remote --help` and `avalonia-remote adb ...` run command-line workflows.
+Running `avalonia-remote` with no arguments opens the desktop client. `avalonia-remote --help` and `avalonia-remote adb ...` run command-line workflows. The desktop client can save and forget its default endpoint/token profile in user-scoped application data.
 
 Security posture:
 

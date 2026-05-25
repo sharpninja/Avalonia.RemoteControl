@@ -62,10 +62,10 @@ Implemented client areas:
 - click command
 - log stream viewer
 - connection/status line
+- user-scoped default connection profile save/forget
 
 Planned client areas:
 
-- richer connection profiles with saved user-scoped settings
 - certificate management and forget-settings workflow
 - visual polish and larger interaction coverage
 - authenticated audit identity display

@@ -231,7 +231,9 @@ Implemented evidence:
 - `RemoteControlDesktopSession` provides authenticated gRPC client calls for capabilities, snapshots, click invocation, property mutation, and log streaming.
 - `Avalonia.RemoteControl.Tool` launches a basic Avalonia desktop UI when run without arguments.
 - The desktop UI includes endpoint/token connection controls, tree rendering, selected-node properties, invoke-click, set-property, log streaming, and status feedback.
-- Saved profiles, certificate management, and manual UI acceptance remain future work.
+- `RemoteControlProfileStoreTests` covers saving, loading, and forgetting the default user-scoped connection profile.
+- The desktop UI exposes Save and Forget controls for endpoint/token profile state.
+- Certificate management and manual UI acceptance remain future work.
 
 ## Iteration 5 - ADB Client UX
 

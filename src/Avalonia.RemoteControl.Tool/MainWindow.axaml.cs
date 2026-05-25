@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.RemoteControl.Client;
+using Avalonia.RemoteControl.Client.Profiles;
 using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.Threading;
 
@@ -15,6 +16,7 @@ public sealed partial class MainWindow : Window
     private readonly ObservableCollection<RemoteTreeItem> treeItems = [];
     private readonly ObservableCollection<PropertyRow> propertyRows = [];
     private readonly ObservableCollection<string> logRows = [];
+    private readonly IRemoteControlProfileStore profileStore = new FileRemoteControlProfileStore();
     private RemoteControlDesktopSession? session;
     private TreeNode? selectedNode;
     private CancellationTokenSource? logStreamCancellation;
@@ -35,6 +37,8 @@ public sealed partial class MainWindow : Window
             logStreamCancellation?.Cancel();
             session?.Dispose();
         };
+
+        _ = LoadProfileAsync();
     }
 
     private async void ConnectClicked(object? sender, RoutedEventArgs e)
@@ -54,6 +58,60 @@ public sealed partial class MainWindow : Window
         catch (Exception ex)
         {
             StatusText.Text = $"Connection failed: {ex.Message}";
+        }
+    }
+
+    private async void SaveProfileClicked(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await profileStore.SaveDefaultAsync(new RemoteControlConnectionProfile
+            {
+                Endpoint = EndpointBox.Text ?? string.Empty,
+                Token = TokenBox.Text ?? string.Empty,
+                UpdatedUtc = DateTimeOffset.UtcNow,
+            });
+
+            StatusText.Text = "Connection profile saved.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"Save failed: {ex.Message}";
+        }
+    }
+
+    private async void ForgetProfileClicked(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await profileStore.ForgetDefaultAsync();
+            TokenBox.Text = string.Empty;
+            StatusText.Text = "Saved connection profile forgotten.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"Forget failed: {ex.Message}";
+        }
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        try
+        {
+            var profile = await profileStore.LoadDefaultAsync();
+
+            if (profile is null)
+            {
+                return;
+            }
+
+            EndpointBox.Text = profile.Endpoint;
+            TokenBox.Text = profile.Token;
+            StatusText.Text = "Saved connection profile loaded.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"Profile load failed: {ex.Message}";
         }
     }
 

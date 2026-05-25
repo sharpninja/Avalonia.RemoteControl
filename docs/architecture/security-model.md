@@ -114,6 +114,12 @@ The client must let users forget saved connection settings.
 
 The client must not log tokens.
 
+Current client implementation:
+
+- `FileRemoteControlProfileStore` saves the default endpoint and bearer token under user-scoped application data.
+- The desktop client exposes Save and Forget controls for the default profile.
+- Profile operations do not write tokens to logs or status text.
+
 ## Requirement Mapping
 
 Functional requirements:
