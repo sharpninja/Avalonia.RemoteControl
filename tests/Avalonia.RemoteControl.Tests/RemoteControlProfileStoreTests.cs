@@ -14,6 +14,7 @@ public sealed class RemoteControlProfileStoreTests
         {
             Endpoint = "http://127.0.0.1:47100",
             Token = "dev-token",
+            CertificatePath = "C:\\certs\\remote-control.cer",
             UpdatedUtc = DateTimeOffset.Parse("2026-05-25T00:00:00Z"),
         };
 
@@ -26,6 +27,7 @@ public sealed class RemoteControlProfileStoreTests
         Assert.NotNull(loaded);
         Assert.Equal(profile.Endpoint, loaded.Endpoint);
         Assert.Equal(profile.Token, loaded.Token);
+        Assert.Equal(profile.CertificatePath, loaded.CertificatePath);
         Assert.Null(forgotten);
     }
 }

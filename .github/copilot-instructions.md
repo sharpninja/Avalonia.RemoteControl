@@ -2,9 +2,9 @@
 
 ## Project State
 
-This repository is in Byrd Iteration 0 foundation implementation. It contains a .NET 10 solution skeleton, package metadata, CI scaffolding, requirements/architecture docs, a sample Avalonia app shell, and an initial test project.
+This repository contains a .NET 10 / Avalonia 12 remote-control system with implementation evidence through the protocol/read-only inspection, remote actions, logging, desktop client/tool, host-side ADB client workflow, CI, and packaging slices. Technical Spike 0 for real Android app-side transport remains the next product-blocking proof.
 
-Do not claim feature behavior beyond the current skeleton APIs until the owning Byrd slice has tests and implementation.
+Do not claim feature behavior beyond the current implemented APIs until the owning Byrd slice has tests and implementation.
 
 ## Planned Build Commands
 

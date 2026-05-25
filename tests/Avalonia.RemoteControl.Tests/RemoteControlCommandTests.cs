@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.RemoteControl.Server;
 using Avalonia.RemoteControl.Server.Commands;
@@ -125,6 +126,78 @@ public sealed class RemoteControlCommandTests
 
         Assert.True(result.Succeeded);
         Assert.True(clicked);
+    }
+
+    [Fact]
+    public async Task ClickInvocationRaisesTappedForNonButtonSurfaceWhenEnabled()
+    {
+        var tapped = false;
+        Point? tappedPosition = null;
+        var root = new Border();
+        root.Measure(new Size(20, 10));
+        root.Arrange(new Rect(0, 0, 20, 10));
+        root.AddHandler(
+            InputElement.TappedEvent,
+            (_, args) =>
+            {
+                tapped = true;
+                tappedPosition = args.GetPosition(root);
+            });
+        var provider = CreateSnapshotProvider();
+        var snapshot = await provider.CaptureSnapshotAsync(root);
+        var invoker = CreateActionInvoker(provider, new AvaloniaRemoteControlOptions { AllowRemoteActions = true });
+
+        var result = await invoker.InvokeClickAsync(snapshot.Nodes[0].Id);
+
+        Assert.True(result.Succeeded);
+        Assert.True(tapped);
+        Assert.Equal(new Point(10, 5), tappedPosition);
+    }
+
+    [Fact]
+    public async Task ClickInvocationRaisesPointerPressReleaseAtCenterForNonButtonSurfaceWhenEnabled()
+    {
+        Point? pressedPosition = null;
+        Point? releasedPosition = null;
+        PointerUpdateKind? pressedUpdateKind = null;
+        PointerUpdateKind? releasedUpdateKind = null;
+        var pressedLeftButton = false;
+        var releasedLeftButton = true;
+        MouseButton? initialPressButton = null;
+        var root = new Border();
+        root.Measure(new Size(30, 10));
+        root.Arrange(new Rect(0, 0, 30, 10));
+        root.AddHandler(
+            InputElement.PointerPressedEvent,
+            (_, args) =>
+            {
+                pressedPosition = args.GetPosition(root);
+                pressedUpdateKind = args.Properties.PointerUpdateKind;
+                pressedLeftButton = args.Properties.IsLeftButtonPressed;
+            });
+        root.AddHandler(
+            InputElement.PointerReleasedEvent,
+            (_, args) =>
+            {
+                releasedPosition = args.GetPosition(root);
+                releasedUpdateKind = args.Properties.PointerUpdateKind;
+                releasedLeftButton = args.Properties.IsLeftButtonPressed;
+                initialPressButton = args.InitialPressMouseButton;
+            });
+        var provider = CreateSnapshotProvider();
+        var snapshot = await provider.CaptureSnapshotAsync(root);
+        var invoker = CreateActionInvoker(provider, new AvaloniaRemoteControlOptions { AllowRemoteActions = true });
+
+        var result = await invoker.InvokeClickAsync(snapshot.Nodes[0].Id);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(new Point(15, 5), pressedPosition);
+        Assert.Equal(new Point(15, 5), releasedPosition);
+        Assert.Equal(PointerUpdateKind.LeftButtonPressed, pressedUpdateKind);
+        Assert.Equal(PointerUpdateKind.LeftButtonReleased, releasedUpdateKind);
+        Assert.True(pressedLeftButton);
+        Assert.False(releasedLeftButton);
+        Assert.Equal(MouseButton.Left, initialPressButton);
     }
 
     [Fact]

@@ -48,7 +48,7 @@ Key gates:
 
 ## Current Workspace State
 
-This repository is in Byrd Iteration 0 foundation implementation. It now contains a .NET 10 solution skeleton, package metadata, CI scaffolding, requirements/architecture docs, a sample Avalonia app shell, and an initial test project.
+This repository has completed foundation work and contains implementation evidence through protocol/read-only inspection, remote actions, logging, desktop client/tool, host-side ADB client workflow, CI, and packaging slices. Technical Spike 0 for real Android app-side transport remains the next product-blocking proof.
 
 Configured remotes:
 
@@ -64,7 +64,7 @@ dotnet test Avalonia.RemoteControl.slnx --configuration Release --no-build
 dotnet pack Avalonia.RemoteControl.slnx --configuration Release --no-build --output artifacts/packages
 ```
 
-There is not yet an MCP marker. Do not claim MCP session/TODO integration exists until `AGENTS-README-FIRST.yaml` or another supported workspace registration artifact is present and verified.
+`AGENTS-README-FIRST.yaml` is present in this checkout. Use the Codex MCP plugin workflow for session log, TODO, requirements, import/export, and traceability operations after marker trust is verified; do not write MCP TODO state directly.
 
 ## Planned Product
 

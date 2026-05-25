@@ -73,6 +73,30 @@ public sealed class RemoteControlAdbClientTests
 
         Assert.Equal(47101, endpoint.DevicePort);
         Assert.Equal("marker-token", endpoint.Token);
+        Assert.Equal(AdbEndpointInfo.GrpcProtocol, endpoint.Protocol);
+        Assert.Null(endpoint.ProtocolVersion);
+        Assert.True(endpoint.IsGrpcProtocol);
+    }
+
+    [Fact]
+    public async Task AdbClientDiscoversVersionedBridgeMetadataFromPackageMarker()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+            new AdbCommandResult(
+                0,
+                """{"schemaVersion":"1","devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
+                string.Empty));
+        var client = new AdbClient(runner);
+
+        var endpoint = await client.DiscoverEndpointAsync("emulator-5554", "com.example.app");
+
+        Assert.Equal(47102, endpoint.DevicePort);
+        Assert.Equal("marker-token", endpoint.Token);
+        Assert.Equal(AdbEndpointInfo.AndroidBridgeProtocol, endpoint.Protocol);
+        Assert.Equal("1", endpoint.ProtocolVersion);
+        Assert.False(endpoint.IsGrpcProtocol);
     }
 
     [Fact]
@@ -136,6 +160,34 @@ public sealed class RemoteControlAdbClientTests
             ["-s emulator-5554 forward tcp:47100 tcp:47100", "-s emulator-5554 forward --remove tcp:47100"],
             runner.Commands);
         Assert.Contains("removed", output.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AdbCommandLineConnectRejectsUnsupportedMarkerProtocolBeforeForwarding()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+            new AdbCommandResult(
+                0,
+                """{"devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
+                string.Empty));
+        var commandLine = new AdbCommandLine(
+            new AdbClient(runner),
+            new RecordingRemoteControlProbe());
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var exitCode = await commandLine.RunAsync(
+            ["connect", "--serial", "emulator-5554", "--package", "com.example.app"],
+            output,
+            error);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("not supported", error.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(
+            ["-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json"],
+            runner.Commands);
     }
 
     [Fact]

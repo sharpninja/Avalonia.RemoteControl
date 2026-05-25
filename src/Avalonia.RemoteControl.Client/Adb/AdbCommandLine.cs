@@ -114,6 +114,12 @@ public sealed class AdbCommandLine
                 serial,
                 packageName,
                 cancellationToken).ConfigureAwait(false);
+            if (!endpointInfo.IsGrpcProtocol)
+            {
+                throw new InvalidOperationException(
+                    $"Android marker protocol '{endpointInfo.Protocol}' is not supported by this client yet.");
+            }
+
             devicePort = endpointInfo.DevicePort;
             token ??= endpointInfo.Token;
         }

@@ -61,8 +61,14 @@ public sealed class AdbClient
                 ?? TryGetInt32(root, "port")
                 ?? throw new FormatException("Marker did not contain a devicePort.");
             var token = TryGetString(root, "token");
+            var protocol = TryGetString(root, "protocol")
+                ?? TryGetString(root, "transport")
+                ?? TryGetString(root, "bridgeProtocol")
+                ?? AdbEndpointInfo.GrpcProtocol;
+            var protocolVersion = TryGetString(root, "protocolVersion")
+                ?? TryGetString(root, "schemaVersion");
 
-            return new AdbEndpointInfo(devicePort, token);
+            return new AdbEndpointInfo(devicePort, token, protocol, protocolVersion);
         }
         catch (JsonException ex)
         {

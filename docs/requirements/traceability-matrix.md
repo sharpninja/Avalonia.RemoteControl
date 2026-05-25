@@ -37,16 +37,22 @@ Requirements:
 - `FR-ADB-004`
 - `FR-ADB-005`
 - `FR-ADB-006`
-- `TR-ADB-001`
-- `TR-ADB-002`
-- `TR-ADB-003`
-- `TR-ADB-004`
-- `TR-ADB-005`
-- `TR-ADB-006`
-- `TR-ADB-007`
-- `TR-ADB-008`
-- `TR-SEC-002`
-- `TR-SEC-005`
+- `TR-ADB-CONNECTIVITY-001`
+- `TR-ADB-CONNECTIVITY-002`
+- `TR-ADB-CONNECTIVITY-003`
+- `TR-ADB-CONNECTIVITY-004`
+- `TR-ADB-CONNECTIVITY-005`
+- `TR-ADB-CONNECTIVITY-006`
+- `TR-ADB-CONNECTIVITY-007`
+- `TR-ADB-CONNECTIVITY-008`
+- `TR-ADB-CONNECTIVITY-009`
+- `TR-ADB-CONNECTIVITY-010`
+- `TR-ADB-CONNECTIVITY-011`
+- `TR-ADB-CONNECTIVITY-012`
+- `TR-ADB-CONNECTIVITY-013`
+- `TR-ADB-CONNECTIVITY-014`
+- `TR-SEC-SECURITY-002`
+- `TR-SEC-SECURITY-005`
 
 Tests/evidence:
 
@@ -56,7 +62,17 @@ Tests/evidence:
 - `TEST-ADB-004`
 - `TEST-ADB-005`
 - `TEST-ADB-006`
+- `TEST-ADB-007`
+- `TEST-ADB-008`
+- `TEST-ADB-009`
 - documented decision on Android app-side transport
+
+Evidence:
+
+- `adb version`, `adb devices -l`, and `avalonia-remote adb list` validated host-side ADB availability against a connected Android device.
+- Package marker discovery against a non-debuggable package failed with Android's expected `run-as: package not debuggable` protection.
+- A generated Avalonia `net10.0-android` app referencing `Avalonia.RemoteControl.Server` failed packaging with `NETSDK1082` because `Microsoft.AspNetCore.App` has no `android-arm64` runtime pack.
+- Decision: Android app-side support needs an Android-compatible bridge or transport behind the same desktop-facing protocol; the current AspNetCore/Kestrel server remains viable for desktop/server-capable targets only.
 
 ## Iteration 1 - Protocol and Read-Only Inspection
 
@@ -68,26 +84,27 @@ Requirements:
 - `FR-PROP-001`
 - `FR-PROP-002`
 - `FR-SEC-001`
+- `FR-SEC-002`
 - `FR-SEC-003`
 - `FR-SEC-005`
 - `FR-SEC-008`
-- `TR-GRPC-001`
-- `TR-GRPC-002`
-- `TR-GRPC-003`
-- `TR-DI-001`
-- `TR-DI-002`
-- `TR-DI-003`
-- `TR-UI-001`
-- `TR-UI-002`
-- `TR-UI-003`
-- `TR-UI-004`
-- `TR-SEC-001`
-- `TR-SEC-002`
-- `TR-SEC-003`
-- `TR-SEC-004`
-- `TR-SEC-006`
-- `TR-SEC-007`
-- `TR-SEC-008`
+- `TR-GRPC-PROTOCOL-001`
+- `TR-GRPC-PROTOCOL-002`
+- `TR-GRPC-PROTOCOL-003`
+- `TR-DI-HOSTING-001`
+- `TR-DI-HOSTING-002`
+- `TR-DI-HOSTING-003`
+- `TR-UI-RUNTIME-001`
+- `TR-UI-RUNTIME-002`
+- `TR-UI-RUNTIME-003`
+- `TR-UI-RUNTIME-004`
+- `TR-SEC-SECURITY-001`
+- `TR-SEC-SECURITY-002`
+- `TR-SEC-SECURITY-003`
+- `TR-SEC-SECURITY-004`
+- `TR-SEC-SECURITY-006`
+- `TR-SEC-SECURITY-007`
+- `TR-SEC-SECURITY-008`
 
 Tests/evidence:
 
@@ -112,6 +129,7 @@ Implemented evidence:
 - `RemoteControlHostedServerTests` proves the hosted gRPC endpoint rejects unauthenticated calls and serves authenticated calls.
 - `AvaloniaRemoteControlServerHost` starts the HTTP/2 gRPC transport from `IServiceProvider` services.
 - `RemoteControlHostingTests` covers the `IServiceProvider.StartAvaloniaRemoteControlAsync` and `StopAvaloniaRemoteControlAsync` helper path when the server is disabled.
+- `RemoteControlHostingTests` covers `IControlledApplicationLifetime.AttachAvaloniaRemoteControl`, proving startup starts the server, exit stops it, and disposing the registration detaches event handlers.
 
 ## Iteration 2 - Live Updates and Remote Actions
 
@@ -128,25 +146,25 @@ Requirements:
 - `FR-ACTION-004`
 - `FR-SEC-006`
 - `FR-SEC-007`
-- `TR-GRPC-004`
-- `TR-GRPC-005`
-- `TR-GRPC-006`
-- `TR-GRPC-008`
-- `TR-UI-005`
-- `TR-PROP-001`
-- `TR-PROP-002`
-- `TR-PROP-003`
-- `TR-PROP-004`
-- `TR-PROP-005`
-- `TR-ACTION-001`
-- `TR-ACTION-002`
-- `TR-ACTION-003`
-- `TR-ACTION-004`
-- `TR-SEC-010`
-- `TR-SEC-011`
-- `TR-SEC-012`
-- `TR-SEC-013`
-- `TR-SEC-014`
+- `TR-GRPC-PROTOCOL-004`
+- `TR-GRPC-PROTOCOL-005`
+- `TR-GRPC-PROTOCOL-006`
+- `TR-GRPC-PROTOCOL-008`
+- `TR-UI-RUNTIME-005`
+- `TR-PROP-MUTATION-001`
+- `TR-PROP-MUTATION-002`
+- `TR-PROP-MUTATION-003`
+- `TR-PROP-MUTATION-004`
+- `TR-PROP-MUTATION-005`
+- `TR-ACTION-INVOCATION-001`
+- `TR-ACTION-INVOCATION-002`
+- `TR-ACTION-INVOCATION-003`
+- `TR-ACTION-INVOCATION-004`
+- `TR-SEC-SECURITY-010`
+- `TR-SEC-SECURITY-011`
+- `TR-SEC-SECURITY-012`
+- `TR-SEC-SECURITY-013`
+- `TR-SEC-SECURITY-014`
 
 Tests/evidence:
 
@@ -169,7 +187,7 @@ Implemented evidence:
 - `RemoteControlCommandTests` covers guarded focus invocation and gRPC focus command mapping.
 - `RemoteControlCommandTests` covers configured mutation for string, `Thickness`, `CornerRadius`, `Point`, `Size`, `Rect`, and solid color brush values.
 - `RemoteControlCommandTests` covers action and mutation audit log messages containing sanitized client identity.
-- Pointer-center synthesis remains planned; current click support uses button semantic invocation.
+- `RemoteControlCommandTests` covers button semantic click invocation and non-button surface click invocation through center-position `PointerPressed`, `PointerReleased`, and typed `Tapped` routed events.
 
 ## Iteration 3 - Logging
 
@@ -179,14 +197,14 @@ Requirements:
 - `FR-LOG-002`
 - `FR-LOG-003`
 - `FR-LOG-004`
-- `TR-GRPC-007`
-- `TR-DI-005`
-- `TR-LOG-001`
-- `TR-LOG-002`
-- `TR-LOG-003`
-- `TR-LOG-004`
-- `TR-LOG-005`
-- `TR-SEC-009`
+- `TR-GRPC-PROTOCOL-007`
+- `TR-DI-HOSTING-005`
+- `TR-LOG-STREAMING-001`
+- `TR-LOG-STREAMING-002`
+- `TR-LOG-STREAMING-003`
+- `TR-LOG-STREAMING-004`
+- `TR-LOG-STREAMING-005`
+- `TR-SEC-SECURITY-009`
 
 Tests/evidence:
 
@@ -200,7 +218,7 @@ Implemented evidence:
 - `RemoteControlLogBuffer` is a bounded replay buffer with cumulative dropped-entry counts.
 - `RemoteControlLoggerProvider` captures `ILogger` messages without replacing existing logging providers.
 - `WatchLogs` is defined on the gRPC service and maps sanitized log entries to protocol messages.
-- Full hosted gRPC log-stream integration remains part of later transport/server hosting validation.
+- `RemoteControlDesktopSessionTests` covers hosted gRPC log streaming from the server log buffer to the desktop client session.
 
 ## Iteration 4 - Client and Tool
 
@@ -213,9 +231,9 @@ Requirements:
 - `FR-CLIENT-005`
 - `FR-CLIENT-006`
 - `FR-SEC-009`
-- `TR-PACK-002`
-- `TR-PACK-003`
-- `TR-SEC-016`
+- `TR-PACK-PACKAGE-002`
+- `TR-PACK-PACKAGE-003`
+- `TR-SEC-SECURITY-016`
 
 Tests/evidence:
 
@@ -235,8 +253,9 @@ Implemented evidence:
 - `Avalonia.RemoteControl.Tool` launches a basic Avalonia desktop UI when run without arguments.
 - The desktop UI includes endpoint/token connection controls, tree rendering, selected-node properties, invoke-click, set-property, log streaming, and status feedback.
 - `RemoteControlProfileStoreTests` covers saving, loading, and forgetting the default user-scoped connection profile.
-- The desktop UI exposes Save and Forget controls for endpoint/token profile state.
-- Certificate management and manual UI acceptance remain future work.
+- The desktop UI exposes Save and Forget controls for endpoint/token/certificate-path profile state.
+- `RemoteControlDesktopSessionTests` covers connecting to a hosted TLS endpoint with a configured trusted server certificate file.
+- Manual certificate acceptance remains future work.
 
 ## Iteration 5 - ADB Client UX
 
@@ -249,14 +268,15 @@ Requirements:
 - `FR-ADB-005`
 - `FR-ADB-006`
 - `FR-SEC-004`
-- `TR-ADB-001`
-- `TR-ADB-002`
-- `TR-ADB-003`
-- `TR-ADB-004`
-- `TR-ADB-005`
-- `TR-ADB-006`
-- `TR-ADB-007`
-- `TR-SEC-015`
+- `TR-ADB-CONNECTIVITY-001`
+- `TR-ADB-CONNECTIVITY-002`
+- `TR-ADB-CONNECTIVITY-003`
+- `TR-ADB-CONNECTIVITY-004`
+- `TR-ADB-CONNECTIVITY-005`
+- `TR-ADB-CONNECTIVITY-006`
+- `TR-ADB-CONNECTIVITY-007`
+- `TR-ADB-CONNECTIVITY-009`
+- `TR-SEC-SECURITY-015`
 
 Tests/evidence:
 
@@ -275,17 +295,51 @@ Implemented evidence:
 - `GrpcRemoteControlProbe` authenticates `GetCapabilities` over the forwarded localhost endpoint.
 - Real emulator/device acceptance remains under Technical Spike 0 and `TEST-MANUAL-003`.
 
+## Iteration 7 - Android Bridge Transport
+
+Requirements:
+
+- `TR-ADB-CONNECTIVITY-009`
+- `TR-ADB-CONNECTIVITY-010`
+- `TR-ADB-CONNECTIVITY-011`
+- `TR-ADB-CONNECTIVITY-012`
+- `TR-ADB-CONNECTIVITY-013`
+- `TR-ADB-CONNECTIVITY-014`
+- `TR-SEC-SECURITY-002`
+- `TR-SEC-SECURITY-005`
+
+Tests/evidence:
+
+- `TEST-ADB-006`
+- `TEST-ADB-007`
+- `TEST-ADB-008`
+- `TEST-ADB-009`
+- `TEST-MANUAL-003`
+- Android bridge sample package
+- package marker read through `adb shell run-as`
+- authenticated capability probe through `adb forward`
+- tree snapshot captured on the Avalonia dispatcher
+- fail-closed unsupported marker transport test
+- length-prefixed protobuf bridge envelope unit tests
+- cleanup of the created ADB forward
+
+Implemented evidence:
+
+- Android marker parsing now recognizes versioned protocol metadata, keeps missing metadata compatible with legacy `grpc`, and rejects unsupported bridge protocols before creating a forward.
+- `RemoteControlBridgeProtocolTests` covers `arc-protobuf-v1` transport constants, `BridgeRequest`/`BridgeResponse` length-prefixed frame round-trip, oversized frame rejection, and sanitized failure response shape.
+- Technical Spike 0 rejected ASP.NET Core/Kestrel gRPC as the Android app-side transport and created the bridge requirement.
+
 ## Iteration 6 - CI, Packaging, and Release
 
 Requirements:
 
-- `TR-PACK-001`
-- `TR-PACK-004`
-- `TR-CI-001`
-- `TR-CI-002`
-- `TR-CI-003`
-- `TR-CI-004`
-- `TR-CI-005`
+- `TR-PACK-PACKAGE-001`
+- `TR-PACK-PACKAGE-004`
+- `TR-CI-RELEASE-001`
+- `TR-CI-RELEASE-002`
+- `TR-CI-RELEASE-003`
+- `TR-CI-RELEASE-004`
+- `TR-CI-RELEASE-005`
 
 Tests/evidence:
 
@@ -303,3 +357,4 @@ Implemented evidence:
 - `.github/workflows/ci.yml` restores, builds, tests, packs, uploads artifacts, and publishes tagged `v*` packages only when `NUGET_API_KEY` is configured.
 - `azure-pipelines.yml` restores, builds, tests, packs, publishes build artifacts, and can publish tagged `v*` packages only when `NuGetApiKey` is configured.
 - `docs/release.md` documents GitHub as public release source of truth, Azure as private validation/mirror, tagged release shape, and duplicate publish prevention through `--skip-duplicate`.
+- Azure Pipelines definition `Avalonia.RemoteControl-CI` has run successfully against `master`; GitHub Actions is defined but current hosted runs are blocked before job start by the GitHub account billing lock.

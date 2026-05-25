@@ -50,6 +50,9 @@
 - `TEST-ADB-004`: Client connects through the forwarded localhost port.
 - `TEST-ADB-005`: Client cleans up forwarding on disconnect by default.
 - `TEST-ADB-006`: Android emulator smoke validates the selected app-side transport.
+- `TEST-ADB-007`: Android bridge acceptance records build/install/launch, marker discovery, authenticated capabilities, tree snapshot, and ADB forward cleanup evidence on a real emulator or device.
+- `TEST-ADB-008`: Unit tests verify versioned Android marker protocol parsing and fail-closed handling for unsupported marker transports.
+- `TEST-ADB-009`: Unit tests verify the `arc-protobuf-v1` bridge envelope encodes and decodes length-prefixed protobuf request/response frames and rejects oversized frames.
 
 ## Packaging and CI Tests
 

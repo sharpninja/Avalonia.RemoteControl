@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Avalonia.RemoteControl.Server.Threading;
@@ -107,7 +108,41 @@ public sealed class RemoteControlActionInvoker
             return new RemoteControlCommandResult(true, "Click invoked.");
         }
 
-        return new RemoteControlCommandResult(false, "Control does not support click invocation.");
+        var releasedArgs = RaisePointerClickSequence(control);
+        control.RaiseEvent(new TappedEventArgs(InputElement.TappedEvent, releasedArgs));
+        logger.LogInformation(
+            "Remote tap succeeded for node {NodeId} from {ClientIdentity}",
+            nodeId,
+            clientIdentity);
+        return new RemoteControlCommandResult(true, "Tap invoked.");
+    }
+
+    private static PointerReleasedEventArgs RaisePointerClickSequence(Control control)
+    {
+        var point = new Point(control.Bounds.Width / 2, control.Bounds.Height / 2);
+        using var pointer = new Pointer(Pointer.GetNextFreeId(), PointerType.Mouse, isPrimary: true);
+        var timestamp = (ulong)Environment.TickCount64;
+        var pressedArgs = new PointerPressedEventArgs(
+            control,
+            pointer,
+            control,
+            point,
+            timestamp,
+            new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed),
+            KeyModifiers.None);
+        control.RaiseEvent(pressedArgs);
+
+        var releasedArgs = new PointerReleasedEventArgs(
+            control,
+            pointer,
+            control,
+            point,
+            timestamp + 1,
+            new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased),
+            KeyModifiers.None,
+            MouseButton.Left);
+        control.RaiseEvent(releasedArgs);
+        return releasedArgs;
     }
 
     private RemoteControlCommandResult InvokeFocus(string nodeId, string clientIdentity)

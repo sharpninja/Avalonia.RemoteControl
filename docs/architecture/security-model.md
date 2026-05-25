@@ -53,6 +53,7 @@ Current server implementation:
 - `RemoteControlStartupValidator` accepts enabled loopback startup only when required credentials are configured.
 - Non-loopback cleartext startup is rejected.
 - Non-loopback TLS startup requires a configured certificate path.
+- Hosted TLS startup has integration coverage using a temporary certificate and an authenticated gRPC capability probe.
 - ADB tunnel startup still requires a configured bearer token.
 
 ## Redaction
@@ -122,8 +123,9 @@ The client must not log tokens.
 
 Current client implementation:
 
-- `FileRemoteControlProfileStore` saves the default endpoint and bearer token under user-scoped application data.
+- `FileRemoteControlProfileStore` saves the default endpoint, bearer token, and certificate path under user-scoped application data.
 - The desktop client exposes Save and Forget controls for the default profile.
+- `RemoteControlDesktopSession` can trust a configured server certificate file by matching the peer certificate SHA-256 hash.
 - Profile operations do not write tokens to logs or status text.
 
 ## Requirement Mapping
@@ -142,22 +144,22 @@ Functional requirements:
 
 Technical requirements:
 
-- `TR-SEC-001`
-- `TR-SEC-002`
-- `TR-SEC-003`
-- `TR-SEC-004`
-- `TR-SEC-005`
-- `TR-SEC-006`
-- `TR-SEC-007`
-- `TR-SEC-008`
-- `TR-SEC-009`
-- `TR-SEC-010`
-- `TR-SEC-011`
-- `TR-SEC-012`
-- `TR-SEC-013`
-- `TR-SEC-014`
-- `TR-SEC-015`
-- `TR-SEC-016`
+- `TR-SEC-SECURITY-001`
+- `TR-SEC-SECURITY-002`
+- `TR-SEC-SECURITY-003`
+- `TR-SEC-SECURITY-004`
+- `TR-SEC-SECURITY-005`
+- `TR-SEC-SECURITY-006`
+- `TR-SEC-SECURITY-007`
+- `TR-SEC-SECURITY-008`
+- `TR-SEC-SECURITY-009`
+- `TR-SEC-SECURITY-010`
+- `TR-SEC-SECURITY-011`
+- `TR-SEC-SECURITY-012`
+- `TR-SEC-SECURITY-013`
+- `TR-SEC-SECURITY-014`
+- `TR-SEC-SECURITY-015`
+- `TR-SEC-SECURITY-016`
 
 Testing requirements:
 

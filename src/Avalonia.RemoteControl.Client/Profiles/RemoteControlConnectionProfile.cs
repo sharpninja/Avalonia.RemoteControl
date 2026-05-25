@@ -16,6 +16,11 @@ public sealed record RemoteControlConnectionProfile
     public string Token { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the optional client-trusted certificate path for TLS profiles.
+    /// </summary>
+    public string CertificatePath { get; init; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the profile update timestamp.
     /// </summary>
     public DateTimeOffset UpdatedUtc { get; init; } = DateTimeOffset.UtcNow;

@@ -21,6 +21,16 @@ public static class RemoteControlProtocol
     public const int DefaultPort = 47100;
 
     /// <summary>
+    /// Marker protocol value for the desktop-facing gRPC transport.
+    /// </summary>
+    public const string GrpcTransportProtocol = "grpc";
+
+    /// <summary>
+    /// Marker protocol value for the Android-compatible protobuf bridge transport.
+    /// </summary>
+    public const string AndroidBridgeTransportProtocol = "arc-protobuf-v1";
+
+    /// <summary>
     /// Current protocol version rendered as a display string.
     /// </summary>
     public static string DisplayVersion => $"{MajorVersion}.{MinorVersion}";

@@ -1,5 +1,7 @@
 using Avalonia.RemoteControl.Protocol.V1;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using Grpc.Net.Client;
 
 namespace Avalonia.RemoteControl.Client;
@@ -12,13 +14,16 @@ public sealed class RemoteControlDesktopSession : IDisposable
     private readonly GrpcChannel channel;
     private readonly Protocol.V1.RemoteControl.RemoteControlClient client;
     private readonly global::Grpc.Core.Metadata headers;
+    private readonly X509Certificate2? trustedServerCertificate;
 
     private RemoteControlDesktopSession(
         Uri endpoint,
-        string token)
+        string token,
+        string? trustedServerCertificatePath)
     {
         Endpoint = endpoint;
-        channel = GrpcChannel.ForAddress(endpoint);
+        trustedServerCertificate = LoadTrustedServerCertificate(trustedServerCertificatePath);
+        channel = CreateChannel(endpoint, trustedServerCertificate);
         client = new Protocol.V1.RemoteControl.RemoteControlClient(channel);
         headers = new global::Grpc.Core.Metadata
         {
@@ -36,15 +41,19 @@ public sealed class RemoteControlDesktopSession : IDisposable
     /// </summary>
     /// <param name="endpoint">Remote endpoint.</param>
     /// <param name="token">Bearer token.</param>
+    /// <param name="trustedServerCertificatePath">Optional certificate file whose thumbprint is trusted for TLS connections.</param>
     /// <returns>A connected session object.</returns>
-    public static RemoteControlDesktopSession Create(Uri endpoint, string token)
+    public static RemoteControlDesktopSession Create(
+        Uri endpoint,
+        string token,
+        string? trustedServerCertificatePath = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
 
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-        return new RemoteControlDesktopSession(endpoint, token);
+        return new RemoteControlDesktopSession(endpoint, token, trustedServerCertificatePath);
     }
 
     /// <summary>
@@ -170,5 +179,50 @@ public sealed class RemoteControlDesktopSession : IDisposable
     public void Dispose()
     {
         channel.Dispose();
+        trustedServerCertificate?.Dispose();
+    }
+
+    private static X509Certificate2? LoadTrustedServerCertificate(string? trustedServerCertificatePath)
+    {
+        if (string.IsNullOrWhiteSpace(trustedServerCertificatePath))
+        {
+            return null;
+        }
+
+        return X509CertificateLoader.LoadCertificateFromFile(trustedServerCertificatePath);
+    }
+
+    private static GrpcChannel CreateChannel(
+        Uri endpoint,
+        X509Certificate2? trustedServerCertificate)
+    {
+        if (trustedServerCertificate is null)
+        {
+            return GrpcChannel.ForAddress(endpoint);
+        }
+
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (_, certificate, _, _) =>
+                IsTrustedServerCertificate(certificate, trustedServerCertificate),
+        };
+
+        return GrpcChannel.ForAddress(
+            endpoint,
+            new GrpcChannelOptions { HttpHandler = handler });
+    }
+
+    private static bool IsTrustedServerCertificate(
+        X509Certificate2? certificate,
+        X509Certificate2 trustedServerCertificate)
+    {
+        if (certificate is null)
+        {
+            return false;
+        }
+
+        return CryptographicOperations.FixedTimeEquals(
+            certificate.GetCertHash(HashAlgorithmName.SHA256),
+            trustedServerCertificate.GetCertHash(HashAlgorithmName.SHA256));
     }
 }

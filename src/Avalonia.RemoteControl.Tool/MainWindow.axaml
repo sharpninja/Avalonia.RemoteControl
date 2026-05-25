@@ -16,7 +16,7 @@
 
   <Grid RowDefinitions="Auto,*" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
     <Border Grid.Row="0" Padding="12" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
-      <Grid ColumnDefinitions="Auto,*,220,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" VerticalAlignment="Center">
+      <Grid ColumnDefinitions="Auto,*,220,180,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" VerticalAlignment="Center">
         <TextBlock Text="Endpoint" VerticalAlignment="Center" />
         <TextBox x:Name="EndpointBox"
                  Grid.Column="1"
@@ -26,11 +26,14 @@
                  Grid.Column="2"
                  PasswordChar="*"
                  PlaceholderText="Bearer token" />
-        <Button Grid.Column="3" Content="Connect" Click="ConnectClicked" />
-        <Button Grid.Column="4" Content="Snapshot" Click="RefreshSnapshotClicked" />
-        <Button Grid.Column="5" Content="Logs" Click="ToggleLogsClicked" />
-        <Button Grid.Column="6" Content="Save" Click="SaveProfileClicked" />
-        <Button Grid.Column="7" Content="Forget" Click="ForgetProfileClicked" />
+        <TextBox x:Name="CertificatePathBox"
+                 Grid.Column="3"
+                 PlaceholderText="Certificate path" />
+        <Button Grid.Column="4" Content="Connect" Click="ConnectClicked" />
+        <Button Grid.Column="5" Content="Snapshot" Click="RefreshSnapshotClicked" />
+        <Button Grid.Column="6" Content="Logs" Click="ToggleLogsClicked" />
+        <Button Grid.Column="7" Content="Save" Click="SaveProfileClicked" />
+        <Button Grid.Column="8" Content="Forget" Click="ForgetProfileClicked" />
       </Grid>
     </Border>
 

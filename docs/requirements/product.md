@@ -53,7 +53,7 @@ The product is valuable only if it is easy to add to an app, easy to connect fro
 
 ## Open Product Risks
 
-- Android in-process gRPC hosting may not be viable.
+- The current ASP.NET Core/Kestrel gRPC host is not packageable as the Android app-side transport because `Microsoft.AspNetCore.App` has no `android-arm64` runtime pack.
 - ADB package/port/token discovery needs a concrete marker strategy.
 - Property mutation can produce app side effects and needs strict policy controls.
 - Public GitHub plus private Azure DevOps needs a clear release/source-of-truth policy before publishing.

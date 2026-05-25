@@ -49,7 +49,8 @@ public sealed partial class MainWindow : Window
             session?.Dispose();
             session = RemoteControlDesktopSession.Create(
                 new Uri(EndpointBox.Text ?? string.Empty),
-                TokenBox.Text ?? string.Empty);
+                TokenBox.Text ?? string.Empty,
+                CertificatePathBox.Text);
 
             var capabilities = await session.GetCapabilitiesAsync();
             StatusText.Text = $"Connected: protocol {capabilities.ProtocolVersion}";
@@ -69,6 +70,7 @@ public sealed partial class MainWindow : Window
             {
                 Endpoint = EndpointBox.Text ?? string.Empty,
                 Token = TokenBox.Text ?? string.Empty,
+                CertificatePath = CertificatePathBox.Text ?? string.Empty,
                 UpdatedUtc = DateTimeOffset.UtcNow,
             });
 
@@ -86,6 +88,7 @@ public sealed partial class MainWindow : Window
         {
             await profileStore.ForgetDefaultAsync();
             TokenBox.Text = string.Empty;
+            CertificatePathBox.Text = string.Empty;
             StatusText.Text = "Saved connection profile forgotten.";
         }
         catch (Exception ex)
@@ -107,6 +110,7 @@ public sealed partial class MainWindow : Window
 
             EndpointBox.Text = profile.Endpoint;
             TokenBox.Text = profile.Token;
+            CertificatePathBox.Text = profile.CertificatePath;
             StatusText.Text = "Saved connection profile loaded.";
         }
         catch (Exception ex)
