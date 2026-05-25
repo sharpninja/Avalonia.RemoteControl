@@ -1,5 +1,7 @@
 using Avalonia.RemoteControl.Server.Commands;
+using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server.Logging;
+using Avalonia.RemoteControl.Server.Rendering;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Microsoft.Extensions.Logging;
 
@@ -29,6 +31,13 @@ public interface IRemoteControlRuntime
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An asynchronous stream of tree snapshots.</returns>
     IAsyncEnumerable<RemoteControlTreeSnapshot> WatchSnapshotsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Watches current and future live remote UI frames.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>An asynchronous stream of live UI frames.</returns>
+    IAsyncEnumerable<RemoteControlFrame> WatchFramesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Invokes a click on the selected node.
@@ -67,6 +76,18 @@ public interface IRemoteControlRuntime
         string nodeId,
         string propertyName,
         string value,
+        string clientIdentity,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends live remote input events to the remote root.
+    /// </summary>
+    /// <param name="events">Input events.</param>
+    /// <param name="clientIdentity">Sanitized authenticated client identity.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The command result.</returns>
+    ValueTask<RemoteControlCommandResult> SendInputAsync(
+        IReadOnlyList<RemoteInputEvent> events,
         string clientIdentity,
         CancellationToken cancellationToken = default);
 

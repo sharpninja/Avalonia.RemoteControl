@@ -1,3 +1,4 @@
+using Avalonia.RemoteControl.Client.Logging;
 using Avalonia.RemoteControl.Server;
 using Avalonia.RemoteControl.Server.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,19 @@ namespace Avalonia.RemoteControl.Tests;
 
 public sealed class RemoteControlLoggingTests
 {
+    [Fact]
+    public void LogVerbosityOptionsExposeSupportedMinimumLevels()
+    {
+        Assert.Equal(
+            ["Debug", "Information", "Warning", "Error"],
+            RemoteLogVerbosity.Supported.Select(option => option.DisplayName).ToArray());
+
+        Assert.Equal(LogLevel.Information, RemoteLogVerbosity.Default.MinimumLevel);
+        Assert.Equal(
+            ["Debug", "Information", "Warning", "Error"],
+            RemoteLogVerbosity.Supported.Select(option => option.MinimumLevelName).ToArray());
+    }
+
     [Fact]
     public void ServiceCollectionRegistersRemoteControlLoggerProvider()
     {

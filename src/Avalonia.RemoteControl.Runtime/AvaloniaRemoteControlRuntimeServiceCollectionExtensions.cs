@@ -41,6 +41,9 @@ public static class AvaloniaRemoteControlRuntimeServiceCollectionExtensions
             provider.GetRequiredService<Logging.RemoteControlLoggerProvider>());
         services.AddSingleton<Commands.RemoteControlActionInvoker>();
         services.AddSingleton<Commands.RemoteControlPropertyMutationService>();
+        services.AddSingleton<Input.RemoteControlInputDispatcher>();
+        services.AddSingleton<Rendering.IRemoteControlFrameProvider, Rendering.AvaloniaRenderTargetFrameProvider>();
+        services.AddSingleton<Rendering.RemoteControlFrameStreamService>();
         services.AddSingleton<Runtime.IRemoteControlRuntime, Runtime.RemoteControlRuntime>();
         services.AddSingleton<Bridge.RemoteControlBridgeRequestHandler>();
         services.AddSingleton<Bridge.RemoteControlBridgeTcpListener>();

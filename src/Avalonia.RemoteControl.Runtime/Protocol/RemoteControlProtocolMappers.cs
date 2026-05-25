@@ -28,6 +28,8 @@ public static class RemoteControlProtocolMappers
             SupportsClickInvocation = capabilities.SupportsClickInvocation,
             SupportsPropertyMutation = capabilities.SupportsPropertyMutation,
             SupportsLogStreaming = capabilities.SupportsLogStreaming,
+            SupportsFrameStreaming = capabilities.SupportsFrameStreaming,
+            SupportsRemoteInput = capabilities.SupportsRemoteInput,
         };
     }
 
@@ -100,6 +102,13 @@ public static class RemoteControlProtocolMappers
                 Y = node.Bounds.Y,
                 Width = node.Bounds.Width,
                 Height = node.Bounds.Height,
+            },
+            AbsoluteBounds = new ProtocolRect
+            {
+                X = node.AbsoluteBounds.X,
+                Y = node.AbsoluteBounds.Y,
+                Width = node.AbsoluteBounds.Width,
+                Height = node.AbsoluteBounds.Height,
             },
             IsVisible = node.IsVisible,
             IsEnabled = node.IsEnabled,

@@ -28,6 +28,8 @@ public sealed class GrpcRemoteControlProbe : IRemoteControlProbe
             capabilities.SupportsTreeStreaming,
             capabilities.SupportsClickInvocation,
             capabilities.SupportsPropertyMutation,
-            capabilities.SupportsLogStreaming);
+            capabilities.SupportsLogStreaming,
+            capabilities.SupportsFrameStreaming,
+            capabilities.SupportsRemoteInput);
     }
 }

@@ -5,7 +5,7 @@
 Install or update the .NET tool:
 
 ```powershell
-dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.1.2
+dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.1.3
 dotnet tool update --global SharpNinja.Avalonia.RemoteControl.Tool
 ```
 
@@ -70,6 +70,23 @@ options.AllowRemoteActions = true;
 
 The selected control must also still exist and support the requested action.
 
+## Live View Is Blank Or Falls Back To Tree Mode
+
+Live screenshots require:
+
+```csharp
+options.AllowRemoteFrames = true;
+```
+
+Remote input requires both:
+
+```csharp
+options.AllowRemoteActions = true;
+options.AllowRemoteInput = true;
+```
+
+If frame streaming is disabled, the client can still use tree replica mode when tree streaming is available. If input is disabled, the live window remains view-only.
+
 ## Logs Are Missing
 
 Confirm that the debuggee uses `Microsoft.Extensions.Logging` and that remote-control services are registered in the same service provider as the app logging pipeline.
@@ -117,6 +134,6 @@ avalonia-remote adb connect --serial <serial> --device-port 47100 --token <token
 Use the `SharpNinja.Avalonia.RemoteControl.*` package IDs. The older `Avalonia.RemoteControl.*` IDs are not the public package names.
 
 ```powershell
-dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.1.2
-dotnet add package SharpNinja.Avalonia.RemoteControl.Runtime --version 0.1.2
+dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.1.3
+dotnet add package SharpNinja.Avalonia.RemoteControl.Runtime --version 0.1.3
 ```

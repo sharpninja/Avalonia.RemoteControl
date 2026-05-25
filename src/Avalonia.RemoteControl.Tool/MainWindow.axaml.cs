@@ -2,8 +2,11 @@ using System.Collections.ObjectModel;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.RemoteControl.Client;
+using Avalonia.RemoteControl.Client.Live;
+using Avalonia.RemoteControl.Client.Logging;
 using Avalonia.RemoteControl.Client.Profiles;
 using Avalonia.RemoteControl.Client.Security;
+using Avalonia.RemoteControl.Protocol;
 using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.Threading;
 
@@ -19,6 +22,7 @@ public sealed partial class MainWindow : Window
     private readonly ObservableCollection<string> logRows = [];
     private readonly IRemoteControlProfileStore profileStore = new FileRemoteControlProfileStore();
     private RemoteControlDesktopSession? session;
+    private RemoteLiveViewCapabilities liveViewCapabilities = RemoteLiveViewCapabilities.None;
     private TreeNode? selectedNode;
     private CancellationTokenSource? logStreamCancellation;
     private RemoteControlServerCertificateInfo? pendingCertificateInfo;
@@ -33,6 +37,14 @@ public sealed partial class MainWindow : Window
         ControlTree.ItemsSource = treeItems;
         PropertyList.ItemsSource = propertyRows;
         LogList.ItemsSource = logRows;
+        TransportProtocolBox.ItemsSource = new[]
+        {
+            RemoteControlProtocol.GrpcTransportProtocol,
+            RemoteControlProtocol.AndroidBridgeTransportProtocol,
+        };
+        TransportProtocolBox.SelectedItem = RemoteControlProtocol.GrpcTransportProtocol;
+        LogVerbosityBox.ItemsSource = RemoteLogVerbosity.Supported;
+        LogVerbosityBox.SelectedItem = RemoteLogVerbosity.Default;
 
         Closing += (_, _) =>
         {
@@ -53,14 +65,17 @@ public sealed partial class MainWindow : Window
                 new Uri(EndpointBox.Text ?? string.Empty),
                 TokenBox.Text ?? string.Empty,
                 CertificatePathBox.Text,
+                transportProtocol: GetSelectedTransportProtocol(),
                 acceptedServerCertificateSha256Fingerprint: AcceptedFingerprintBox.Text);
 
             var capabilities = await session.GetCapabilitiesAsync();
-            StatusText.Text = $"Connected: protocol {capabilities.ProtocolVersion}";
+            liveViewCapabilities = RemoteLiveViewCapabilities.FromProtocol(capabilities);
+            StatusText.Text = $"Connected: protocol {capabilities.ProtocolVersion}; transport {GetSelectedTransportProtocol()}";
             await RefreshSnapshotAsync();
         }
         catch (Exception ex)
         {
+            liveViewCapabilities = RemoteLiveViewCapabilities.None;
             StatusText.Text = $"Connection failed: {ex.Message}";
         }
     }
@@ -85,6 +100,7 @@ public sealed partial class MainWindow : Window
             TokenBox.Text = string.Empty;
             CertificatePathBox.Text = string.Empty;
             AcceptedFingerprintBox.Text = string.Empty;
+            TransportProtocolBox.SelectedItem = RemoteControlProtocol.GrpcTransportProtocol;
             pendingCertificateInfo = null;
             StatusText.Text = "Saved connection profile forgotten.";
         }
@@ -109,6 +125,7 @@ public sealed partial class MainWindow : Window
             TokenBox.Text = profile.Token;
             CertificatePathBox.Text = profile.CertificatePath;
             AcceptedFingerprintBox.Text = profile.AcceptedServerCertificateSha256Fingerprint;
+            TransportProtocolBox.SelectedItem = profile.TransportProtocol;
             StatusText.Text = "Saved connection profile loaded.";
         }
         catch (Exception ex)
@@ -120,6 +137,19 @@ public sealed partial class MainWindow : Window
     private async void RefreshSnapshotClicked(object? sender, RoutedEventArgs e)
     {
         await RefreshSnapshotAsync();
+    }
+
+    private void OpenLiveViewClicked(object? sender, RoutedEventArgs e)
+    {
+        if (session is null)
+        {
+            StatusText.Text = "Connect before opening live view.";
+            return;
+        }
+
+        var liveView = new RemoteViewWindow(session, liveViewCapabilities);
+        liveView.Show();
+        StatusText.Text = "Live view opened.";
     }
 
     private async Task RefreshSnapshotAsync()
@@ -262,15 +292,16 @@ public sealed partial class MainWindow : Window
         }
 
         logStreamCancellation = new CancellationTokenSource();
-        _ = WatchLogsAsync(logStreamCancellation.Token);
-        StatusText.Text = "Log stream started.";
+        var minimumLevel = SelectedLogMinimumLevel;
+        _ = WatchLogsAsync(minimumLevel, logStreamCancellation.Token);
+        StatusText.Text = $"Log stream started ({minimumLevel}).";
     }
 
-    private async Task WatchLogsAsync(CancellationToken cancellationToken)
+    private async Task WatchLogsAsync(string minimumLevel, CancellationToken cancellationToken)
     {
         try
         {
-            await foreach (var entry in session!.WatchLogsAsync("Information", null, cancellationToken))
+            await foreach (var entry in session!.WatchLogsAsync(minimumLevel, null, cancellationToken))
             {
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
@@ -289,6 +320,9 @@ public sealed partial class MainWindow : Window
             });
         }
     }
+
+    private string SelectedLogMinimumLevel =>
+        (LogVerbosityBox.SelectedItem as RemoteLogVerbosity ?? RemoteLogVerbosity.Default).MinimumLevelName;
 
     private async void InspectCertificateClicked(object? sender, RoutedEventArgs e)
     {
@@ -349,10 +383,17 @@ public sealed partial class MainWindow : Window
             Token = TokenBox.Text ?? string.Empty,
             CertificatePath = CertificatePathBox.Text ?? string.Empty,
             AcceptedServerCertificateSha256Fingerprint = AcceptedFingerprintBox.Text ?? string.Empty,
+            TransportProtocol = GetSelectedTransportProtocol(),
             UpdatedUtc = DateTimeOffset.UtcNow,
         });
 
         StatusText.Text = statusText;
+    }
+
+    private string GetSelectedTransportProtocol()
+    {
+        return TransportProtocolBox.SelectedItem as string
+            ?? RemoteControlProtocol.GrpcTransportProtocol;
     }
 
     private static IReadOnlyList<RemoteTreeItem> BuildTree(TreeSnapshot snapshot)

@@ -50,6 +50,8 @@ public sealed class AndroidProbeBridgeHost : IDisposable
             options.AuthenticationToken = debugToken;
             options.IsAdbTunnel = true;
             options.AllowRemoteActions = true;
+            options.AllowRemoteFrames = true;
+            options.AllowRemoteInput = true;
             options.AllowedMutableProperties.Add("Text");
         });
         services.AddSingleton(rootProvider);

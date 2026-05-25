@@ -205,8 +205,16 @@ public sealed class RemoteControlBridgeTcpListener : IAsyncDisposable
                     stream,
                     BridgeRequest.Parser,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
-                var response = await requestHandler.HandleAsync(request, cancellationToken).ConfigureAwait(false);
-                await BridgeFrameCodec.WriteAsync(stream, response, cancellationToken).ConfigureAwait(false);
+                await foreach (var response in requestHandler.HandleResponsesAsync(request, cancellationToken)
+                    .ConfigureAwait(false))
+                {
+                    await BridgeFrameCodec.WriteAsync(stream, response, cancellationToken).ConfigureAwait(false);
+
+                    if (response.EndOfStream)
+                    {
+                        break;
+                    }
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

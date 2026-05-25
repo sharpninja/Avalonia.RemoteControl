@@ -22,6 +22,7 @@
 - `FR-ACTION-002`: A connected client can request focus for a focusable target.
 - `FR-ACTION-003`: Stale node IDs produce a recoverable client error and trigger a refresh path.
 - `FR-ACTION-004`: Unsupported actions are reported as unsupported with a reason.
+- `FR-ACTION-005`: A connected client can send approved pointer, wheel, keyboard, and text input to the remote application from the live remote view.
 
 ## Logging
 
@@ -29,6 +30,8 @@
 - `FR-LOG-002`: Log output includes timestamp, level, category, event ID, message, structured state summary, scope summary, exception summary, sequence number, and dropped-message count.
 - `FR-LOG-003`: The client can filter logs by level and category.
 - `FR-LOG-004`: The client shows when logs were dropped because of buffering/backpressure.
+- `FR-LOG-005`: The client exposes a log verbosity setting with Debug, Information, Warning, and Error options and uses the selected level when streaming `ILogger` events.
+- `FR-LOG-006`: Every remote-control operation sent from the client and every non-logstream response or stream update sent to the client emits a sanitized Debug `ILogger` message.
 
 ## Client Experience
 
@@ -38,6 +41,10 @@
 - `FR-CLIENT-004`: The client provides action controls for supported remote interactions.
 - `FR-CLIENT-005`: The client provides a log viewer.
 - `FR-CLIENT-006`: The client shows connection state, authentication state, and transport mode.
+- `FR-CLIENT-007`: Saved client profiles preserve the endpoint transport protocol so ADB bridge sessions can be reopened by the desktop UI without falling back to gRPC.
+- `FR-CLIENT-008`: The desktop client provides a separate live remote UI window that can render the remote application outside the tree/property inspector.
+- `FR-CLIENT-009`: The live remote UI window responds to changes in the remote UI without manual refresh.
+- `FR-CLIENT-010`: The live remote UI window renders the same top-level visual surface a user sees on the target device, including application background, popup, flyout, and overlay layers when Avalonia exposes them.
 
 ## Android ADB Connectivity
 
@@ -60,3 +67,5 @@
 - `FR-SEC-008`: Sensitive control properties and log fields are redacted by default.
 - `FR-SEC-009`: The client can forget saved endpoint/token/certificate settings.
 - `FR-SEC-010`: The client can inspect a TLS server certificate fingerprint and explicitly accept it for a later connection.
+- `FR-SEC-011`: Live pixel rendering requires explicit debuggee opt-in and remains disabled by default.
+- `FR-SEC-012`: Live remote input requires explicit debuggee opt-in in addition to existing remote action enablement.

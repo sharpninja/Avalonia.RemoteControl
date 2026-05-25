@@ -88,9 +88,29 @@ public sealed class AvaloniaRemoteControlOptions
     public bool AllowRemoteActions { get; set; }
 
     /// <summary>
+    /// Gets or sets whether live remote UI frame streaming is enabled.
+    /// </summary>
+    public bool AllowRemoteFrames { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether live remote pointer and keyboard input is enabled.
+    /// </summary>
+    public bool AllowRemoteInput { get; set; }
+
+    /// <summary>
     /// Gets or sets the periodic snapshot interval for live tree streams.
     /// </summary>
     public TimeSpan TreeStreamInterval { get; set; } = TimeSpan.FromMilliseconds(250);
+
+    /// <summary>
+    /// Gets or sets the periodic frame interval for live UI frame streams.
+    /// </summary>
+    public TimeSpan FrameStreamInterval { get; set; } = TimeSpan.FromMilliseconds(100);
+
+    /// <summary>
+    /// Gets or sets the maximum pixel count allowed for a captured live frame.
+    /// </summary>
+    public int MaxFramePixelCount { get; set; } = 4_000_000;
 
     /// <summary>
     /// Gets or sets the maximum number of log entries retained for new log stream subscribers.

@@ -54,8 +54,9 @@ public sealed class AvaloniaControlTreeSnapshotProvider : IControlTreeSnapshotPr
 
         return dispatcher.InvokeAsync(() =>
         {
+            root = RemoteControlRootNormalizer.Normalize(root);
             var nodes = new List<RemoteControlNodeSnapshot>();
-            CaptureNode(root, parentId: null, nodes);
+            CaptureNode(root, parentId: null, parentOffset: default, nodes);
 
             var sequence = Interlocked.Increment(ref nextSequence);
             return new RemoteControlTreeSnapshot(sequence, nodes);
@@ -74,11 +75,16 @@ public sealed class AvaloniaControlTreeSnapshotProvider : IControlTreeSnapshotPr
         return false;
     }
 
-    private void CaptureNode(Control control, string? parentId, List<RemoteControlNodeSnapshot> nodes)
+    private void CaptureNode(
+        Control control,
+        string? parentId,
+        Point parentOffset,
+        List<RemoteControlNodeSnapshot> nodes)
     {
         var identity = identities.GetValue(control, _ => new NodeIdentity($"node-{Interlocked.Increment(ref nextNodeId)}"));
         controlsById[identity.Id] = new WeakReference<Control>(control);
         var bounds = control.Bounds;
+        var absoluteOffset = new Point(parentOffset.X + bounds.X, parentOffset.Y + bounds.Y);
 
         nodes.Add(new RemoteControlNodeSnapshot
         {
@@ -90,6 +96,11 @@ public sealed class AvaloniaControlTreeSnapshotProvider : IControlTreeSnapshotPr
             AutomationId = AutomationProperties.GetAutomationId(control),
             Classes = control.Classes.ToArray(),
             Bounds = new RemoteControlRect(bounds.X, bounds.Y, bounds.Width, bounds.Height),
+            AbsoluteBounds = new RemoteControlRect(
+                absoluteOffset.X,
+                absoluteOffset.Y,
+                bounds.Width,
+                bounds.Height),
             IsVisible = control.IsVisible,
             IsEnabled = control.IsEnabled,
             IsFocused = control.IsFocused,
@@ -98,7 +109,7 @@ public sealed class AvaloniaControlTreeSnapshotProvider : IControlTreeSnapshotPr
 
         foreach (var child in control.GetVisualChildren().OfType<Control>())
         {
-            CaptureNode(child, identity.Id, nodes);
+            CaptureNode(child, identity.Id, absoluteOffset, nodes);
         }
     }
 

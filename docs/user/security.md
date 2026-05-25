@@ -11,6 +11,8 @@ Avalonia.RemoteControl exposes a debugging and mutation surface. Treat every ena
 - ADB tunnel sessions still require authentication.
 - Property mutation denied by default.
 - Remote actions disabled by default.
+- Live frame streaming disabled by default.
+- Remote input disabled by default.
 - Sensitive properties and log data redacted by default.
 
 ## Enable Only In Controlled Builds
@@ -65,6 +67,16 @@ Enable actions only when needed:
 options.AllowRemoteActions = true;
 ```
 
+Enable live view surfaces only for controlled debugging sessions:
+
+```csharp
+options.AllowRemoteFrames = true;
+options.AllowRemoteActions = true;
+options.AllowRemoteInput = true;
+```
+
+Frame streaming can expose visible application data. Remote input can manipulate application state and can include typed text. Audit logs must record sanitized input metadata, but must not record typed text payloads.
+
 Every allowed or rejected mutation/action should be visible through sanitized audit logs.
 
 ## Redaction
@@ -94,5 +106,7 @@ ADB forwarding only makes the debuggee reachable on the host machine. It does no
 - Non-loopback TLS certificate is configured and trusted by the client.
 - Mutation allow-list is minimal.
 - Remote actions are enabled only for workflows that need them.
+- Frame streaming is enabled only when screenshots are acceptable for the debugging session.
+- Remote input is enabled only when the operator is trusted to interact with the debuggee.
 - Logs and property snapshots redact app-specific sensitive names.
 - ADB marker files are written only for debuggable builds.

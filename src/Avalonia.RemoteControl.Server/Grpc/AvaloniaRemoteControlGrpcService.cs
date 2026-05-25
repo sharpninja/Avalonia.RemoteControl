@@ -1,7 +1,9 @@
 using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server.Commands;
+using Avalonia.RemoteControl.Server.Input;
 using Avalonia.RemoteControl.Server.Logging;
 using Avalonia.RemoteControl.Server.Protocol;
+using Avalonia.RemoteControl.Server.Rendering;
 using Avalonia.RemoteControl.Server.Runtime;
 using Avalonia.RemoteControl.Server.Security;
 using Avalonia.RemoteControl.Server.Snapshots;
@@ -36,24 +38,30 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
     /// <param name="rootProvider">The host app root provider.</param>
     /// <param name="treeStreamService">The live tree stream service.</param>
     /// <param name="logStreamService">The live log stream service.</param>
+    /// <param name="frameStreamService">The live frame stream service.</param>
     /// <param name="actionInvoker">The remote action invoker.</param>
     /// <param name="propertyMutationService">The remote property mutation service.</param>
+    /// <param name="inputDispatcher">The live remote input dispatcher.</param>
     public AvaloniaRemoteControlGrpcService(
         AvaloniaRemoteControlService remoteControlService,
         IControlTreeSnapshotProvider snapshotProvider,
         IRemoteControlRootProvider rootProvider,
         RemoteControlTreeStreamService treeStreamService,
         RemoteControlLogStreamService logStreamService,
+        RemoteControlFrameStreamService frameStreamService,
         RemoteControlActionInvoker actionInvoker,
-        RemoteControlPropertyMutationService propertyMutationService)
+        RemoteControlPropertyMutationService propertyMutationService,
+        RemoteControlInputDispatcher inputDispatcher)
         : this(new RemoteControlRuntime(
             remoteControlService,
             snapshotProvider,
             rootProvider,
             treeStreamService,
             logStreamService,
+            frameStreamService,
             actionInvoker,
-            propertyMutationService))
+            propertyMutationService,
+            inputDispatcher))
     {
     }
 
@@ -99,6 +107,18 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
     }
 
     /// <inheritdoc />
+    public override async Task WatchFrames(
+        WatchFramesRequest request,
+        IServerStreamWriter<FrameUpdate> responseStream,
+        ServerCallContext context)
+    {
+        await foreach (var frame in runtime.WatchFramesAsync(GetCancellationToken(context)))
+        {
+            await responseStream.WriteAsync(frame.ToProtocol());
+        }
+    }
+
+    /// <inheritdoc />
     public override async Task<CommandResult> InvokeClick(
         InvokeClickRequest request,
         ServerCallContext context)
@@ -131,6 +151,19 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
             request.NodeId,
             request.PropertyName,
             request.Value,
+            RemoteControlClientIdentity.From(context),
+            GetCancellationToken(context));
+
+        return result.ToProtocol();
+    }
+
+    /// <inheritdoc />
+    public override async Task<CommandResult> SendInput(
+        SendInputRequest request,
+        ServerCallContext context)
+    {
+        var result = await runtime.SendInputAsync(
+            request.Events,
             RemoteControlClientIdentity.From(context),
             GetCancellationToken(context));
 

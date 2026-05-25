@@ -1,4 +1,5 @@
 using Avalonia.RemoteControl.Client.Diagnostics;
+using Avalonia.RemoteControl.Client.Profiles;
 using Avalonia.RemoteControl.Protocol;
 
 namespace Avalonia.RemoteControl.Client.Adb;
@@ -10,18 +11,22 @@ public sealed class AdbCommandLine
 {
     private readonly AdbClient adbClient;
     private readonly IRemoteControlProbe remoteControlProbe;
+    private readonly IRemoteControlProfileStore? profileStore;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AdbCommandLine"/> class.
     /// </summary>
     /// <param name="adbClient">ADB client.</param>
     /// <param name="remoteControlProbe">Remote-control probe.</param>
+    /// <param name="profileStore">Optional profile store used to persist kept ADB forwards for the desktop UI.</param>
     public AdbCommandLine(
         AdbClient adbClient,
-        IRemoteControlProbe remoteControlProbe)
+        IRemoteControlProbe remoteControlProbe,
+        IRemoteControlProfileStore? profileStore = null)
     {
         this.adbClient = adbClient;
         this.remoteControlProbe = remoteControlProbe;
+        this.profileStore = profileStore;
     }
 
     /// <summary>
@@ -99,7 +104,8 @@ public sealed class AdbCommandLine
         var packageName = GetOptional(parsed, "package");
         var token = GetOptional(parsed, "token");
         var keepForward = parsed.ContainsKey("keep-forward");
-        var transportProtocol = RemoteControlProtocol.GrpcTransportProtocol;
+        var transportProtocol = NormalizeTransportProtocol(
+            GetOptional(parsed, "transport-protocol") ?? RemoteControlProtocol.GrpcTransportProtocol);
 
         if (devicePort is null)
         {
@@ -152,6 +158,22 @@ public sealed class AdbCommandLine
             await output.WriteLineAsync($"Serial: {forward.Serial}").ConfigureAwait(false);
             await output.WriteLineAsync($"Endpoint: {forward.Endpoint}").ConfigureAwait(false);
             await output.WriteLineAsync($"Protocol: {capabilities.ProtocolVersion}").ConfigureAwait(false);
+            await output.WriteLineAsync($"Frame streaming: {FormatSupported(capabilities.SupportsFrameStreaming)}").ConfigureAwait(false);
+            await output.WriteLineAsync($"Remote input: {FormatSupported(capabilities.SupportsRemoteInput)}").ConfigureAwait(false);
+
+            if (keepForward && profileStore is not null)
+            {
+                await profileStore.SaveDefaultAsync(
+                    new RemoteControlConnectionProfile
+                    {
+                        Endpoint = forward.Endpoint.ToString(),
+                        Token = token,
+                        TransportProtocol = transportProtocol,
+                        UpdatedUtc = DateTimeOffset.UtcNow,
+                    },
+                    cancellationToken).ConfigureAwait(false);
+                await output.WriteLineAsync("Connection profile saved for desktop client.").ConfigureAwait(false);
+            }
 
             if (!keepForward)
             {
@@ -193,7 +215,7 @@ public sealed class AdbCommandLine
             """
             Usage:
               avalonia-remote adb list
-              avalonia-remote adb connect --serial <serial> --device-port <port> --token <token> [--host-port <port>] [--keep-forward]
+              avalonia-remote adb connect --serial <serial> --device-port <port> --token <token> [--transport-protocol grpc|arc-protobuf-v1] [--host-port <port>] [--keep-forward]
               avalonia-remote adb connect --serial <serial> --package <package> [--token <token>] [--host-port <port>] [--keep-forward]
               avalonia-remote adb cleanup --serial <serial> [--host-port <port>]
             """).ConfigureAwait(false);
@@ -272,6 +294,27 @@ public sealed class AdbCommandLine
         return value.Equals("--help", StringComparison.OrdinalIgnoreCase)
             || value.Equals("-h", StringComparison.OrdinalIgnoreCase)
             || value.Equals("help", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeTransportProtocol(string value)
+    {
+        if (value.Equals(RemoteControlProtocol.GrpcTransportProtocol, StringComparison.OrdinalIgnoreCase))
+        {
+            return RemoteControlProtocol.GrpcTransportProtocol;
+        }
+
+        if (value.Equals(RemoteControlProtocol.AndroidBridgeTransportProtocol, StringComparison.OrdinalIgnoreCase))
+        {
+            return RemoteControlProtocol.AndroidBridgeTransportProtocol;
+        }
+
+        throw new ArgumentException(
+            $"Unsupported transport protocol '{value}'. Supported values are grpc and arc-protobuf-v1.");
+    }
+
+    private static string FormatSupported(bool value)
+    {
+        return value ? "supported" : "not supported";
     }
 
     private static string SanitizeAdbError(string standardError)

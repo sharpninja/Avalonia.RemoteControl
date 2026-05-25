@@ -1,5 +1,6 @@
 using Avalonia.RemoteControl.Client.Adb;
 using Avalonia.RemoteControl.Client.Diagnostics;
+using Avalonia.RemoteControl.Client.Profiles;
 using Avalonia.RemoteControl.Protocol;
 
 namespace Avalonia.RemoteControl.Tests;
@@ -127,6 +128,8 @@ public sealed class RemoteControlAdbClientTests
         Assert.Equal("http://127.0.0.1:47100/", probe.Endpoint?.ToString());
         Assert.Equal("dev-token", probe.Token);
         Assert.Contains("forward ready", output.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Frame streaming: supported", output.ToString(), StringComparison.Ordinal);
+        Assert.Contains("Remote input: supported", output.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain("dev-token", output.ToString(), StringComparison.Ordinal);
     }
 
@@ -198,6 +201,44 @@ public sealed class RemoteControlAdbClientTests
     }
 
     [Fact]
+    public async Task AdbCommandLineConnectKeepForwardSavesBridgeConnectionProfile()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+            new AdbCommandResult(
+                0,
+                """{"devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
+                string.Empty));
+        runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47102", AdbCommandResult.Success);
+        var profilePath = Path.Combine(
+            Path.GetTempPath(),
+            "Avalonia.RemoteControl.Tests",
+            Guid.NewGuid().ToString("N"),
+            "connection-profile.json");
+        var profileStore = new FileRemoteControlProfileStore(profilePath);
+        var commandLine = new AdbCommandLine(
+            new AdbClient(runner),
+            new RecordingRemoteControlProbe(),
+            profileStore);
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var exitCode = await commandLine.RunAsync(
+            ["connect", "--serial", "emulator-5554", "--package", "com.example.app", "--keep-forward"],
+            output,
+            error);
+        var profile = await profileStore.LoadDefaultAsync();
+
+        Assert.Equal(0, exitCode);
+        Assert.NotNull(profile);
+        Assert.Equal("http://127.0.0.1:47100/", profile.Endpoint);
+        Assert.Equal("marker-token", profile.Token);
+        Assert.Equal(RemoteControlProtocol.AndroidBridgeTransportProtocol, profile.TransportProtocol);
+        Assert.Contains("profile saved", output.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task AdbCommandLineCleanupRemovesForward()
     {
         var runner = new RecordingAdbCommandRunner();
@@ -261,6 +302,8 @@ public sealed class RemoteControlAdbClientTests
 
             return Task.FromResult(new RemoteControlProbeResult(
                 RemoteControlProtocol.DisplayVersion,
+                true,
+                true,
                 true,
                 true,
                 true,

@@ -40,6 +40,8 @@ Defined RPCs:
 - `InvokeClick`
 - `SetProperty`
 - `WatchLogs`
+- `WatchFrames`
+- `SendInput`
 
 The protocol must support version/capability negotiation because Android transport feasibility may force different app-side transport internals while preserving the desktop-facing contract.
 
@@ -68,7 +70,8 @@ Implemented client areas:
 
 Planned client areas:
 
-- visual polish and larger interaction coverage
+- separate live remote UI window with screenshot and tree replica render modes
+- pointer, wheel, keyboard, and text input from the live remote view
 - authenticated audit identity display
 
 ## Android

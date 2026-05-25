@@ -56,6 +56,8 @@ The desktop tool should select the transport from the marker:
 - `grpc` uses the existing `GrpcRemoteControlProbe` and gRPC desktop session.
 - `arc-protobuf-v1` uses the bridge client adapter behind the same desktop session/probe workflow for capabilities, snapshots, click, focus, and property mutation.
 
+When `avalonia-remote adb connect --keep-forward` succeeds, the CLI persists the forwarded endpoint, token, and selected transport protocol into the desktop client's user-scoped default profile. This lets the desktop UI reopen Android bridge sessions with `arc-protobuf-v1` instead of falling back to gRPC.
+
 Bridge tree/log streaming remains future work. The Android app-side listener starts as a loopback-only TCP listener, dispatches authenticated unary requests through the runtime bridge handler, publishes package-private marker metadata, and stops with the debuggee lifecycle. The Android probe sample writes a per-process debug token into package-private marker JSON, so normal client discovery still uses `adb shell run-as` and does not log the token. If an external desktop-facing gRPC endpoint is still required for Android sessions, add a host-side localhost gRPC proxy in a later slice after the Android bridge proof passes.
 
 ## Evidence
@@ -74,6 +76,7 @@ Bridge tree/log streaming remains future work. The Android app-side listener sta
 ## Requirements
 
 - `FR-ADB-004`
+- `FR-CLIENT-007`
 - `FR-SEC-004`
 - `TR-ADB-CONNECTIVITY-004`
 - `TR-ADB-CONNECTIVITY-006`
@@ -84,9 +87,11 @@ Bridge tree/log streaming remains future work. The Android app-side listener sta
 - `TR-ADB-CONNECTIVITY-013`
 - `TR-ADB-CONNECTIVITY-014`
 - `TR-ADB-CONNECTIVITY-015`
+- `TR-ADB-CONNECTIVITY-016`
 - `TR-SEC-SECURITY-002`
 - `TR-SEC-SECURITY-015`
 - `TEST-ADB-008`
 - `TEST-ADB-009`
 - `TEST-ADB-010`
 - `TEST-ADB-011`
+- `TEST-ADB-012`

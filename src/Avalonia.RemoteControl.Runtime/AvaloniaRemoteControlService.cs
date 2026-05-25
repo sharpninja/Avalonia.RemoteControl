@@ -37,7 +37,13 @@ public sealed class AvaloniaRemoteControlService
     /// <returns>The supported remote-control capabilities.</returns>
     public RemoteControlCapabilities GetCapabilities()
     {
-        return new RemoteControlCapabilities();
+        var configuredOptions = options ?? new AvaloniaRemoteControlOptions();
+
+        return new RemoteControlCapabilities
+        {
+            SupportsFrameStreaming = configuredOptions.AllowRemoteFrames,
+            SupportsRemoteInput = configuredOptions.AllowRemoteActions && configuredOptions.AllowRemoteInput,
+        };
     }
 
     /// <summary>

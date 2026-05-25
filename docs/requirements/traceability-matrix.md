@@ -204,6 +204,8 @@ Requirements:
 - `FR-LOG-002`
 - `FR-LOG-003`
 - `FR-LOG-004`
+- `FR-LOG-005`
+- `FR-LOG-006`
 - `TR-GRPC-PROTOCOL-007`
 - `TR-DI-HOSTING-005`
 - `TR-LOG-STREAMING-001`
@@ -211,11 +213,15 @@ Requirements:
 - `TR-LOG-STREAMING-003`
 - `TR-LOG-STREAMING-004`
 - `TR-LOG-STREAMING-005`
+- `TR-LOG-STREAMING-006`
+- `TR-LOG-STREAMING-007`
 - `TR-SEC-SECURITY-009`
 
 Tests/evidence:
 
 - `TEST-UNIT-005`
+- `TEST-LOG-001`
+- `TEST-CLIENT-002`
 - `TEST-GRPC-005`
 - `TEST-SEC-004`
 
@@ -226,6 +232,8 @@ Implemented evidence:
 - `RemoteControlLoggerProvider` captures `ILogger` messages without replacing existing logging providers.
 - `WatchLogs` is defined on the gRPC service and maps sanitized log entries to protocol messages.
 - `RemoteControlDesktopSessionTests` covers hosted gRPC log streaming from the server log buffer to the desktop client session.
+- `RemoteControlLoggingTests` covers the supported client log verbosity options and the minimum-level names sent to `WatchLogs`.
+- `RemoteControlProtocolEventLoggingTests` covers Debug `ILogger` messages for runtime client request receipt, unary responses, stream updates, and log-stream lifecycle without echoing each outgoing log entry.
 
 ## Iteration 4 - Client and Tool
 
@@ -237,12 +245,14 @@ Requirements:
 - `FR-CLIENT-004`
 - `FR-CLIENT-005`
 - `FR-CLIENT-006`
+- `FR-CLIENT-007`
 - `FR-SEC-009`
 - `FR-SEC-010`
 - `TR-PACK-PACKAGE-002`
 - `TR-PACK-PACKAGE-003`
 - `TR-SEC-SECURITY-016`
 - `TR-SEC-SECURITY-017`
+- `TR-ADB-CONNECTIVITY-016`
 
 Tests/evidence:
 
@@ -250,6 +260,7 @@ Tests/evidence:
 - `TEST-PACK-003`
 - `TEST-PACK-004`
 - `TEST-SEC-008`
+- `TEST-ADB-012`
 - `TEST-MANUAL-001`
 - `TEST-MANUAL-004`
 - `TEST-MANUAL-005`
@@ -261,13 +272,14 @@ Implemented evidence:
 - `RemoteControlDesktopSessionTests` covers authenticated desktop client session capability probing against the hosted server.
 - `RemoteControlDesktopSession` provides authenticated gRPC client calls for capabilities, snapshots, click invocation, property mutation, and log streaming.
 - `Avalonia.RemoteControl.Tool` launches a basic Avalonia desktop UI when run without arguments.
-- The desktop UI includes endpoint/token connection controls, tree rendering, selected-node properties, invoke-click, set-property, log streaming, and status feedback.
+- The desktop UI includes endpoint/token connection controls, tree rendering, selected-node properties, invoke-click, set-property, log streaming with selectable verbosity, and status feedback.
 - `RemoteControlProfileStoreTests` covers saving, loading, and forgetting the default user-scoped connection profile.
 - The desktop UI exposes Save and Forget controls for endpoint/token/certificate-path/fingerprint profile state.
 - `RemoteControlDesktopSessionTests` covers connecting to a hosted TLS endpoint with a configured trusted server certificate file.
 - `RemoteControlDesktopSessionTests` covers accepted SHA-256 fingerprint trust, mismatched fingerprint rejection, and certificate inspection.
 - `RemoteControlProfileStoreTests` covers accepted SHA-256 fingerprint persistence and deletion through profile forget.
 - The desktop UI exposes inspect, accept, and reject controls for manual TLS certificate trust.
+- The desktop UI and profile store preserve the selected transport protocol so kept ADB bridge forwards can be reopened with `arc-protobuf-v1`.
 - `docs/requirements/manual-acceptance-evidence.md` records the current manual acceptance evidence for loopback, TLS/token, live tree, logs, click, property edit, audit trail, and Android ADB workflows.
 
 ## Iteration 5 - ADB Client UX
@@ -289,6 +301,7 @@ Requirements:
 - `TR-ADB-CONNECTIVITY-006`
 - `TR-ADB-CONNECTIVITY-007`
 - `TR-ADB-CONNECTIVITY-009`
+- `TR-ADB-CONNECTIVITY-016`
 - `TR-SEC-SECURITY-015`
 
 Tests/evidence:
@@ -299,14 +312,60 @@ Tests/evidence:
 - `TEST-ADB-004`
 - `TEST-ADB-005`
 - `TEST-MANUAL-003`
+- `TEST-ADB-012`
 
 Implemented evidence:
 
 - `RemoteControlAdbClientTests` covers `adb devices -l` parsing, ADB device listing, serial-specific port forwarding, forward cleanup, package marker discovery, and CLI connect cleanup behavior.
+- `RemoteControlAdbClientTests` covers saving a transport-aware default profile after `adb connect --keep-forward`.
 - `AdbClient` creates `adb -s <serial> forward tcp:<hostPort> tcp:<devicePort>` and removes forwards with `adb -s <serial> forward --remove tcp:<hostPort>`.
 - `AdbCommandLine` wires `adb list`, `adb connect`, and `adb cleanup` into the .NET tool workflow.
 - `GrpcRemoteControlProbe` authenticates `GetCapabilities` over the forwarded localhost endpoint.
 - Physical-device acceptance for the Android bridge probe is recorded under Technical Spike 0 and `TEST-MANUAL-003`; broader emulator/device matrix coverage remains future compatibility work.
+
+## Iteration 9 - Live Interactive Remote View
+
+Requirements:
+
+- `FR-CLIENT-008`
+- `FR-CLIENT-009`
+- `FR-CLIENT-010`
+- `FR-ACTION-005`
+- `FR-SEC-011`
+- `FR-SEC-012`
+- `TR-GRPC-PROTOCOL-009`
+- `TR-GRPC-PROTOCOL-010`
+- `TR-UI-RUNTIME-006`
+- `TR-UI-RUNTIME-007`
+- `TR-UI-RUNTIME-008`
+- `TR-ACTION-INVOCATION-005`
+- `TR-SEC-SECURITY-018`
+- `TR-SEC-SECURITY-019`
+- `TR-ADB-CONNECTIVITY-017`
+
+Tests/evidence:
+
+- `TEST-CLIENT-001`
+- `TEST-GRPC-008`
+- `TEST-GRPC-009`
+- `TEST-ADB-013`
+- `TEST-AVA-005`
+- `TEST-AVA-006`
+- `TEST-AVA-007`
+- additive protocol contract tests
+- frame stream runtime and transport tests
+- remote input policy and audit tests
+- desktop live-view model tests
+
+Evidence required:
+
+- `WatchFrames` and `SendInput` are additive protocol members and older snapshot/action APIs remain compatible.
+- Frame streaming is rejected by default and succeeds only when live frames are enabled.
+- Remote input is rejected by default and succeeds only when both remote actions and remote input are enabled.
+- Tree snapshots include absolute bounds while preserving existing local bounds.
+- Frame capture, tree snapshots, and input dispatch normalize child roots to the containing `TopLevel` so target-device backgrounds, popups, flyouts, and overlays are visible and interactive.
+- gRPC and Android bridge transports both support live tree/frame streaming and remote input.
+- The desktop client opens a separate live-view window with screenshot and tree replica modes.
 
 ## Iteration 7 - Android Bridge Transport
 

@@ -111,6 +111,27 @@ public sealed class RemoteControlBridgeRequestHandlerTests
         Assert.Equal("After", root.Text);
     }
 
+    [Fact]
+    public async Task BridgeHandlerReturnsStreamFailureWhenFramesDisabledByPolicy()
+    {
+        await using var provider = CreateProvider(new TextBlock(), options =>
+        {
+            options.AuthenticationToken = "dev-token";
+        });
+
+        await using var enumerator = provider.GetRequiredService<RemoteControlBridgeRequestHandler>()
+            .HandleResponsesAsync(CreateRequest(
+                "req-frame-policy-001",
+                BridgeMethod.WatchFrames,
+                new WatchFramesRequest().ToByteString()))
+            .GetAsyncEnumerator();
+
+        Assert.True(await enumerator.MoveNextAsync());
+        Assert.Equal(BridgeStatus.Error, enumerator.Current.Status);
+        Assert.True(enumerator.Current.EndOfStream);
+        Assert.Contains("disabled", enumerator.Current.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static BridgeRequest CreateRequest(
         string requestId,
         BridgeMethod method,

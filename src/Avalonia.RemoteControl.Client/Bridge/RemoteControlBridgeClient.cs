@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using Avalonia.RemoteControl.Protocol;
 using Avalonia.RemoteControl.Protocol.V1;
 using Google.Protobuf;
@@ -42,6 +43,24 @@ internal sealed class RemoteControlBridgeClient : IDisposable
             cancellationToken);
     }
 
+    public IAsyncEnumerable<TreeUpdate> WatchTreeAsync(CancellationToken cancellationToken = default)
+    {
+        return SendStreamAsync(
+            BridgeMethod.WatchTree,
+            new WatchTreeRequest(),
+            TreeUpdate.Parser,
+            cancellationToken);
+    }
+
+    public IAsyncEnumerable<FrameUpdate> WatchFramesAsync(CancellationToken cancellationToken = default)
+    {
+        return SendStreamAsync(
+            BridgeMethod.WatchFrames,
+            new WatchFramesRequest(),
+            FrameUpdate.Parser,
+            cancellationToken);
+    }
+
     public Task<CommandResult> InvokeClickAsync(
         string nodeId,
         CancellationToken cancellationToken = default)
@@ -82,17 +101,34 @@ internal sealed class RemoteControlBridgeClient : IDisposable
             cancellationToken);
     }
 
-    public async IAsyncEnumerable<LogEntry> WatchLogsAsync(
+    public Task<CommandResult> SendInputAsync(
+        IReadOnlyList<RemoteInputEvent> events,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new SendInputRequest();
+        request.Events.AddRange(events);
+
+        return SendUnaryAsync(
+            BridgeMethod.SendInput,
+            request,
+            CommandResult.Parser,
+            cancellationToken);
+    }
+
+    public IAsyncEnumerable<LogEntry> WatchLogsAsync(
         string minimumLevel,
         string? categoryPrefix,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
-        await Task.Yield();
-        cancellationToken.ThrowIfCancellationRequested();
-        throw new NotSupportedException("Bridge log streaming is not implemented yet.");
-#pragma warning disable CS0162
-        yield break;
-#pragma warning restore CS0162
+        return SendStreamAsync(
+            BridgeMethod.WatchLogs,
+            new WatchLogsRequest
+            {
+                MinimumLevel = minimumLevel,
+                CategoryPrefix = categoryPrefix ?? string.Empty,
+            },
+            LogEntry.Parser,
+            cancellationToken);
     }
 
     public void Dispose()
@@ -147,5 +183,69 @@ internal sealed class RemoteControlBridgeClient : IDisposable
         }
 
         return responseParser.ParseFrom(response.Payload);
+    }
+
+    private async IAsyncEnumerable<TResponse> SendStreamAsync<TRequest, TResponse>(
+        BridgeMethod method,
+        TRequest payload,
+        MessageParser<TResponse> responseParser,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+        where TRequest : IMessage
+        where TResponse : IMessage<TResponse>
+    {
+        var requestId = $"req-{Guid.NewGuid():N}";
+        var request = new BridgeRequest
+        {
+            ProtocolVersion = RemoteControlProtocol.DisplayVersion,
+            RequestId = requestId,
+            Method = method,
+            Authorization = authorization,
+            Payload = payload.ToByteString(),
+        };
+
+        using var tcpClient = new TcpClient();
+        await tcpClient.ConnectAsync(endpoint.Host, endpoint.Port, cancellationToken).ConfigureAwait(false);
+        await using var stream = tcpClient.GetStream();
+
+        await BridgeFrameCodec.WriteAsync(stream, request, cancellationToken).ConfigureAwait(false);
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var response = await BridgeFrameCodec.ReadAsync(
+                stream,
+                BridgeResponse.Parser,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            ValidateResponse(requestId, response);
+
+            if (response.EndOfStream)
+            {
+                yield break;
+            }
+
+            yield return responseParser.ParseFrom(response.Payload);
+        }
+    }
+
+    private static void ValidateResponse(string requestId, BridgeResponse response)
+    {
+        if (!string.Equals(response.RequestId, requestId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Bridge response request ID did not match the request.");
+        }
+
+        if (!string.Equals(
+            response.ProtocolVersion,
+            RemoteControlProtocol.DisplayVersion,
+            StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Bridge response protocol version is not supported.");
+        }
+
+        if (response.Status != BridgeStatus.Ok)
+        {
+            throw new InvalidOperationException(
+                $"Bridge request failed with status {response.Status}: {response.ErrorMessage}");
+        }
     }
 }

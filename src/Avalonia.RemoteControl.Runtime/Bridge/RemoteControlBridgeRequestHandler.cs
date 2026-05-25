@@ -71,10 +71,11 @@ public sealed class RemoteControlBridgeRequestHandler
                 BridgeMethod.InvokeClick => await HandleInvokeClickAsync(request, auth.ClientIdentity, cancellationToken).ConfigureAwait(false),
                 BridgeMethod.InvokeFocus => await HandleInvokeFocusAsync(request, auth.ClientIdentity, cancellationToken).ConfigureAwait(false),
                 BridgeMethod.SetProperty => await HandleSetPropertyAsync(request, auth.ClientIdentity, cancellationToken).ConfigureAwait(false),
-                BridgeMethod.WatchTree or BridgeMethod.WatchLogs => Failure(
+                BridgeMethod.SendInput => await HandleSendInputAsync(request, auth.ClientIdentity, cancellationToken).ConfigureAwait(false),
+                BridgeMethod.WatchTree or BridgeMethod.WatchFrames or BridgeMethod.WatchLogs => Failure(
                     request,
                     BridgeStatus.Unsupported,
-                    "Bridge streaming is not implemented by this request handler."),
+                    "Bridge streaming must be read through a streaming bridge connection."),
                 _ => Failure(request, BridgeStatus.Unsupported, "Unsupported bridge method."),
             };
         }
@@ -99,6 +100,142 @@ public sealed class RemoteControlBridgeRequestHandler
                 request.Method);
 
             return Failure(request, BridgeStatus.Error, "Bridge request failed.");
+        }
+    }
+
+    /// <summary>
+    /// Handles a bridge request as a potentially long-lived response stream.
+    /// </summary>
+    /// <param name="request">Bridge request envelope.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Response envelopes.</returns>
+    public async IAsyncEnumerable<BridgeResponse> HandleResponsesAsync(
+        BridgeRequest request,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (request.Method is not (BridgeMethod.WatchTree or BridgeMethod.WatchFrames or BridgeMethod.WatchLogs))
+        {
+            yield return await HandleAsync(request, cancellationToken).ConfigureAwait(false);
+            yield break;
+        }
+
+        if (!string.Equals(
+            request.ProtocolVersion,
+            RemoteControlProtocol.DisplayVersion,
+            StringComparison.Ordinal))
+        {
+            yield return Failure(request, BridgeStatus.Unsupported, "Unsupported bridge protocol version.");
+            yield break;
+        }
+
+        var auth = authenticator.AuthenticateAuthorization(request.Authorization);
+        if (!auth.IsAuthenticated)
+        {
+            yield return Failure(request, BridgeStatus.Unauthenticated, auth.FailureMessage);
+            yield break;
+        }
+
+        var stream = CreateStreamPayloadsAsync(request, cancellationToken);
+        await using var enumerator = stream.GetAsyncEnumerator(cancellationToken);
+
+        while (true)
+        {
+            BridgeResponse? failure = null;
+            var hasNext = false;
+
+            try
+            {
+                hasNext = await enumerator.MoveNextAsync().ConfigureAwait(false);
+            }
+            catch (InvalidProtocolBufferException)
+            {
+                failure = Failure(request, BridgeStatus.Error, "Invalid bridge payload.");
+            }
+            catch (RemoteControlRuntimeException exception)
+            {
+                failure = Failure(request, ToBridgeStatus(exception.ErrorCode), exception.Message);
+            }
+            catch (OperationCanceledException)
+            {
+                failure = Failure(request, BridgeStatus.Cancelled, "Bridge request was cancelled.");
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(
+                    exception,
+                    "Bridge stream request {RequestId} failed for method {Method}.",
+                    request.RequestId,
+                    request.Method);
+
+                failure = Failure(request, BridgeStatus.Error, "Bridge request failed.");
+            }
+
+            if (failure is not null)
+            {
+                yield return failure;
+                yield break;
+            }
+
+            if (!hasNext)
+            {
+                break;
+            }
+
+            yield return StreamItem(request, enumerator.Current);
+        }
+
+        yield return Success(request, ByteString.Empty);
+    }
+
+    private async IAsyncEnumerable<ByteString> CreateStreamPayloadsAsync(
+        BridgeRequest request,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        switch (request.Method)
+        {
+            case BridgeMethod.WatchTree:
+                WatchTreeRequest.Parser.ParseFrom(request.Payload);
+                await foreach (var snapshot in runtime.WatchSnapshotsAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    var update = new TreeUpdate
+                    {
+                        Sequence = snapshot.Sequence,
+                        Snapshot = snapshot.ToProtocol(),
+                        Reason = "periodic",
+                    };
+                    yield return update.ToByteString();
+                }
+
+                break;
+            case BridgeMethod.WatchFrames:
+                WatchFramesRequest.Parser.ParseFrom(request.Payload);
+                await foreach (var frame in runtime.WatchFramesAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    yield return frame.ToProtocol().ToByteString();
+                }
+
+                break;
+            case BridgeMethod.WatchLogs:
+                var logRequest = WatchLogsRequest.Parser.ParseFrom(request.Payload);
+                var minimumLevel = Enum.TryParse<Microsoft.Extensions.Logging.LogLevel>(
+                    logRequest.MinimumLevel,
+                    ignoreCase: true,
+                    out var parsed)
+                    ? parsed
+                    : Microsoft.Extensions.Logging.LogLevel.Trace;
+                var categoryPrefix = string.IsNullOrWhiteSpace(logRequest.CategoryPrefix)
+                    ? null
+                    : logRequest.CategoryPrefix;
+
+                await foreach (var logEntry in runtime.WatchLogEntriesAsync(
+                    minimumLevel,
+                    categoryPrefix,
+                    cancellationToken).ConfigureAwait(false))
+                {
+                    yield return logEntry.ToProtocol().ToByteString();
+                }
+
+                break;
         }
     }
 
@@ -161,6 +298,20 @@ public sealed class RemoteControlBridgeRequestHandler
         return Success(request, result.ToProtocol().ToByteString());
     }
 
+    private async ValueTask<BridgeResponse> HandleSendInputAsync(
+        BridgeRequest request,
+        string clientIdentity,
+        CancellationToken cancellationToken)
+    {
+        var inputRequest = SendInputRequest.Parser.ParseFrom(request.Payload);
+        var result = await runtime.SendInputAsync(
+            inputRequest.Events,
+            clientIdentity,
+            cancellationToken).ConfigureAwait(false);
+
+        return Success(request, result.ToProtocol().ToByteString());
+    }
+
     private static BridgeResponse Success(BridgeRequest request, ByteString payload)
     {
         return new BridgeResponse
@@ -170,6 +321,18 @@ public sealed class RemoteControlBridgeRequestHandler
             Status = BridgeStatus.Ok,
             Payload = payload,
             EndOfStream = true,
+        };
+    }
+
+    private static BridgeResponse StreamItem(BridgeRequest request, ByteString payload)
+    {
+        return new BridgeResponse
+        {
+            ProtocolVersion = RemoteControlProtocol.DisplayVersion,
+            RequestId = request.RequestId,
+            Status = BridgeStatus.Ok,
+            Payload = payload,
+            EndOfStream = false,
         };
     }
 

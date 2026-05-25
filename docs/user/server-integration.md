@@ -30,9 +30,13 @@ Common options:
 - `TlsCertificatePath`: certificate path for TLS listeners.
 - `TlsCertificatePassword`: optional certificate password.
 - `AllowRemoteActions`: enables focus and click actions.
+- `AllowRemoteFrames`: enables live PNG frame streaming. Default is false.
+- `AllowRemoteInput`: enables pointer, wheel, keyboard, and text input forwarding when `AllowRemoteActions` is also true. Default is false.
 - `DenyPropertyMutationByDefault`: keeps property mutation deny-by-default.
 - `AllowedMutableProperties`: property allow-list for mutation.
 - `TreeStreamInterval`: live tree stream refresh interval.
+- `FrameStreamInterval`: live frame stream refresh interval. Default is 100 ms.
+- `MaxFramePixelCount`: maximum captured frame pixel count before frame streaming is rejected.
 - `LogBufferCapacity`: retained log entries for new subscribers.
 - `SensitiveNameFragments`: default redaction fragments.
 
@@ -45,6 +49,18 @@ Property mutation is denied unless one of these policy entries matches:
 - Full type name plus property, for example `Avalonia.Controls.TextBox.Text`
 
 Sensitive names are still blocked by redaction policy even if allow-listed. Names containing fragments such as `password`, `token`, `secret`, `key`, `credential`, `auth`, `cookie`, or `connection string` are redacted by default.
+
+## Live Frames And Input
+
+Live frame streaming and interactive input are separate debug-only gates:
+
+```csharp
+options.AllowRemoteFrames = true;
+options.AllowRemoteActions = true;
+options.AllowRemoteInput = true;
+```
+
+Frame streaming captures the Avalonia root with `RenderTargetBitmap` and sends PNG frames to connected clients. Remote input is delivered in root-relative DIPs and is rejected unless both action and input gates are enabled.
 
 ## Logging
 

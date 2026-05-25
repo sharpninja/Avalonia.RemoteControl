@@ -5,7 +5,9 @@ using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server;
 using Avalonia.RemoteControl.Server.Commands;
 using Avalonia.RemoteControl.Server.Grpc;
+using Avalonia.RemoteControl.Server.Input;
 using Avalonia.RemoteControl.Server.Logging;
+using Avalonia.RemoteControl.Server.Rendering;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Avalonia.RemoteControl.Server.Threading;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -152,6 +154,11 @@ public sealed class RemoteControlReadOnlyInspectionTests
                 Options.Create(options)),
             new RemoteControlLogStreamService(
                 new RemoteControlLogBuffer(Options.Create(options))),
+            new RemoteControlFrameStreamService(
+                new StaticRemoteControlRootProvider(root),
+                new StubFrameProvider(),
+                Options.Create(options),
+                NullLogger<RemoteControlFrameStreamService>.Instance),
             new RemoteControlActionInvoker(
                 provider,
                 Options.Create(options),
@@ -161,6 +168,30 @@ public sealed class RemoteControlReadOnlyInspectionTests
                 provider,
                 Options.Create(options),
                 new InlineRemoteControlDispatcher(),
-                NullLogger<RemoteControlPropertyMutationService>.Instance));
+                NullLogger<RemoteControlPropertyMutationService>.Instance),
+            new RemoteControlInputDispatcher(
+                new StaticRemoteControlRootProvider(root),
+                Options.Create(options),
+                new InlineRemoteControlDispatcher(),
+                NullLogger<RemoteControlInputDispatcher>.Instance));
+    }
+
+    private sealed class StubFrameProvider : IRemoteControlFrameProvider
+    {
+        public ValueTask<RemoteControlFrame> CaptureFrameAsync(
+            Control root,
+            ulong sequence,
+            CancellationToken cancellationToken)
+        {
+            return ValueTask.FromResult(new RemoteControlFrame(
+                sequence,
+                [1],
+                1,
+                1,
+                1,
+                1,
+                1,
+                DateTimeOffset.UtcNow));
+        }
     }
 }

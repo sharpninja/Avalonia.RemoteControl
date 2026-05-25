@@ -14,6 +14,7 @@
 - `TEST-UNIT-004`: Mutation policy denies by default and allows only configured members/types.
 - `TEST-UNIT-005`: Log buffering reports dropped messages.
 - `TEST-UNIT-006`: Auth/TLS option validation enforces safe defaults.
+- `TEST-LOG-001`: Unit tests verify Debug `ILogger` messages for incoming client operations and outgoing runtime responses or stream updates, including non-recursive `WatchLogs` lifecycle behavior.
 
 ## Avalonia Tests
 
@@ -21,6 +22,9 @@
 - `TEST-AVA-002`: Headless Avalonia tests prove live update signaling after layout/state changes.
 - `TEST-AVA-003`: Headless Avalonia tests prove click/focus invocation for supported controls.
 - `TEST-AVA-004`: Headless Avalonia tests prove safe property mutation on sample controls.
+- `TEST-AVA-005`: Headless Avalonia tests prove dispatcher-safe frame capture, max size rejection, and frame stream cancellation.
+- `TEST-AVA-006`: Headless Avalonia tests prove pointer, wheel, keyboard, and text input dispatch to the remote root or focused control.
+- `TEST-AVA-007`: Validation covers that frame capture, tree snapshots, and input dispatch use the `TopLevel` surface when the registered root provider returns a child view.
 
 ## gRPC Integration Tests
 
@@ -31,6 +35,13 @@
 - `TEST-GRPC-005`: Log stream sends ordered log messages and dropped-message metadata.
 - `TEST-GRPC-006`: Stale node IDs return recoverable errors.
 - `TEST-GRPC-007`: Canceled streams release resources.
+- `TEST-GRPC-008`: Frame stream tests verify authenticated gRPC frame streaming, cancellation, and policy rejection.
+- `TEST-GRPC-009`: Remote input tests verify `SendInput` policy rejection, enabled dispatch, pointer drag state, keyboard/text routing, and sanitized audit logs.
+
+## Client Tests
+
+- `TEST-CLIENT-001`: Client tests verify live-view coordinate mapping, frame updates, input batching, and tree-replica model updates.
+- `TEST-CLIENT-002`: Client tests verify the supported log verbosity options and selected minimum level mapping for Debug, Information, Warning, and Error.
 
 ## Security Tests
 
@@ -56,6 +67,8 @@
 - `TEST-ADB-009`: Unit tests verify the `arc-protobuf-v1` bridge envelope encodes and decodes length-prefixed protobuf request/response frames and rejects oversized frames.
 - `TEST-ADB-010`: Unit tests and build checks verify the host-independent runtime builds for `net10.0-android`, dispatches bridge requests with bearer authentication, and lets the host client probe marker-discovered `arc-protobuf-v1` endpoints.
 - `TEST-ADB-011`: Unit tests and build checks verify the app-side bridge listener accepts authenticated length-prefixed protobuf requests, writes Android marker metadata, and can be referenced by the Android probe sample without ASP.NET Core/Kestrel dependencies.
+- `TEST-ADB-012`: Unit tests verify ADB connect can save a default profile with the marker-discovered transport protocol and the desktop UI/session factory can reopen that profile without using the gRPC default.
+- `TEST-ADB-013`: Unit tests verify bridge streaming for tree and frame streams, bridge cancellation by socket close, and unsupported capability handling.
 
 ## Packaging and CI Tests
 

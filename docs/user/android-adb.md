@@ -33,6 +33,10 @@ adb -s <serial> forward tcp:<hostPort> tcp:<devicePort>
 
 The default host port is `47100`. Override it with `--host-port`.
 
+When `--keep-forward` succeeds, the command saves the forwarded endpoint, token, and transport protocol into the desktop client's default connection profile. Launch `avalonia-remote` after the command finishes, verify the saved profile is loaded, and click Connect.
+
+To open an interactive remote window over ADB, connect first, then click Live View in the desktop client. The saved Android bridge profile uses `arc-protobuf-v1`, and the live window uses that bridge for `WatchTree`, `WatchFrames`, and `SendInput`.
+
 ## Connect By Package Marker
 
 Use this when the Android app writes `files/avalonia-remote-control.json` in package-private storage:
@@ -54,6 +58,8 @@ The marker must include:
 - `bridgeProtocol` set to `arc-protobuf-v1`
 
 The client fails closed before forwarding when the marker advertises an unsupported protocol.
+
+For Android bridge markers, the saved desktop profile uses the `arc-protobuf-v1` transport. This prevents the desktop client from reopening the forwarded endpoint with the default gRPC transport.
 
 ## Cleanup
 
@@ -77,6 +83,8 @@ An Android bridge host should:
 6. Stop the listener on app shutdown.
 
 The sample `samples/Avalonia.RemoteControl.AndroidProbe.Android` demonstrates this pattern.
+
+Live screenshots require `AllowRemoteFrames = true`. Remote input requires both `AllowRemoteActions = true` and `AllowRemoteInput = true`. Keep those options restricted to debuggable builds because the bridge can expose app visuals and mutate app state through forwarded input.
 
 ## Common ADB Limits
 

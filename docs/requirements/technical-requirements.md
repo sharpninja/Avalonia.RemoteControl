@@ -21,6 +21,8 @@
 - `TR-GRPC-PROTOCOL-006`: Provide `SetProperty`.
 - `TR-GRPC-PROTOCOL-007`: Provide `WatchLogs`.
 - `TR-GRPC-PROTOCOL-008`: Streaming responses include sequence/version data sufficient for reconnect and resync behavior.
+- `TR-GRPC-PROTOCOL-009`: Provide `WatchFrames` as an additive stream carrying PNG frame bytes, pixel size, root DIP size, render scale, sequence, and timestamp metadata.
+- `TR-GRPC-PROTOCOL-010`: Provide `SendInput` as an additive unary operation accepting batched pointer, wheel, key, and text events in root-relative DIP coordinates.
 
 ## Dependency Injection and Hosting
 
@@ -37,6 +39,9 @@
 - `TR-UI-RUNTIME-003`: Snapshot capture handles popups/flyouts when Avalonia exposes them safely.
 - `TR-UI-RUNTIME-004`: Virtualized or unrealized items are represented as unavailable rather than fabricated.
 - `TR-UI-RUNTIME-005`: Stale node IDs are detected and reported.
+- `TR-UI-RUNTIME-006`: Tree snapshots expose root-relative absolute bounds while preserving existing local bounds values.
+- `TR-UI-RUNTIME-007`: Frame capture runs on the Avalonia UI dispatcher using `RenderTargetBitmap`, enforces max frame size, and supports cancellation-aware periodic streaming at a default cadence of 10 FPS.
+- `TR-UI-RUNTIME-008`: Runtime frame capture, live tree snapshots, and live input dispatch normalize an app-provided `Control` root to its containing Avalonia `TopLevel` before rendering, traversing, or dispatching input.
 
 ## Property Mutation
 
@@ -51,7 +56,8 @@
 - `TR-ACTION-INVOCATION-001`: Click invocation runs on the Avalonia UI dispatcher.
 - `TR-ACTION-INVOCATION-002`: Click invocation uses the visible center of the selected node by default.
 - `TR-ACTION-INVOCATION-003`: Command-control semantic invocation may be used when pointer event synthesis is not appropriate.
-- `TR-ACTION-INVOCATION-004`: Unsupported gestures, text input, drag/drop, and arbitrary method invocation are out of v1 unless added through future requirements.
+- `TR-ACTION-INVOCATION-004`: Unsupported drag/drop and arbitrary method invocation are out of v1 unless added through future requirements.
+- `TR-ACTION-INVOCATION-005`: Live remote input dispatches pointer, wheel, keyboard, and text events through the Avalonia UI dispatcher, maintains pointer state for drag sequences, and targets keyboard/text input to the focused element.
 
 ## Logging
 
@@ -60,6 +66,8 @@
 - `TR-LOG-STREAMING-003`: Buffer limits are configurable.
 - `TR-LOG-STREAMING-004`: Dropped messages are counted and surfaced to clients.
 - `TR-LOG-STREAMING-005`: Log streaming applies sensitive-data redaction.
+- `TR-LOG-STREAMING-006`: The desktop client maps log verbosity selections to `Microsoft.Extensions.Logging.LogLevel` names and sends the selected minimum level in `WatchLogs` requests.
+- `TR-LOG-STREAMING-007`: The shared runtime emits Debug `ILogger` messages for client request receipt, unary response completion, live tree update sends, live frame sends, log-stream lifecycle, and remote input command completion without logging bearer tokens, property values, or typed text.
 
 ## Android ADB Connectivity
 
@@ -78,6 +86,8 @@
 - `TR-ADB-CONNECTIVITY-013`: Android-compatible runtime services must be isolated from ASP.NET Core/Kestrel host dependencies before Android bridge app-side implementation starts.
 - `TR-ADB-CONNECTIVITY-014`: The Android bridge protocol must use a versioned length-prefixed protobuf envelope that carries bearer authentication, request identity, method identity, payload bytes, response status, and sanitized error details.
 - `TR-ADB-CONNECTIVITY-015`: The Android app-side bridge listener must bind to loopback, handle authenticated unary bridge requests, expose package-private marker metadata, and stop cleanly with the debuggee app lifecycle.
+- `TR-ADB-CONNECTIVITY-016`: A successful `avalonia-remote adb connect --keep-forward` session must save a user-scoped connection profile containing endpoint, token, and transport protocol so the desktop UI can attach to the kept forward using the marker-advertised transport.
+- `TR-ADB-CONNECTIVITY-017`: The Android bridge transport supports long-lived streaming responses for `WatchTree` and `WatchFrames` and ends streams on client cancellation or socket close.
 
 ## Security Constraints
 
@@ -98,6 +108,8 @@
 - `TR-SEC-SECURITY-015`: ADB forwarding cleanup runs by default when the client disconnects.
 - `TR-SEC-SECURITY-016`: Client persists connection settings only in user-scoped storage and never logs tokens.
 - `TR-SEC-SECURITY-017`: Manually accepted TLS certificates are persisted as SHA-256 certificate fingerprints and connections succeed only when the presented server certificate matches the accepted fingerprint or configured certificate file.
+- `TR-SEC-SECURITY-018`: Live frame streaming is disabled by default and rejected unless `AllowRemoteFrames` is enabled.
+- `TR-SEC-SECURITY-019`: Live remote input is disabled by default, requires `AllowRemoteActions` and `AllowRemoteInput`, and emits sanitized audit logs without recording typed text.
 
 ## CI and Release
 

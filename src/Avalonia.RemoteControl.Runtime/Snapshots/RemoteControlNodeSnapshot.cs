@@ -46,6 +46,11 @@ public sealed record RemoteControlNodeSnapshot
     public required RemoteControlRect Bounds { get; init; }
 
     /// <summary>
+    /// Gets the current control bounds relative to the remote-control root.
+    /// </summary>
+    public required RemoteControlRect AbsoluteBounds { get; init; }
+
+    /// <summary>
     /// Gets a value indicating whether the control is visible.
     /// </summary>
     public bool IsVisible { get; init; }

@@ -36,4 +36,14 @@ public sealed record RemoteControlCapabilities
     /// Gets a value indicating whether log streaming is supported.
     /// </summary>
     public bool SupportsLogStreaming { get; init; } = true;
+
+    /// <summary>
+    /// Gets a value indicating whether live frame streaming is enabled.
+    /// </summary>
+    public bool SupportsFrameStreaming { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether live remote input is enabled.
+    /// </summary>
+    public bool SupportsRemoteInput { get; init; }
 }

@@ -125,6 +125,48 @@ public sealed class RemoteControlDesktopSession : IDisposable
     }
 
     /// <summary>
+    /// Watches remote tree updates.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Tree update stream.</returns>
+    public IAsyncEnumerable<TreeUpdate> WatchTreeAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (bridgeClient is not null)
+        {
+            return bridgeClient.WatchTreeAsync(cancellationToken);
+        }
+
+        var call = client!.WatchTree(
+            new WatchTreeRequest(),
+            headers!,
+            cancellationToken: cancellationToken);
+
+        return ReadTreeUpdateStreamAsync(call.ResponseStream, cancellationToken);
+    }
+
+    /// <summary>
+    /// Watches remote UI frame updates.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Frame update stream.</returns>
+    public IAsyncEnumerable<FrameUpdate> WatchFramesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (bridgeClient is not null)
+        {
+            return bridgeClient.WatchFramesAsync(cancellationToken);
+        }
+
+        var call = client!.WatchFrames(
+            new WatchFramesRequest(),
+            headers!,
+            cancellationToken: cancellationToken);
+
+        return ReadFrameUpdateStreamAsync(call.ResponseStream, cancellationToken);
+    }
+
+    /// <summary>
     /// Invokes a click on a remote node.
     /// </summary>
     /// <param name="nodeId">Stable remote node ID.</param>
@@ -201,6 +243,32 @@ public sealed class RemoteControlDesktopSession : IDisposable
     }
 
     /// <summary>
+    /// Sends a batch of live input events to the remote application.
+    /// </summary>
+    /// <param name="events">Input events.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Command result.</returns>
+    public async Task<CommandResult> SendInputAsync(
+        IReadOnlyList<RemoteInputEvent> events,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (bridgeClient is not null)
+        {
+            return await bridgeClient.SendInputAsync(events, cancellationToken).ConfigureAwait(false);
+        }
+
+        var request = new SendInputRequest();
+        request.Events.AddRange(events);
+
+        return await client!.SendInputAsync(
+            request,
+            headers!,
+            cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
     /// Watches remote log entries.
     /// </summary>
     /// <param name="minimumLevel">Minimum log level.</param>
@@ -231,6 +299,26 @@ public sealed class RemoteControlDesktopSession : IDisposable
 
     private static async IAsyncEnumerable<LogEntry> ReadLogStreamAsync(
         global::Grpc.Core.IAsyncStreamReader<LogEntry> reader,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        while (await reader.MoveNext(cancellationToken).ConfigureAwait(false))
+        {
+            yield return reader.Current;
+        }
+    }
+
+    private static async IAsyncEnumerable<TreeUpdate> ReadTreeUpdateStreamAsync(
+        global::Grpc.Core.IAsyncStreamReader<TreeUpdate> reader,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        while (await reader.MoveNext(cancellationToken).ConfigureAwait(false))
+        {
+            yield return reader.Current;
+        }
+    }
+
+    private static async IAsyncEnumerable<FrameUpdate> ReadFrameUpdateStreamAsync(
+        global::Grpc.Core.IAsyncStreamReader<FrameUpdate> reader,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         while (await reader.MoveNext(cancellationToken).ConfigureAwait(false))

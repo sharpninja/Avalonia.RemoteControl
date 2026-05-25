@@ -5,7 +5,9 @@ using Avalonia.Media;
 using Avalonia.RemoteControl.Server;
 using Avalonia.RemoteControl.Server.Commands;
 using Avalonia.RemoteControl.Server.Grpc;
+using Avalonia.RemoteControl.Server.Input;
 using Avalonia.RemoteControl.Server.Logging;
+using Avalonia.RemoteControl.Server.Rendering;
 using Avalonia.RemoteControl.Server.Security;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Avalonia.RemoteControl.Server.Threading;
@@ -303,6 +305,44 @@ public sealed class RemoteControlCommandTests
     }
 
     [Fact]
+    public async Task GrpcSendInputUsesInputPolicy()
+    {
+        Point? pressedPosition = null;
+        var root = new Border();
+        root.Measure(new Size(30, 10));
+        root.Arrange(new Rect(0, 0, 30, 10));
+        root.AddHandler(
+            InputElement.PointerPressedEvent,
+            (_, args) => pressedPosition = args.GetPosition(root));
+        var provider = CreateSnapshotProvider();
+        var options = new AvaloniaRemoteControlOptions
+        {
+            AllowRemoteActions = true,
+            AllowRemoteInput = true,
+        };
+        var grpc = CreateGrpcService(root, provider, options);
+
+        var result = await grpc.SendInput(
+            new SendInputRequest
+            {
+                Events =
+                {
+                    new RemoteInputEvent
+                    {
+                        Kind = RemoteInputKind.PointerPress,
+                        Button = RemoteMouseButton.Left,
+                        X = 12,
+                        Y = 4,
+                    },
+                },
+            },
+            context: null!);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(new Point(12, 4), pressedPosition);
+    }
+
+    [Fact]
     public async Task PropertyMutationAuditLogIncludesClientIdentity()
     {
         var root = new TextBlock { Text = "Before" };
@@ -368,8 +408,37 @@ public sealed class RemoteControlCommandTests
                 Options.Create(options)),
             new RemoteControlLogStreamService(
                 new RemoteControlLogBuffer(Options.Create(options))),
+            new RemoteControlFrameStreamService(
+                new StaticRemoteControlRootProvider(root),
+                new StubFrameProvider(),
+                Options.Create(options),
+                NullLogger<RemoteControlFrameStreamService>.Instance),
             CreateActionInvoker(provider, options),
-            CreateMutationService(provider, options));
+            CreateMutationService(provider, options),
+            new RemoteControlInputDispatcher(
+                new StaticRemoteControlRootProvider(root),
+                Options.Create(options),
+                new InlineRemoteControlDispatcher(),
+                NullLogger<RemoteControlInputDispatcher>.Instance));
+    }
+
+    private sealed class StubFrameProvider : IRemoteControlFrameProvider
+    {
+        public ValueTask<RemoteControlFrame> CaptureFrameAsync(
+            Control root,
+            ulong sequence,
+            CancellationToken cancellationToken)
+        {
+            return ValueTask.FromResult(new RemoteControlFrame(
+                sequence,
+                [1],
+                1,
+                1,
+                1,
+                1,
+                1,
+                DateTimeOffset.UtcNow));
+        }
     }
 
     private sealed class SensitiveActionTestControl : Control

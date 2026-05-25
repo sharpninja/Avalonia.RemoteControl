@@ -11,7 +11,7 @@ This guide connects a local Avalonia desktop app to the Avalonia.RemoteControl c
 ## Install The Client Tool
 
 ```powershell
-dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.1.2
+dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.1.3
 ```
 
 Update later with:
@@ -31,7 +31,7 @@ avalonia-remote --help
 For a desktop or server-capable Avalonia app, add:
 
 ```powershell
-dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.1.2
+dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.1.3
 ```
 
 The server package brings in the runtime and protocol packages.
@@ -72,6 +72,8 @@ public override void OnFrameworkInitializationCompleted()
         options.Port = 47100;
         options.AuthenticationToken = Environment.GetEnvironmentVariable("AVALONIA_REMOTE_TOKEN");
         options.AllowRemoteActions = true;
+        options.AllowRemoteFrames = true;
+        options.AllowRemoteInput = true;
         options.AllowedMutableProperties.Add("Text");
     });
 
@@ -97,6 +99,7 @@ Important details:
 - `AuthenticationToken` is required when remote control is enabled.
 - Loopback cleartext is allowed by default; non-loopback listeners require TLS.
 - Mutation still requires explicit property allow-list entries.
+- Live screenshots require `AllowRemoteFrames`; live input requires both `AllowRemoteActions` and `AllowRemoteInput`.
 
 ## Run And Connect
 
@@ -119,4 +122,4 @@ Use these connection values:
 - Token: the value of `AVALONIA_REMOTE_TOKEN`
 - Mode: Local
 
-After connecting, the client can display the tree, selected-node properties, logs, and enabled actions.
+After connecting, the client can display the tree, selected-node properties, logs, and enabled actions. Click Live View to open the separate interactive remote UI window.

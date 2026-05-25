@@ -1,3 +1,5 @@
+using Avalonia.RemoteControl.Protocol;
+
 namespace Avalonia.RemoteControl.Client.Profiles;
 
 /// <summary>
@@ -24,6 +26,11 @@ public sealed record RemoteControlConnectionProfile
     /// Gets or sets the accepted server certificate SHA-256 fingerprint for TLS profiles.
     /// </summary>
     public string AcceptedServerCertificateSha256Fingerprint { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the transport protocol used by the endpoint.
+    /// </summary>
+    public string TransportProtocol { get; init; } = RemoteControlProtocol.GrpcTransportProtocol;
 
     /// <summary>
     /// Gets or sets the profile update timestamp.

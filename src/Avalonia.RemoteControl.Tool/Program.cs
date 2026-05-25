@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.RemoteControl.Client;
 using Avalonia.RemoteControl.Client.Adb;
 using Avalonia.RemoteControl.Client.Diagnostics;
+using Avalonia.RemoteControl.Client.Profiles;
 
 namespace Avalonia.RemoteControl.Tool;
 
@@ -32,7 +33,8 @@ internal static class Program
         {
             var adbCommandLine = new AdbCommandLine(
                 new AdbClient(new ProcessAdbCommandRunner()),
-                new GrpcRemoteControlProbe());
+                new GrpcRemoteControlProbe(),
+                new FileRemoteControlProfileStore());
 
             return await adbCommandLine.RunAsync(adbArgs, Console.Out, Console.Error).ConfigureAwait(false);
         }

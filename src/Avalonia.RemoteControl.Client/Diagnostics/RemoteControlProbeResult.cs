@@ -9,4 +9,6 @@ public sealed record RemoteControlProbeResult(
     bool SupportsTreeStreaming,
     bool SupportsClickInvocation,
     bool SupportsPropertyMutation,
-    bool SupportsLogStreaming);
+    bool SupportsLogStreaming,
+    bool SupportsFrameStreaming,
+    bool SupportsRemoteInput);

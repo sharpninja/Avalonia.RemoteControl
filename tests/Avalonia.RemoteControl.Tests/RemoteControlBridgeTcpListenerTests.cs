@@ -8,6 +8,7 @@ using Avalonia.RemoteControl.Server;
 using Avalonia.RemoteControl.Server.Bridge;
 using Avalonia.RemoteControl.Server.Commands;
 using Avalonia.RemoteControl.Server.Logging;
+using Avalonia.RemoteControl.Server.Rendering;
 using Avalonia.RemoteControl.Server.Runtime;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Avalonia.RemoteControl.Server.Threading;
@@ -66,6 +67,59 @@ public sealed class RemoteControlBridgeTcpListenerTests
             var snapshot = await session.GetSnapshotAsync();
 
             Assert.Contains(snapshot.Nodes, node => node.Name == "ListenerSnapshotRoot");
+        }
+        finally
+        {
+            await listener.StopAsync();
+        }
+    }
+
+    [Fact]
+    public async Task BridgeTcpListenerStreamsFramesThroughRuntime()
+    {
+        await using var provider = CreateProvider(new StubRemoteControlRuntime());
+        var listener = provider.GetRequiredService<RemoteControlBridgeTcpListener>();
+
+        try
+        {
+            await listener.StartAsync();
+
+            using var session = RemoteControlDesktopSession.Create(
+                CreateBridgeUri(listener),
+                "dev-token",
+                transportProtocol: RemoteControlProtocol.AndroidBridgeTransportProtocol);
+            await using var enumerator = session.WatchFramesAsync().GetAsyncEnumerator();
+
+            Assert.True(await enumerator.MoveNextAsync());
+            Assert.Equal(1UL, enumerator.Current.Sequence);
+            Assert.Equal(1, enumerator.Current.PixelWidth);
+            Assert.False(await enumerator.MoveNextAsync());
+        }
+        finally
+        {
+            await listener.StopAsync();
+        }
+    }
+
+    [Fact]
+    public async Task BridgeTcpListenerStreamsTreeThroughRuntime()
+    {
+        await using var provider = CreateProvider(new StubRemoteControlRuntime());
+        var listener = provider.GetRequiredService<RemoteControlBridgeTcpListener>();
+
+        try
+        {
+            await listener.StartAsync();
+
+            using var session = RemoteControlDesktopSession.Create(
+                CreateBridgeUri(listener),
+                "dev-token",
+                transportProtocol: RemoteControlProtocol.AndroidBridgeTransportProtocol);
+            await using var enumerator = session.WatchTreeAsync().GetAsyncEnumerator();
+
+            Assert.True(await enumerator.MoveNextAsync());
+            Assert.Contains(enumerator.Current.Snapshot.Nodes, node => node.Name == "ListenerSnapshotRoot");
+            Assert.False(await enumerator.MoveNextAsync());
         }
         finally
         {
@@ -182,6 +236,7 @@ public sealed class RemoteControlBridgeTcpListenerTests
                         TypeName = nameof(TextBlock),
                         Name = "ListenerSnapshotRoot",
                         Bounds = new RemoteControlRect(0, 0, 100, 32),
+                        AbsoluteBounds = new RemoteControlRect(0, 0, 100, 32),
                         IsVisible = true,
                         IsEnabled = true,
                     },
@@ -218,6 +273,29 @@ public sealed class RemoteControlBridgeTcpListenerTests
             CancellationToken cancellationToken = default)
         {
             return ValueTask.FromResult(new RemoteControlCommandResult(false, "Not implemented."));
+        }
+
+        public async IAsyncEnumerable<RemoteControlFrame> WatchFramesAsync(
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            yield return new RemoteControlFrame(
+                1,
+                [1, 2, 3],
+                1,
+                1,
+                1,
+                1,
+                1,
+                DateTimeOffset.UtcNow);
+            await Task.CompletedTask.ConfigureAwait(false);
+        }
+
+        public ValueTask<RemoteControlCommandResult> SendInputAsync(
+            IReadOnlyList<RemoteInputEvent> events,
+            string clientIdentity,
+            CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new RemoteControlCommandResult(true, "Input accepted."));
         }
 
         public async IAsyncEnumerable<RemoteControlLogEntry> WatchLogEntriesAsync(
