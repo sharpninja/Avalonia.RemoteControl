@@ -1,6 +1,8 @@
 using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server.Commands;
 using Avalonia.RemoteControl.Server.Logging;
+using Avalonia.RemoteControl.Server.Protocol;
+using Avalonia.RemoteControl.Server.Runtime;
 using Avalonia.RemoteControl.Server.Security;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Grpc.Core;
@@ -14,13 +16,17 @@ namespace Avalonia.RemoteControl.Server.Grpc;
 /// </summary>
 public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteControlBase
 {
-    private readonly AvaloniaRemoteControlService remoteControlService;
-    private readonly IControlTreeSnapshotProvider snapshotProvider;
-    private readonly IRemoteControlRootProvider rootProvider;
-    private readonly RemoteControlTreeStreamService treeStreamService;
-    private readonly RemoteControlLogStreamService logStreamService;
-    private readonly RemoteControlActionInvoker actionInvoker;
-    private readonly RemoteControlPropertyMutationService propertyMutationService;
+    private readonly IRemoteControlRuntime runtime;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AvaloniaRemoteControlGrpcService"/> class.
+    /// </summary>
+    /// <param name="runtime">Transport-independent runtime service.</param>
+    [Microsoft.Extensions.DependencyInjection.ActivatorUtilitiesConstructor]
+    public AvaloniaRemoteControlGrpcService(IRemoteControlRuntime runtime)
+    {
+        this.runtime = runtime;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AvaloniaRemoteControlGrpcService"/> class.
@@ -40,14 +46,15 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         RemoteControlLogStreamService logStreamService,
         RemoteControlActionInvoker actionInvoker,
         RemoteControlPropertyMutationService propertyMutationService)
+        : this(new RemoteControlRuntime(
+            remoteControlService,
+            snapshotProvider,
+            rootProvider,
+            treeStreamService,
+            logStreamService,
+            actionInvoker,
+            propertyMutationService))
     {
-        this.remoteControlService = remoteControlService;
-        this.snapshotProvider = snapshotProvider;
-        this.rootProvider = rootProvider;
-        this.treeStreamService = treeStreamService;
-        this.logStreamService = logStreamService;
-        this.actionInvoker = actionInvoker;
-        this.propertyMutationService = propertyMutationService;
     }
 
     /// <inheritdoc />
@@ -55,7 +62,7 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         GetCapabilitiesRequest request,
         ServerCallContext context)
     {
-        return Task.FromResult(remoteControlService.GetCapabilities().ToGrpc());
+        return Task.FromResult(runtime.GetCapabilities().ToProtocol());
     }
 
     /// <inheritdoc />
@@ -63,17 +70,15 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         GetSnapshotRequest request,
         ServerCallContext context)
     {
-        var root = rootProvider.GetRootControl();
-
-        if (root is null)
+        try
         {
-            throw new RpcException(new Status(
-                StatusCode.FailedPrecondition,
-                "No Avalonia remote-control root control is registered."));
+            var snapshot = await runtime.GetSnapshotAsync(GetCancellationToken(context));
+            return snapshot.ToProtocol();
         }
-
-        var snapshot = await snapshotProvider.CaptureSnapshotAsync(root);
-        return snapshot.ToGrpc();
+        catch (RemoteControlRuntimeException exception)
+        {
+            throw ToRpcException(exception);
+        }
     }
 
     /// <inheritdoc />
@@ -82,12 +87,12 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         IServerStreamWriter<TreeUpdate> responseStream,
         ServerCallContext context)
     {
-        await foreach (var snapshot in treeStreamService.WatchSnapshotsAsync(context.CancellationToken))
+        await foreach (var snapshot in runtime.WatchSnapshotsAsync(GetCancellationToken(context)))
         {
             await responseStream.WriteAsync(new TreeUpdate
             {
                 Sequence = snapshot.Sequence,
-                Snapshot = snapshot.ToGrpc(),
+                Snapshot = snapshot.ToProtocol(),
                 Reason = "periodic",
             });
         }
@@ -98,10 +103,11 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         InvokeClickRequest request,
         ServerCallContext context)
     {
-        var result = await actionInvoker.InvokeClickAsync(
+        var result = await runtime.InvokeClickAsync(
             request.NodeId,
-            RemoteControlClientIdentity.From(context));
-        return result.ToGrpc();
+            RemoteControlClientIdentity.From(context),
+            GetCancellationToken(context));
+        return result.ToProtocol();
     }
 
     /// <inheritdoc />
@@ -109,10 +115,11 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         InvokeFocusRequest request,
         ServerCallContext context)
     {
-        var result = await actionInvoker.InvokeFocusAsync(
+        var result = await runtime.InvokeFocusAsync(
             request.NodeId,
-            RemoteControlClientIdentity.From(context));
-        return result.ToGrpc();
+            RemoteControlClientIdentity.From(context),
+            GetCancellationToken(context));
+        return result.ToProtocol();
     }
 
     /// <inheritdoc />
@@ -120,13 +127,14 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         SetPropertyRequest request,
         ServerCallContext context)
     {
-        var result = await propertyMutationService.SetPropertyAsync(
+        var result = await runtime.SetPropertyAsync(
             request.NodeId,
             request.PropertyName,
             request.Value,
-            RemoteControlClientIdentity.From(context));
+            RemoteControlClientIdentity.From(context),
+            GetCancellationToken(context));
 
-        return result.ToGrpc();
+        return result.ToProtocol();
     }
 
     /// <inheritdoc />
@@ -140,12 +148,12 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
             ? null
             : request.CategoryPrefix;
 
-        await foreach (var entry in logStreamService.WatchEntriesAsync(
+        await foreach (var entry in runtime.WatchLogEntriesAsync(
             minimumLevel,
             categoryPrefix,
-            context.CancellationToken))
+            GetCancellationToken(context)))
         {
-            await responseStream.WriteAsync(entry.ToGrpc());
+            await responseStream.WriteAsync(entry.ToProtocol());
         }
     }
 
@@ -164,5 +172,24 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         throw new RpcException(new Status(
             StatusCode.InvalidArgument,
             "minimum_level must be a Microsoft.Extensions.Logging LogLevel name."));
+    }
+
+    private static CancellationToken GetCancellationToken(ServerCallContext? context)
+    {
+        return context?.CancellationToken ?? CancellationToken.None;
+    }
+
+    private static RpcException ToRpcException(RemoteControlRuntimeException exception)
+    {
+        var statusCode = exception.ErrorCode switch
+        {
+            RemoteControlRuntimeErrorCode.InvalidArgument => StatusCode.InvalidArgument,
+            RemoteControlRuntimeErrorCode.FailedPrecondition => StatusCode.FailedPrecondition,
+            RemoteControlRuntimeErrorCode.Cancelled => StatusCode.Cancelled,
+            RemoteControlRuntimeErrorCode.Unsupported => StatusCode.Unimplemented,
+            _ => StatusCode.Unknown,
+        };
+
+        return new RpcException(new Status(statusCode, exception.Message));
     }
 }

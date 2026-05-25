@@ -77,15 +77,16 @@ Android connectivity is a first-class product requirement. The client should aut
 
 Technical Spike 0 found that the current Kestrel/AspNetCore gRPC server transport cannot be used directly inside a `net10.0-android` app because `Microsoft.AspNetCore.App` has no Android runtime pack. Android support therefore needs an Android-compatible app-side bridge or transport behind the same desktop-facing protocol.
 
-The package-private Android marker is the negotiation point for this split. Missing protocol metadata means the existing gRPC ADB path. Bridge markers must declare `arc-protobuf-v1`, and current clients reject that marker before forwarding until the Android bridge adapter exists.
+The package-private Android marker is the negotiation point for this split. Missing protocol metadata means the existing gRPC ADB path. Bridge markers must declare `arc-protobuf-v1`; current clients support that marker for authenticated unary bridge operations and reject unknown protocols before forwarding.
 
 ## Current Implementation Status
 
-- `Avalonia.RemoteControl.Protocol` defines the versioned gRPC contract.
-- `Avalonia.RemoteControl.Server` starts a Kestrel HTTP/2 gRPC endpoint, enforces bearer authentication, validates listener/TLS startup policy, captures stable tree snapshots, streams snapshots, exposes guarded click/focus actions and property mutation, synthesizes center-position pointer click sequences for non-button surfaces, and captures sanitized logs through a bounded `ILoggerProvider`.
+- `Avalonia.RemoteControl.Protocol` defines the versioned gRPC and bridge contracts.
+- `Avalonia.RemoteControl.Runtime` provides host-independent runtime services for dispatcher-safe tree snapshots, mutation/action services, logging, bearer authentication, bridge dispatch, and Android-compatible builds.
+- `Avalonia.RemoteControl.Server` starts a Kestrel HTTP/2 gRPC endpoint, enforces bearer authentication, validates listener/TLS startup policy, and hosts the runtime services for desktop/server-capable targets.
 - `Avalonia.RemoteControl.Tool` opens the desktop client UI by default and also provides ADB device listing, forwarding, package marker discovery, authenticated endpoint probing, and cleanup commands.
 - CI files exist for GitHub Actions and Azure Pipelines.
-- Android bridge transport implementation/proof, non-loopback TLS manual certificate acceptance, and richer client profile management remain future slices.
+- Android app-side bridge listener/probe sample, non-loopback TLS manual certificate acceptance, and richer client profile management remain future slices.
 
 ## Security
 

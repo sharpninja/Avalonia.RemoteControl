@@ -31,4 +31,9 @@ public sealed record AdbEndpointInfo(int DevicePort, string? Token, string Proto
     /// Gets a value indicating whether the marker describes the current gRPC ADB transport.
     /// </summary>
     public bool IsGrpcProtocol => Protocol.Equals(GrpcProtocol, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Gets a value indicating whether the marker advertises the Android bridge protocol.
+    /// </summary>
+    public bool IsAndroidBridgeProtocol => Protocol.Equals(AndroidBridgeProtocol, StringComparison.OrdinalIgnoreCase);
 }

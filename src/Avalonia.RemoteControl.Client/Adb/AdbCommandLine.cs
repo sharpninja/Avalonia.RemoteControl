@@ -99,6 +99,7 @@ public sealed class AdbCommandLine
         var packageName = GetOptional(parsed, "package");
         var token = GetOptional(parsed, "token");
         var keepForward = parsed.ContainsKey("keep-forward");
+        var transportProtocol = RemoteControlProtocol.GrpcTransportProtocol;
 
         if (devicePort is null)
         {
@@ -114,14 +115,15 @@ public sealed class AdbCommandLine
                 serial,
                 packageName,
                 cancellationToken).ConfigureAwait(false);
-            if (!endpointInfo.IsGrpcProtocol)
+            if (!endpointInfo.IsGrpcProtocol && !endpointInfo.IsAndroidBridgeProtocol)
             {
                 throw new InvalidOperationException(
-                    $"Android marker protocol '{endpointInfo.Protocol}' is not supported by this client yet.");
+                    $"Android marker protocol '{endpointInfo.Protocol}' is not supported by this client.");
             }
 
             devicePort = endpointInfo.DevicePort;
             token ??= endpointInfo.Token;
+            transportProtocol = endpointInfo.Protocol;
         }
 
         if (string.IsNullOrWhiteSpace(token))
@@ -143,6 +145,7 @@ public sealed class AdbCommandLine
             var capabilities = await remoteControlProbe.ProbeAsync(
                 forward.Endpoint,
                 token,
+                transportProtocol,
                 cancellationToken).ConfigureAwait(false);
 
             await output.WriteLineAsync("ADB forward ready.").ConfigureAwait(false);

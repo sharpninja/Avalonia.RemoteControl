@@ -8,6 +8,7 @@
 - `TR-PACK-PACKAGE-002`: Package the client launcher as `Avalonia.RemoteControl.Tool`.
 - `TR-PACK-PACKAGE-003`: The .NET tool command name is `avalonia-remote`.
 - `TR-PACK-PACKAGE-004`: Packages include symbols and SourceLink when package infrastructure is implemented.
+- `TR-PACK-PACKAGE-005`: Package the host-independent runtime as `Avalonia.RemoteControl.Runtime` for Android-compatible consumers.
 
 ## Protocol
 

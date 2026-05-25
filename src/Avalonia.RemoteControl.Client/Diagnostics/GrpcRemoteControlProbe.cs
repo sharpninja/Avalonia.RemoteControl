@@ -1,10 +1,7 @@
-using Avalonia.RemoteControl.Protocol.V1;
-using Grpc.Net.Client;
-
 namespace Avalonia.RemoteControl.Client.Diagnostics;
 
 /// <summary>
-/// Probes a remote-control endpoint through the gRPC protocol.
+/// Probes a remote-control endpoint through the advertised remote-control transport.
 /// </summary>
 public sealed class GrpcRemoteControlProbe : IRemoteControlProbe
 {
@@ -12,19 +9,18 @@ public sealed class GrpcRemoteControlProbe : IRemoteControlProbe
     public async Task<RemoteControlProbeResult> ProbeAsync(
         Uri endpoint,
         string token,
+        string transportProtocol,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
+        ArgumentException.ThrowIfNullOrWhiteSpace(transportProtocol);
 
-        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-
-        using var channel = GrpcChannel.ForAddress(endpoint);
-        var client = new Protocol.V1.RemoteControl.RemoteControlClient(channel);
-        var capabilities = await client.GetCapabilitiesAsync(
-            new GetCapabilitiesRequest(),
-            new global::Grpc.Core.Metadata { { "authorization", $"Bearer {token}" } },
-            cancellationToken: cancellationToken);
+        using var session = RemoteControlDesktopSession.Create(
+            endpoint,
+            token,
+            transportProtocol: transportProtocol);
+        var capabilities = await session.GetCapabilitiesAsync(cancellationToken).ConfigureAwait(false);
 
         return new RemoteControlProbeResult(
             capabilities.ProtocolVersion,

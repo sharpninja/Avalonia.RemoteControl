@@ -3,14 +3,22 @@ using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server.Commands;
 using Avalonia.RemoteControl.Server.Logging;
 using Avalonia.RemoteControl.Server.Snapshots;
-using GrpcLogEntry = Avalonia.RemoteControl.Protocol.V1.LogEntry;
-using GrpcRect = Avalonia.RemoteControl.Protocol.V1.Rect;
+using ProtocolLogEntry = Avalonia.RemoteControl.Protocol.V1.LogEntry;
+using ProtocolRect = Avalonia.RemoteControl.Protocol.V1.Rect;
 
-namespace Avalonia.RemoteControl.Server.Grpc;
+namespace Avalonia.RemoteControl.Server.Protocol;
 
-internal static class RemoteControlGrpcMappers
+/// <summary>
+/// Maps transport-independent runtime models to protobuf protocol messages.
+/// </summary>
+public static class RemoteControlProtocolMappers
 {
-    public static GetCapabilitiesResponse ToGrpc(this RemoteControlCapabilities capabilities)
+    /// <summary>
+    /// Maps runtime capabilities to the protobuf capabilities response.
+    /// </summary>
+    /// <param name="capabilities">Runtime capabilities.</param>
+    /// <returns>The protobuf capabilities response.</returns>
+    public static GetCapabilitiesResponse ToProtocol(this RemoteControlCapabilities capabilities)
     {
         return new GetCapabilitiesResponse
         {
@@ -23,19 +31,29 @@ internal static class RemoteControlGrpcMappers
         };
     }
 
-    public static TreeSnapshot ToGrpc(this RemoteControlTreeSnapshot snapshot)
+    /// <summary>
+    /// Maps a runtime tree snapshot to the protobuf tree snapshot.
+    /// </summary>
+    /// <param name="snapshot">Runtime tree snapshot.</param>
+    /// <returns>The protobuf tree snapshot.</returns>
+    public static TreeSnapshot ToProtocol(this RemoteControlTreeSnapshot snapshot)
     {
         var response = new TreeSnapshot
         {
             Sequence = snapshot.Sequence,
         };
 
-        response.Nodes.AddRange(snapshot.Nodes.Select(ToGrpc));
+        response.Nodes.AddRange(snapshot.Nodes.Select(ToProtocol));
 
         return response;
     }
 
-    public static CommandResult ToGrpc(this RemoteControlCommandResult result)
+    /// <summary>
+    /// Maps a runtime command result to the protobuf command result.
+    /// </summary>
+    /// <param name="result">Runtime command result.</param>
+    /// <returns>The protobuf command result.</returns>
+    public static CommandResult ToProtocol(this RemoteControlCommandResult result)
     {
         return new CommandResult
         {
@@ -44,9 +62,14 @@ internal static class RemoteControlGrpcMappers
         };
     }
 
-    public static GrpcLogEntry ToGrpc(this RemoteControlLogEntry entry)
+    /// <summary>
+    /// Maps a runtime log entry to the protobuf log entry.
+    /// </summary>
+    /// <param name="entry">Runtime log entry.</param>
+    /// <returns>The protobuf log entry.</returns>
+    public static ProtocolLogEntry ToProtocol(this RemoteControlLogEntry entry)
     {
-        return new GrpcLogEntry
+        return new ProtocolLogEntry
         {
             Sequence = entry.Sequence,
             TimestampUtc = entry.TimestampUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture),
@@ -61,7 +84,7 @@ internal static class RemoteControlGrpcMappers
         };
     }
 
-    private static TreeNode ToGrpc(RemoteControlNodeSnapshot node)
+    private static TreeNode ToProtocol(RemoteControlNodeSnapshot node)
     {
         var response = new TreeNode
         {
@@ -71,7 +94,7 @@ internal static class RemoteControlGrpcMappers
             Name = node.Name ?? string.Empty,
             AutomationName = node.AutomationName ?? string.Empty,
             AutomationId = node.AutomationId ?? string.Empty,
-            Bounds = new GrpcRect
+            Bounds = new ProtocolRect
             {
                 X = node.Bounds.X,
                 Y = node.Bounds.Y,
@@ -84,12 +107,12 @@ internal static class RemoteControlGrpcMappers
         };
 
         response.Classes.AddRange(node.Classes);
-        response.Properties.AddRange(node.Properties.Select(ToGrpc));
+        response.Properties.AddRange(node.Properties.Select(ToProtocol));
 
         return response;
     }
 
-    private static PropertyValue ToGrpc(RemoteControlPropertySnapshot property)
+    private static PropertyValue ToProtocol(RemoteControlPropertySnapshot property)
     {
         return new PropertyValue
         {

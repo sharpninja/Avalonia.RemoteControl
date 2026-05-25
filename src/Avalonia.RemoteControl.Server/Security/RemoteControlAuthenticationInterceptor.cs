@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Microsoft.Extensions.Logging;
@@ -13,8 +11,7 @@ namespace Avalonia.RemoteControl.Server.Security;
 public sealed class RemoteControlAuthenticationInterceptor : Interceptor
 {
     private const string AuthorizationHeaderName = "authorization";
-    private const string BearerPrefix = "Bearer ";
-    private readonly AvaloniaRemoteControlOptions options;
+    private readonly RemoteControlBearerTokenAuthenticator authenticator;
     private readonly ILogger<RemoteControlAuthenticationInterceptor> logger;
 
     /// <summary>
@@ -25,10 +22,22 @@ public sealed class RemoteControlAuthenticationInterceptor : Interceptor
     public RemoteControlAuthenticationInterceptor(
         IOptions<AvaloniaRemoteControlOptions> options,
         ILogger<RemoteControlAuthenticationInterceptor> logger)
+        : this(new RemoteControlBearerTokenAuthenticator(options), logger)
     {
-        ArgumentNullException.ThrowIfNull(options);
+    }
 
-        this.options = options.Value;
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RemoteControlAuthenticationInterceptor"/> class.
+    /// </summary>
+    /// <param name="authenticator">Transport-independent bearer token authenticator.</param>
+    /// <param name="logger">Security logger.</param>
+    public RemoteControlAuthenticationInterceptor(
+        RemoteControlBearerTokenAuthenticator authenticator,
+        ILogger<RemoteControlAuthenticationInterceptor> logger)
+    {
+        ArgumentNullException.ThrowIfNull(authenticator);
+
+        this.authenticator = authenticator;
         this.logger = logger;
     }
 
@@ -76,48 +85,21 @@ public sealed class RemoteControlAuthenticationInterceptor : Interceptor
 
     private void EnsureAuthenticated(ServerCallContext context)
     {
-        if (!options.RequireAuthentication)
-        {
-            return;
-        }
-
-        var expectedToken = options.AuthenticationToken;
-        var presentedToken = GetBearerToken(context.RequestHeaders);
-
-        if (string.IsNullOrWhiteSpace(expectedToken)
-            || string.IsNullOrWhiteSpace(presentedToken)
-            || !FixedTimeEquals(expectedToken, presentedToken))
+        var result = authenticator.AuthenticateAuthorization(GetAuthorizationHeader(context.RequestHeaders));
+        if (!result.IsAuthenticated)
         {
             logger.LogWarning("Remote-control authentication rejected for {Method}", context.Method);
 
             throw new RpcException(new Status(
                 StatusCode.Unauthenticated,
-                "Authentication is required."));
+                result.FailureMessage));
         }
 
-        context.UserState[RemoteControlClientIdentity.UserStateKey] = string.IsNullOrWhiteSpace(options.AuthenticatedClientIdentity)
-            ? RemoteControlClientIdentity.Unknown
-            : options.AuthenticatedClientIdentity;
+        context.UserState[RemoteControlClientIdentity.UserStateKey] = result.ClientIdentity;
     }
 
-    private static string? GetBearerToken(global::Grpc.Core.Metadata requestHeaders)
+    private static string? GetAuthorizationHeader(global::Grpc.Core.Metadata requestHeaders)
     {
-        var header = requestHeaders.Get(AuthorizationHeaderName)?.Value;
-
-        if (header is null || !header.StartsWith(BearerPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        return header[BearerPrefix.Length..].Trim();
-    }
-
-    private static bool FixedTimeEquals(string expectedToken, string presentedToken)
-    {
-        var expectedBytes = Encoding.UTF8.GetBytes(expectedToken);
-        var presentedBytes = Encoding.UTF8.GetBytes(presentedToken);
-
-        return expectedBytes.Length == presentedBytes.Length
-            && CryptographicOperations.FixedTimeEquals(expectedBytes, presentedBytes);
+        return requestHeaders.Get(AuthorizationHeaderName)?.Value;
     }
 }

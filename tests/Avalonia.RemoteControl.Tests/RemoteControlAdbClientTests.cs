@@ -163,7 +163,7 @@ public sealed class RemoteControlAdbClientTests
     }
 
     [Fact]
-    public async Task AdbCommandLineConnectRejectsUnsupportedMarkerProtocolBeforeForwarding()
+    public async Task AdbCommandLineConnectSupportsBridgeMarkerProtocol()
     {
         var runner = new RecordingAdbCommandRunner();
         runner.Respond(
@@ -172,9 +172,12 @@ public sealed class RemoteControlAdbClientTests
                 0,
                 """{"devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
                 string.Empty));
+        runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47102", AdbCommandResult.Success);
+        runner.Respond("-s emulator-5554 forward --remove tcp:47100", AdbCommandResult.Success);
+        var probe = new RecordingRemoteControlProbe();
         var commandLine = new AdbCommandLine(
             new AdbClient(runner),
-            new RecordingRemoteControlProbe());
+            probe);
         using var output = new StringWriter();
         using var error = new StringWriter();
 
@@ -183,10 +186,14 @@ public sealed class RemoteControlAdbClientTests
             output,
             error);
 
-        Assert.Equal(1, exitCode);
-        Assert.Contains("not supported", error.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, exitCode);
+        Assert.Equal(AdbEndpointInfo.AndroidBridgeProtocol, probe.TransportProtocol);
         Assert.Equal(
-            ["-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json"],
+            [
+                "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+                "-s emulator-5554 forward tcp:47100 tcp:47102",
+                "-s emulator-5554 forward --remove tcp:47100"
+            ],
             runner.Commands);
     }
 
@@ -240,13 +247,17 @@ public sealed class RemoteControlAdbClientTests
 
         public string? Token { get; private set; }
 
+        public string? TransportProtocol { get; private set; }
+
         public Task<RemoteControlProbeResult> ProbeAsync(
             Uri endpoint,
             string token,
+            string transportProtocol,
             CancellationToken cancellationToken = default)
         {
             Endpoint = endpoint;
             Token = token;
+            TransportProtocol = transportProtocol;
 
             return Task.FromResult(new RemoteControlProbeResult(
                 RemoteControlProtocol.DisplayVersion,

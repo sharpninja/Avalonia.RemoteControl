@@ -53,6 +53,7 @@
 - `TEST-ADB-007`: Android bridge acceptance records build/install/launch, marker discovery, authenticated capabilities, tree snapshot, and ADB forward cleanup evidence on a real emulator or device.
 - `TEST-ADB-008`: Unit tests verify versioned Android marker protocol parsing and fail-closed handling for unsupported marker transports.
 - `TEST-ADB-009`: Unit tests verify the `arc-protobuf-v1` bridge envelope encodes and decodes length-prefixed protobuf request/response frames and rejects oversized frames.
+- `TEST-ADB-010`: Unit tests and build checks verify the host-independent runtime builds for `net10.0-android`, dispatches bridge requests with bearer authentication, and lets the host client probe marker-discovered `arc-protobuf-v1` endpoints.
 
 ## Packaging and CI Tests
 
@@ -60,6 +61,7 @@
 - `TEST-PACK-002`: `dotnet pack --no-build` produces the tool package.
 - `TEST-PACK-003`: The tool can be installed from local artifacts.
 - `TEST-PACK-004`: `avalonia-remote --help` works after local install.
+- `TEST-PACK-005`: `dotnet pack --no-build` produces the runtime NuGet package.
 - `TEST-CI-001`: GitHub Actions runs restore/build/test/pack.
 - `TEST-CI-002`: Azure Pipelines runs restore/build/test/pack.
 

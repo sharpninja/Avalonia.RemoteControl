@@ -50,7 +50,7 @@ The package marker is a JSON file in app-private storage:
 }
 ```
 
-The file is intentionally read through `run-as`, so it only works for debuggable packages and does not require broad device storage access. Missing protocol metadata is treated as legacy `grpc`. Android bridge markers must set `bridgeProtocol` or `protocol` to `arc-protobuf-v1`; clients that do not implement that bridge must reject the marker before opening an ADB forward.
+The file is intentionally read through `run-as`, so it only works for debuggable packages and does not require broad device storage access. Missing protocol metadata is treated as legacy `grpc`. Android bridge markers must set `bridgeProtocol` or `protocol` to `arc-protobuf-v1`; clients must reject unknown marker protocols before opening an ADB forward.
 
 ## Requirements
 
@@ -108,7 +108,7 @@ Current status: host-side ADB workflow is implemented and unit-tested. `adb` is 
 
 Technical Spike 0 found that the current Kestrel/AspNetCore gRPC server transport is not viable as the Android app-side transport. A throwaway `net10.0-android` app referencing `Avalonia.RemoteControl.Server` restored and compiled project references, then failed Android packaging with `NETSDK1082` because `Microsoft.AspNetCore.App` has no `android-arm64` runtime pack. Android support therefore needs an Android-compatible app-side bridge or transport behind the same desktop-facing protocol instead of directly hosting the current AspNetCore server in-process.
 
-The `arc-protobuf-v1` marker value and bridge envelope contract are now defined in the protocol package. The Android app-side listener, runtime split, and Android probe sample remain open.
+The `arc-protobuf-v1` marker value and bridge envelope contract are defined in the protocol package. `Avalonia.RemoteControl.Runtime` now builds for `net10.0-android` without ASP.NET Core/Kestrel dependencies, and the desktop client can probe `arc-protobuf-v1` endpoints through the bridge adapter. The Android app-side listener and Android probe sample remain open.
 
 Minimal proof commands used:
 

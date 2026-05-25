@@ -5,6 +5,7 @@
   <Folder Name="/src/">
     <Project Path="src/Avalonia.RemoteControl.Client/Avalonia.RemoteControl.Client.csproj" />
     <Project Path="src/Avalonia.RemoteControl.Protocol/Avalonia.RemoteControl.Protocol.csproj" />
+    <Project Path="src/Avalonia.RemoteControl.Runtime/Avalonia.RemoteControl.Runtime.csproj" />
     <Project Path="src/Avalonia.RemoteControl.Server/Avalonia.RemoteControl.Server.csproj" />
     <Project Path="src/Avalonia.RemoteControl.Tool/Avalonia.RemoteControl.Tool.csproj" />
   </Folder>

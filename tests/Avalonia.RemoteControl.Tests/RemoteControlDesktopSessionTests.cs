@@ -1,9 +1,12 @@
 using System.Net;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Avalonia.RemoteControl.Client;
 using Avalonia.RemoteControl.Protocol;
+using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server;
+using Avalonia.RemoteControl.Server.Bridge;
 using Avalonia.RemoteControl.Server.Hosting;
 using Avalonia.RemoteControl.Server.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -139,6 +142,37 @@ public sealed class RemoteControlDesktopSessionTests
         }
     }
 
+    [Fact]
+    public async Task DesktopSessionReadsCapabilitiesFromBridgeTransport()
+    {
+        var services = new ServiceCollection();
+        services.AddAvaloniaRemoteControlRuntime(options =>
+        {
+            options.AuthenticationToken = "dev-token";
+        });
+
+        await using var provider = services.BuildServiceProvider();
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+
+        var endpoint = new Uri($"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}");
+        var serverTask = HandleSingleBridgeRequestAsync(
+            listener,
+            provider.GetRequiredService<RemoteControlBridgeRequestHandler>());
+
+        using var session = RemoteControlDesktopSession.Create(
+            endpoint,
+            "dev-token",
+            transportProtocol: RemoteControlProtocol.AndroidBridgeTransportProtocol);
+
+        var capabilities = await session.GetCapabilitiesAsync();
+
+        await serverTask;
+
+        Assert.Equal(RemoteControlProtocol.DisplayVersion, capabilities.ProtocolVersion);
+        Assert.True(capabilities.SupportsTreeSnapshots);
+    }
+
     private static (byte[] Pfx, byte[] Cert) CreateCertificateBytes(string password)
     {
         using var rsa = RSA.Create(2048);
@@ -160,5 +194,17 @@ public sealed class RemoteControlDesktopSessionTests
         return (
             certificate.Export(X509ContentType.Pfx, password),
             certificate.Export(X509ContentType.Cert));
+    }
+
+    private static async Task HandleSingleBridgeRequestAsync(
+        TcpListener listener,
+        RemoteControlBridgeRequestHandler handler)
+    {
+        using var tcpClient = await listener.AcceptTcpClientAsync();
+        await using var stream = tcpClient.GetStream();
+        var request = await BridgeFrameCodec.ReadAsync(stream, BridgeRequest.Parser);
+        var response = await handler.HandleAsync(request);
+        await BridgeFrameCodec.WriteAsync(stream, response);
+        listener.Stop();
     }
 }

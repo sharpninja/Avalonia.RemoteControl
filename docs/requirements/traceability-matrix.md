@@ -65,6 +65,7 @@ Tests/evidence:
 - `TEST-ADB-007`
 - `TEST-ADB-008`
 - `TEST-ADB-009`
+- `TEST-ADB-010`
 - documented decision on Android app-side transport
 
 Evidence:
@@ -73,6 +74,7 @@ Evidence:
 - Package marker discovery against a non-debuggable package failed with Android's expected `run-as: package not debuggable` protection.
 - A generated Avalonia `net10.0-android` app referencing `Avalonia.RemoteControl.Server` failed packaging with `NETSDK1082` because `Microsoft.AspNetCore.App` has no `android-arm64` runtime pack.
 - Decision: Android app-side support needs an Android-compatible bridge or transport behind the same desktop-facing protocol; the current AspNetCore/Kestrel server remains viable for desktop/server-capable targets only.
+- `Avalonia.RemoteControl.Runtime` targets `net10.0-android` and builds without `Microsoft.AspNetCore.App`, Kestrel, or `Grpc.AspNetCore`.
 
 ## Iteration 1 - Protocol and Read-Only Inspection
 
@@ -314,6 +316,7 @@ Tests/evidence:
 - `TEST-ADB-007`
 - `TEST-ADB-008`
 - `TEST-ADB-009`
+- `TEST-ADB-010`
 - `TEST-MANUAL-003`
 - Android bridge sample package
 - package marker read through `adb shell run-as`
@@ -321,12 +324,17 @@ Tests/evidence:
 - tree snapshot captured on the Avalonia dispatcher
 - fail-closed unsupported marker transport test
 - length-prefixed protobuf bridge envelope unit tests
+- Android-compatible runtime build check
+- host-side bridge client adapter test
 - cleanup of the created ADB forward
 
 Implemented evidence:
 
-- Android marker parsing now recognizes versioned protocol metadata, keeps missing metadata compatible with legacy `grpc`, and rejects unsupported bridge protocols before creating a forward.
+- Android marker parsing now recognizes versioned protocol metadata, keeps missing metadata compatible with legacy `grpc`, supports `arc-protobuf-v1`, and rejects unknown protocols before creating a forward.
 - `RemoteControlBridgeProtocolTests` covers `arc-protobuf-v1` transport constants, `BridgeRequest`/`BridgeResponse` length-prefixed frame round-trip, oversized frame rejection, and sanitized failure response shape.
+- `RemoteControlBridgeRequestHandlerTests` covers bridge bearer authentication, capabilities, snapshot dispatch, and property mutation through the runtime policy.
+- `RemoteControlDesktopSessionTests` covers capabilities over a loopback TCP `arc-protobuf-v1` bridge connection.
+- `RemoteControlAdbClientTests` covers marker-discovered `arc-protobuf-v1` ADB connect flow and protocol handoff to probing.
 - Technical Spike 0 rejected ASP.NET Core/Kestrel gRPC as the Android app-side transport and created the bridge requirement.
 
 ## Iteration 6 - CI, Packaging, and Release
@@ -335,6 +343,7 @@ Requirements:
 
 - `TR-PACK-PACKAGE-001`
 - `TR-PACK-PACKAGE-004`
+- `TR-PACK-PACKAGE-005`
 - `TR-CI-RELEASE-001`
 - `TR-CI-RELEASE-002`
 - `TR-CI-RELEASE-003`
@@ -345,6 +354,7 @@ Tests/evidence:
 
 - `TEST-PACK-001`
 - `TEST-PACK-002`
+- `TEST-PACK-005`
 - `TEST-CI-001`
 - `TEST-CI-002`
 - package artifacts
@@ -353,6 +363,7 @@ Tests/evidence:
 Implemented evidence:
 
 - `Directory.Build.props` enables repository URL metadata, SourceLink, embedded untracked sources, `.nupkg`, and `.snupkg` package outputs.
+- `Avalonia.RemoteControl.Runtime` is packable and supplies the Android-compatible runtime dependency for future bridge debuggee packages.
 - `Microsoft.SourceLink.GitHub` is centrally versioned in `Directory.Packages.props`.
 - `.github/workflows/ci.yml` restores, builds, tests, packs, uploads artifacts, and publishes tagged `v*` packages only when `NUGET_API_KEY` is configured.
 - `azure-pipelines.yml` restores, builds, tests, packs, publishes build artifacts, and can publish tagged `v*` packages only when `NuGetApiKey` is configured.

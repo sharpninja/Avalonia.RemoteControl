@@ -85,7 +85,7 @@ public sealed class RemoteControlActionInvoker
             return new RemoteControlCommandResult(false, "Node is no longer available.");
         }
 
-        if (control is Button button)
+        if (control is Avalonia.Controls.Button button)
         {
             if (button.Command is not null)
             {
@@ -98,7 +98,7 @@ public sealed class RemoteControlActionInvoker
             }
             else
             {
-                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                button.RaiseEvent(new RoutedEventArgs(Avalonia.Controls.Button.ClickEvent));
             }
 
             logger.LogInformation(

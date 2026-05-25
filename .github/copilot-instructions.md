@@ -20,6 +20,7 @@ dotnet pack Avalonia.RemoteControl.slnx --configuration Release --no-build --out
 - .NET 10
 - Avalonia 12
 - gRPC for the desktop-facing protocol
+- NuGet package for `Avalonia.RemoteControl.Runtime`
 - NuGet package for `Avalonia.RemoteControl.Server`
 - .NET tool package for `Avalonia.RemoteControl.Tool`
 - GitHub Actions and Azure Pipelines

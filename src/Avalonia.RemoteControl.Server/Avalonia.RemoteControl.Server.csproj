@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Avalonia.RemoteControl.Protocol\Avalonia.RemoteControl.Protocol.csproj" />
+    <ProjectReference Include="..\Avalonia.RemoteControl.Runtime\Avalonia.RemoteControl.Runtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

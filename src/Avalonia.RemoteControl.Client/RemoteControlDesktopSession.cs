@@ -2,33 +2,55 @@ using Avalonia.RemoteControl.Protocol.V1;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using Avalonia.RemoteControl.Client.Bridge;
+using Avalonia.RemoteControl.Protocol;
 using Grpc.Net.Client;
 
 namespace Avalonia.RemoteControl.Client;
 
 /// <summary>
-/// Provides a token-authenticated gRPC client session for desktop remote-control clients.
+/// Provides a token-authenticated client session for desktop remote-control clients.
 /// </summary>
 public sealed class RemoteControlDesktopSession : IDisposable
 {
-    private readonly GrpcChannel channel;
-    private readonly Protocol.V1.RemoteControl.RemoteControlClient client;
-    private readonly global::Grpc.Core.Metadata headers;
+    private readonly GrpcChannel? channel;
+    private readonly Protocol.V1.RemoteControl.RemoteControlClient? client;
+    private readonly global::Grpc.Core.Metadata? headers;
+    private readonly RemoteControlBridgeClient? bridgeClient;
     private readonly X509Certificate2? trustedServerCertificate;
 
     private RemoteControlDesktopSession(
         Uri endpoint,
         string token,
-        string? trustedServerCertificatePath)
+        string? trustedServerCertificatePath,
+        string transportProtocol)
     {
         Endpoint = endpoint;
-        trustedServerCertificate = LoadTrustedServerCertificate(trustedServerCertificatePath);
-        channel = CreateChannel(endpoint, trustedServerCertificate);
-        client = new Protocol.V1.RemoteControl.RemoteControlClient(channel);
-        headers = new global::Grpc.Core.Metadata
+
+        if (transportProtocol.Equals(
+            RemoteControlProtocol.AndroidBridgeTransportProtocol,
+            StringComparison.OrdinalIgnoreCase))
         {
-            { "authorization", $"Bearer {token}" },
-        };
+            bridgeClient = new RemoteControlBridgeClient(endpoint, token);
+        }
+        else if (transportProtocol.Equals(
+            RemoteControlProtocol.GrpcTransportProtocol,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            trustedServerCertificate = LoadTrustedServerCertificate(trustedServerCertificatePath);
+            channel = CreateChannel(endpoint, trustedServerCertificate);
+            client = new Protocol.V1.RemoteControl.RemoteControlClient(channel);
+            headers = new global::Grpc.Core.Metadata
+            {
+                { "authorization", $"Bearer {token}" },
+            };
+        }
+        else
+        {
+            throw new ArgumentException(
+                $"Unsupported remote-control transport protocol '{transportProtocol}'.",
+                nameof(transportProtocol));
+        }
     }
 
     /// <summary>
@@ -46,14 +68,20 @@ public sealed class RemoteControlDesktopSession : IDisposable
     public static RemoteControlDesktopSession Create(
         Uri endpoint,
         string token,
-        string? trustedServerCertificatePath = null)
+        string? trustedServerCertificatePath = null,
+        string transportProtocol = RemoteControlProtocol.GrpcTransportProtocol)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
+        ArgumentException.ThrowIfNullOrWhiteSpace(transportProtocol);
 
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-        return new RemoteControlDesktopSession(endpoint, token, trustedServerCertificatePath);
+        return new RemoteControlDesktopSession(
+            endpoint,
+            token,
+            trustedServerCertificatePath,
+            transportProtocol);
     }
 
     /// <summary>
@@ -64,9 +92,14 @@ public sealed class RemoteControlDesktopSession : IDisposable
     public async Task<GetCapabilitiesResponse> GetCapabilitiesAsync(
         CancellationToken cancellationToken = default)
     {
-        return await client.GetCapabilitiesAsync(
+        if (bridgeClient is not null)
+        {
+            return await bridgeClient.GetCapabilitiesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return await client!.GetCapabilitiesAsync(
             new GetCapabilitiesRequest(),
-            headers,
+            headers!,
             cancellationToken: cancellationToken);
     }
 
@@ -78,9 +111,14 @@ public sealed class RemoteControlDesktopSession : IDisposable
     public async Task<TreeSnapshot> GetSnapshotAsync(
         CancellationToken cancellationToken = default)
     {
-        return await client.GetSnapshotAsync(
+        if (bridgeClient is not null)
+        {
+            return await bridgeClient.GetSnapshotAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return await client!.GetSnapshotAsync(
             new GetSnapshotRequest(),
-            headers,
+            headers!,
             cancellationToken: cancellationToken);
     }
 
@@ -94,9 +132,14 @@ public sealed class RemoteControlDesktopSession : IDisposable
         string nodeId,
         CancellationToken cancellationToken = default)
     {
-        return await client.InvokeClickAsync(
+        if (bridgeClient is not null)
+        {
+            return await bridgeClient.InvokeClickAsync(nodeId, cancellationToken).ConfigureAwait(false);
+        }
+
+        return await client!.InvokeClickAsync(
             new InvokeClickRequest { NodeId = nodeId },
-            headers,
+            headers!,
             cancellationToken: cancellationToken);
     }
 
@@ -110,9 +153,14 @@ public sealed class RemoteControlDesktopSession : IDisposable
         string nodeId,
         CancellationToken cancellationToken = default)
     {
-        return await client.InvokeFocusAsync(
+        if (bridgeClient is not null)
+        {
+            return await bridgeClient.InvokeFocusAsync(nodeId, cancellationToken).ConfigureAwait(false);
+        }
+
+        return await client!.InvokeFocusAsync(
             new InvokeFocusRequest { NodeId = nodeId },
-            headers,
+            headers!,
             cancellationToken: cancellationToken);
     }
 
@@ -130,14 +178,23 @@ public sealed class RemoteControlDesktopSession : IDisposable
         string value,
         CancellationToken cancellationToken = default)
     {
-        return await client.SetPropertyAsync(
+        if (bridgeClient is not null)
+        {
+            return await bridgeClient.SetPropertyAsync(
+                nodeId,
+                propertyName,
+                value,
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        return await client!.SetPropertyAsync(
             new SetPropertyRequest
             {
                 NodeId = nodeId,
                 PropertyName = propertyName,
                 Value = value,
             },
-            headers,
+            headers!,
             cancellationToken: cancellationToken);
     }
 
@@ -153,13 +210,18 @@ public sealed class RemoteControlDesktopSession : IDisposable
         string? categoryPrefix,
         CancellationToken cancellationToken = default)
     {
-        var call = client.WatchLogs(
+        if (bridgeClient is not null)
+        {
+            return bridgeClient.WatchLogsAsync(minimumLevel, categoryPrefix, cancellationToken);
+        }
+
+        var call = client!.WatchLogs(
             new WatchLogsRequest
             {
                 MinimumLevel = minimumLevel,
                 CategoryPrefix = categoryPrefix ?? string.Empty,
             },
-            headers,
+            headers!,
             cancellationToken: cancellationToken);
 
         return ReadLogStreamAsync(call.ResponseStream, cancellationToken);
@@ -178,7 +240,8 @@ public sealed class RemoteControlDesktopSession : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        channel.Dispose();
+        bridgeClient?.Dispose();
+        channel?.Dispose();
         trustedServerCertificate?.Dispose();
     }
 

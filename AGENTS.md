@@ -72,6 +72,7 @@ Avalonia.RemoteControl is a .NET 10 / Avalonia 12 debugging and control system f
 
 Planned packages:
 
+- `Avalonia.RemoteControl.Runtime` - host-independent runtime SDK package for shared desktop/Android-compatible services.
 - `Avalonia.RemoteControl.Server` - embeddable server SDK package.
 - `Avalonia.RemoteControl.Tool` - .NET tool package exposing `avalonia-remote`.
 

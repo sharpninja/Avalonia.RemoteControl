@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed for `ADB-BRIDGE-001`.
+Partially implemented for `ADB-BRIDGE-001`.
 
 ## Context
 
@@ -30,15 +30,15 @@ Current marker fields:
 Supported marker protocol values:
 
 - `grpc`: current desktop/server-capable gRPC endpoint.
-- `arc-protobuf-v1`: reserved Android-compatible bridge protocol for the next proof slice.
+- `arc-protobuf-v1`: Android-compatible bridge protocol.
 
-Until the `arc-protobuf-v1` client adapter is implemented, the client must reject that marker before creating an ADB forward. This is a fail-closed behavior to avoid opening tunnels to an endpoint the tool cannot authenticate and validate correctly.
+The client must reject unknown marker protocols before creating an ADB forward. The current client supports `grpc` and `arc-protobuf-v1` for authenticated unary bridge operations.
 
 ## Planned Bridge Shape
 
 The Android app-side bridge should be a small loopback TCP listener using an explicit length-prefixed protobuf request/response envelope. It must avoid `Microsoft.AspNetCore.App`, Kestrel, and `Grpc.AspNetCore` in the Android target.
 
-The protocol project now defines `BridgeRequest`, `BridgeResponse`, `BridgeMethod`, and `BridgeStatus` protobuf contract types plus a host-agnostic frame codec for the length-prefixed envelope. This establishes the wire shape before Android app-side implementation starts.
+The protocol project defines `BridgeRequest`, `BridgeResponse`, `BridgeMethod`, and `BridgeStatus` protobuf contract types plus a host-agnostic frame codec for the length-prefixed envelope. This establishes the wire shape before Android app-side implementation starts.
 
 The bridge API surface should mirror the product operations instead of exposing arbitrary object access:
 
@@ -49,20 +49,20 @@ The bridge API surface should mirror the product operations instead of exposing 
 - set property
 - watch logs
 
-The implementation should reuse the dispatcher, snapshot, mutation, action, logging, redaction, and authorization services that do not require ASP.NET Core. Split those services into a host-agnostic runtime package before adding Android app-side code so the Android target does not inherit the `Microsoft.AspNetCore.App` framework reference.
+The implementation reuses dispatcher, snapshot, mutation, action, logging, redaction, and authorization services through `Avalonia.RemoteControl.Runtime`. That project targets `net10.0` and `net10.0-android`; it does not reference `Microsoft.AspNetCore.App`, Kestrel, or `Grpc.AspNetCore`.
 
 The desktop tool should select the transport from the marker:
 
 - `grpc` uses the existing `GrpcRemoteControlProbe` and gRPC desktop session.
-- `arc-protobuf-v1` uses a future Android bridge adapter behind the same desktop UI workflows.
+- `arc-protobuf-v1` uses the bridge client adapter behind the same desktop session/probe workflow for capabilities, snapshots, click, focus, and property mutation.
 
-If an external desktop-facing gRPC endpoint is still required for Android sessions, add a host-side localhost gRPC proxy in a later slice after the Android bridge proof passes.
+Bridge tree/log streaming and the Android app-side listener remain future work. If an external desktop-facing gRPC endpoint is still required for Android sessions, add a host-side localhost gRPC proxy in a later slice after the Android bridge proof passes.
 
 ## Alternatives
 
 - Direct ASP.NET Core/Kestrel gRPC in the Android app: rejected by Technical Spike 0.
 - Defer Android support: rejected because ADB connectivity is an MVP capability.
-- Use marker protocol negotiation and fail closed until the adapter exists: selected because it preserves the current ADB UX and gives the bridge proof a testable contract.
+- Use marker protocol negotiation and fail closed until a protocol is implemented: selected because it preserves the current ADB UX and gives the bridge proof a testable contract.
 
 ## Requirements
 
@@ -80,3 +80,4 @@ If an external desktop-facing gRPC endpoint is still required for Android sessio
 - `TR-SEC-SECURITY-015`
 - `TEST-ADB-008`
 - `TEST-ADB-009`
+- `TEST-ADB-010`

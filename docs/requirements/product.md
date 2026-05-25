@@ -43,6 +43,7 @@ The product is valuable only if it is easy to add to an app, easy to connect fro
 
 ## Package Targets
 
+- `Avalonia.RemoteControl.Runtime` - host-independent runtime SDK for shared desktop and Android-compatible services.
 - `Avalonia.RemoteControl.Server` - embeddable server SDK.
 - `Avalonia.RemoteControl.Tool` - .NET tool launcher for the desktop client.
 
@@ -53,7 +54,7 @@ The product is valuable only if it is easy to add to an app, easy to connect fro
 
 ## Open Product Risks
 
-- The current ASP.NET Core/Kestrel gRPC host is not packageable as the Android app-side transport because `Microsoft.AspNetCore.App` has no `android-arm64` runtime pack.
-- ADB package/port/token discovery needs a concrete marker strategy.
+- The ASP.NET Core/Kestrel gRPC host is not packageable as the Android app-side transport because `Microsoft.AspNetCore.App` has no `android-arm64` runtime pack; Android uses the runtime/bridge path instead.
+- The Android app-side bridge listener and probe package still need real emulator/device proof.
 - Property mutation can produce app side effects and needs strict policy controls.
 - Public GitHub plus private Azure DevOps needs a clear release/source-of-truth policy before publishing.
