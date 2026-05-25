@@ -252,6 +252,14 @@ Tests/evidence:
 - `TEST-ADB-005`
 - `TEST-MANUAL-003`
 
+Implemented evidence:
+
+- `RemoteControlAdbClientTests` covers `adb devices -l` parsing, ADB device listing, serial-specific port forwarding, forward cleanup, package marker discovery, and CLI connect cleanup behavior.
+- `AdbClient` creates `adb -s <serial> forward tcp:<hostPort> tcp:<devicePort>` and removes forwards with `adb -s <serial> forward --remove tcp:<hostPort>`.
+- `AdbCommandLine` wires `adb list`, `adb connect`, and `adb cleanup` into the .NET tool workflow.
+- `GrpcRemoteControlProbe` authenticates `GetCapabilities` over the forwarded localhost endpoint.
+- Real emulator/device acceptance remains under Technical Spike 0 and `TEST-MANUAL-003`.
+
 ## Iteration 6 - CI, Packaging, and Release
 
 Requirements:

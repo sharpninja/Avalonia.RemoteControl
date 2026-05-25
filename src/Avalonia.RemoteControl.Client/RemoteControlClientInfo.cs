@@ -38,6 +38,7 @@ public static class RemoteControlClientInfo
           {CommandName} adb list
           {CommandName} adb connect --serial <serial> --package <package>
           {CommandName} adb connect --serial <serial> --device-port <port> --token <token>
+          {CommandName} adb cleanup --serial <serial> [--host-port <port>]
 
         Connection modes:
           local    Loopback debuggee connection.
@@ -45,7 +46,7 @@ public static class RemoteControlClientInfo
           adb      Android emulator/device connection through adb forward.
 
         Current status:
-          Early implementation build. Full client UI and ADB automation are planned but not implemented.
+          Early implementation build. ADB list/connect/cleanup are available; full client UI is planned.
         """;
     }
 }

@@ -17,14 +17,38 @@ The user should not need to manually type `adb forward` commands for normal use.
 7. Client connects to `127.0.0.1:<hostPort>`.
 8. Client cleans up the forward on disconnect by default.
 
-## Planned CLI
+## CLI
 
 ```powershell
 avalonia-remote adb list
-avalonia-remote adb connect --serial emulator-5554 --package com.example.app
-avalonia-remote adb connect --serial emulator-5554 --device-port 47100 --token <token>
-avalonia-remote adb cleanup --serial emulator-5554
+avalonia-remote adb connect --serial emulator-5554 --package com.example.app --keep-forward
+avalonia-remote adb connect --serial emulator-5554 --device-port 47100 --token <token> --keep-forward
+avalonia-remote adb cleanup --serial emulator-5554 --host-port 47100
 ```
+
+Default `adb connect` behavior creates the forward, probes the authenticated gRPC endpoint, and removes the forward before exit. Use `--keep-forward` when a follow-on tool or manual diagnostic session should keep the tunnel open.
+
+## Implemented Client Behavior
+
+- `adb list` runs `adb devices -l` and parses serial, state, model, product, and device metadata.
+- `adb connect` creates `adb -s <serial> forward tcp:<hostPort> tcp:<devicePort>`.
+- `adb connect` requires `--token` unless package marker discovery supplies one.
+- `adb connect --package <package>` reads `files/avalonia-remote-control.json` through `adb shell run-as <package> cat ...`.
+- After forwarding, the client probes `GetCapabilities` over `http://127.0.0.1:<hostPort>` with bearer authentication.
+- `adb cleanup` removes a host forward using `adb -s <serial> forward --remove tcp:<hostPort>`.
+
+## Android Marker
+
+The package marker is a JSON file in app-private storage:
+
+```json
+{
+  "devicePort": 47100,
+  "token": "debug-session-token"
+}
+```
+
+The file is intentionally read through `run-as`, so it only works for debuggable packages and does not require broad device storage access.
 
 ## Requirements
 
@@ -71,6 +95,8 @@ Spike output:
 - minimal proof commands
 - pass/fail evidence
 - required changes to protocol/hosting requirements
+
+Current status: host-side ADB workflow is implemented and unit-tested. Technical Spike 0 still needs a real emulator/device proof that an Avalonia Android app can host or bridge the selected app-side transport and publish the marker safely.
 
 ## Open Design Questions
 

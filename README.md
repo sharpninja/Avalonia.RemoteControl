@@ -2,7 +2,7 @@
 
 Avalonia.RemoteControl is a debugging and remote-control system for Avalonia 12 applications.
 
-The project is in early Byrd implementation. Current deliverables include requirements, architecture, solution skeleton, package metadata, CI scaffolding, gRPC protocol contracts, hosted gRPC startup, bearer-token RPC authentication, read-only tree snapshots, live tree streaming, guarded property mutation, guarded click invocation, and bounded `ILogger` streaming.
+The project is in early Byrd implementation. Current deliverables include requirements, architecture, solution skeleton, package metadata, CI scaffolding, gRPC protocol contracts, hosted gRPC startup, bearer-token RPC authentication, read-only tree snapshots, live tree streaming, guarded property mutation, guarded click invocation, bounded `ILogger` streaming, and ADB list/connect/cleanup CLI workflows.
 
 Planned packages:
 
@@ -26,4 +26,13 @@ dotnet restore Avalonia.RemoteControl.slnx
 dotnet build Avalonia.RemoteControl.slnx --configuration Release --no-restore
 dotnet test Avalonia.RemoteControl.slnx --configuration Release --no-build
 dotnet pack Avalonia.RemoteControl.slnx --configuration Release --no-build --output artifacts/packages
+```
+
+ADB CLI:
+
+```powershell
+avalonia-remote adb list
+avalonia-remote adb connect --serial emulator-5554 --device-port 47100 --token <token> --keep-forward
+avalonia-remote adb connect --serial emulator-5554 --package com.example.app --keep-forward
+avalonia-remote adb cleanup --serial emulator-5554 --host-port 47100
 ```

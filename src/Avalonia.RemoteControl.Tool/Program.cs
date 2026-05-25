@@ -1,14 +1,25 @@
 using Avalonia.RemoteControl.Client;
+using Avalonia.RemoteControl.Client.Adb;
+using Avalonia.RemoteControl.Client.Diagnostics;
 
-if (args.Length == 0 || args.Contains("--help", StringComparer.OrdinalIgnoreCase) || args.Contains("-h", StringComparer.OrdinalIgnoreCase))
+if (args.Length == 0)
 {
     Console.WriteLine(RemoteControlClientInfo.CreateHelpText());
     return 0;
 }
 
-if (args is ["adb", "list"])
+if (args is ["adb", .. var adbArgs])
 {
-    Console.WriteLine("ADB discovery is planned for Iteration 5. See docs/architecture/android-adb-connectivity.md.");
+    var adbCommandLine = new AdbCommandLine(
+        new AdbClient(new ProcessAdbCommandRunner()),
+        new GrpcRemoteControlProbe());
+
+    return await adbCommandLine.RunAsync(adbArgs, Console.Out, Console.Error);
+}
+
+if (args.Contains("--help", StringComparer.OrdinalIgnoreCase) || args.Contains("-h", StringComparer.OrdinalIgnoreCase))
+{
+    Console.WriteLine(RemoteControlClientInfo.CreateHelpText());
     return 0;
 }
 
