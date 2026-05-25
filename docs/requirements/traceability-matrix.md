@@ -357,6 +357,7 @@ Requirements:
 - `TR-PACK-PACKAGE-001`
 - `TR-PACK-PACKAGE-004`
 - `TR-PACK-PACKAGE-005`
+- `TR-PACK-PACKAGE-006`
 - `TR-CI-RELEASE-001`
 - `TR-CI-RELEASE-002`
 - `TR-CI-RELEASE-003`
@@ -368,6 +369,7 @@ Tests/evidence:
 - `TEST-PACK-001`
 - `TEST-PACK-002`
 - `TEST-PACK-005`
+- `TEST-PACK-006`
 - `TEST-CI-001`
 - `TEST-CI-002`
 - package artifacts
@@ -376,9 +378,10 @@ Tests/evidence:
 Implemented evidence:
 
 - `Directory.Build.props` enables repository URL metadata, SourceLink, embedded untracked sources, `.nupkg`, and `.snupkg` package outputs.
-- `Avalonia.RemoteControl.Runtime` is packable and supplies the Android-compatible runtime dependency for future bridge debuggee packages.
+- `SharpNinja.Avalonia.RemoteControl.Protocol` is packable so Runtime and Server package dependencies resolve from NuGet.
+- `SharpNinja.Avalonia.RemoteControl.Runtime` is packable and supplies the Android-compatible runtime dependency for future bridge debuggee packages.
 - `Microsoft.SourceLink.GitHub` is centrally versioned in `Directory.Packages.props`.
 - `.github/workflows/ci.yml` restores, builds, tests, packs, uploads artifacts, and publishes tagged `v*` packages only when `NUGET_API_KEY` is configured.
 - `azure-pipelines.yml` restores, builds, tests, packs, publishes build artifacts, and can publish tagged `v*` packages only when `NuGetApiKey` is configured.
-- `docs/release.md` documents GitHub as public release source of truth, Azure as private validation/mirror, tagged release shape, and duplicate publish prevention through `--skip-duplicate`.
+- `docs/release.md` documents GitHub as public release source of truth, Azure as private validation/mirror, tagged release shape, owner-controlled `SharpNinja.Avalonia.RemoteControl.*` package IDs, and duplicate publish prevention through `--skip-duplicate`.
 - Azure Pipelines definition `Avalonia.RemoteControl-CI` has run successfully against `master`; GitHub Actions is defined but current hosted runs are blocked before job start by the GitHub account billing lock.

@@ -5,7 +5,7 @@
     <IsPackable>true</IsPackable>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>avalonia-remote</ToolCommandName>
-    <PackageId>Avalonia.RemoteControl.Tool</PackageId>
+    <PackageId>SharpNinja.Avalonia.RemoteControl.Tool</PackageId>
     <Title>Avalonia Remote Control Tool</Title>
     <Description>Command-line launcher for the Avalonia Remote Control client.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

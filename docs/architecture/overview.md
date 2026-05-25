@@ -11,7 +11,7 @@ Avalonia.RemoteControl has four major parts:
 
 ## Server SDK
 
-The server SDK will be packaged as `Avalonia.RemoteControl.Server`.
+The server SDK will be packaged as `SharpNinja.Avalonia.RemoteControl.Server`.
 
 Implemented responsibilities:
 
@@ -45,7 +45,7 @@ The protocol must support version/capability negotiation because Android transpo
 
 ## Client
 
-The client is an Avalonia desktop application launched by the .NET tool package `Avalonia.RemoteControl.Tool`.
+The client is an Avalonia desktop application launched by the .NET tool package `SharpNinja.Avalonia.RemoteControl.Tool`.
 
 Command:
 
@@ -81,10 +81,10 @@ The package-private Android marker is the negotiation point for this split. Miss
 
 ## Current Implementation Status
 
-- `Avalonia.RemoteControl.Protocol` defines the versioned gRPC and bridge contracts.
-- `Avalonia.RemoteControl.Runtime` provides host-independent runtime services for dispatcher-safe tree snapshots, mutation/action services, logging, bearer authentication, bridge dispatch, and Android-compatible builds.
-- `Avalonia.RemoteControl.Server` starts a Kestrel HTTP/2 gRPC endpoint, enforces bearer authentication, validates listener/TLS startup policy, and hosts the runtime services for desktop/server-capable targets.
-- `Avalonia.RemoteControl.Tool` opens the desktop client UI by default and also provides ADB device listing, forwarding, package marker discovery, authenticated endpoint probing, manual TLS certificate acceptance, and cleanup commands.
+- `SharpNinja.Avalonia.RemoteControl.Protocol` defines the versioned gRPC and bridge contracts.
+- `SharpNinja.Avalonia.RemoteControl.Runtime` provides host-independent runtime services for dispatcher-safe tree snapshots, mutation/action services, logging, bearer authentication, bridge dispatch, and Android-compatible builds.
+- `SharpNinja.Avalonia.RemoteControl.Server` starts a Kestrel HTTP/2 gRPC endpoint, enforces bearer authentication, validates listener/TLS startup policy, and hosts the runtime services for desktop/server-capable targets.
+- `SharpNinja.Avalonia.RemoteControl.Tool` opens the desktop client UI by default and also provides ADB device listing, forwarding, package marker discovery, authenticated endpoint probing, manual TLS certificate acceptance, and cleanup commands.
 - CI files exist for GitHub Actions and Azure Pipelines.
 - Broader Android emulator/device matrix coverage and richer client profile management remain future slices.
 
@@ -108,8 +108,8 @@ See `docs/architecture/security-model.md`.
 
 Packages:
 
-- `Avalonia.RemoteControl.Server`
-- `Avalonia.RemoteControl.Tool`
+- `SharpNinja.Avalonia.RemoteControl.Server`
+- `SharpNinja.Avalonia.RemoteControl.Tool`
 
 Pipelines:
 

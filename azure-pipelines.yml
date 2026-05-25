@@ -74,9 +74,10 @@ steps:
 
         $expectedVersion = $tag -replace '^v', ''
         $packagePrefixes = @(
-          'Avalonia.RemoteControl.Runtime.',
-          'Avalonia.RemoteControl.Server.',
-          'Avalonia.RemoteControl.Tool.'
+          'SharpNinja.Avalonia.RemoteControl.Protocol.',
+          'SharpNinja.Avalonia.RemoteControl.Runtime.',
+          'SharpNinja.Avalonia.RemoteControl.Server.',
+          'SharpNinja.Avalonia.RemoteControl.Tool.'
         )
 
         $packages = Get-ChildItem -Path "$(Build.ArtifactStagingDirectory)/packages" -Filter *.nupkg | Select-Object -ExpandProperty FullName

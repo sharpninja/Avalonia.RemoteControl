@@ -64,6 +64,7 @@
 - `TEST-PACK-003`: The tool can be installed from local artifacts.
 - `TEST-PACK-004`: `avalonia-remote --help` works after local install.
 - `TEST-PACK-005`: `dotnet pack --no-build` produces the runtime NuGet package.
+- `TEST-PACK-006`: `dotnet pack --no-build` produces the protocol NuGet package used by SDK package dependencies.
 - `TEST-CI-001`: GitHub Actions runs restore/build/test/pack.
 - `TEST-CI-002`: Azure Pipelines runs restore/build/test/pack.
 

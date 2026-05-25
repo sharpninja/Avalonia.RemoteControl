@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>net10.0;net10.0-android</TargetFrameworks>
     <IsPackable>true</IsPackable>
-    <PackageId>Avalonia.RemoteControl.Runtime</PackageId>
+    <PackageId>SharpNinja.Avalonia.RemoteControl.Runtime</PackageId>
     <Title>Avalonia Remote Control Runtime</Title>
     <Description>Host-independent Avalonia remote inspection and control runtime services.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

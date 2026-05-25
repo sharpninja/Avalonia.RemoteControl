@@ -4,11 +4,12 @@
 
 - `TR-PLAT-CORE-001`: Target .NET 10.
 - `TR-PLAT-CORE-002`: Target Avalonia 12.
-- `TR-PACK-PACKAGE-001`: Package the server SDK as `Avalonia.RemoteControl.Server`.
-- `TR-PACK-PACKAGE-002`: Package the client launcher as `Avalonia.RemoteControl.Tool`.
+- `TR-PACK-PACKAGE-001`: Package the server SDK as `SharpNinja.Avalonia.RemoteControl.Server`.
+- `TR-PACK-PACKAGE-002`: Package the client launcher as `SharpNinja.Avalonia.RemoteControl.Tool`.
 - `TR-PACK-PACKAGE-003`: The .NET tool command name is `avalonia-remote`.
 - `TR-PACK-PACKAGE-004`: Packages include symbols and SourceLink when package infrastructure is implemented.
-- `TR-PACK-PACKAGE-005`: Package the host-independent runtime as `Avalonia.RemoteControl.Runtime` for Android-compatible consumers.
+- `TR-PACK-PACKAGE-005`: Package the host-independent runtime as `SharpNinja.Avalonia.RemoteControl.Runtime` for Android-compatible consumers.
+- `TR-PACK-PACKAGE-006`: Package the shared protocol contracts as `SharpNinja.Avalonia.RemoteControl.Protocol` so SDK package dependencies resolve from NuGet.
 
 ## Protocol
 

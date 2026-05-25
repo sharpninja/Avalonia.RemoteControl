@@ -6,8 +6,10 @@ The project is in early Byrd implementation. Current deliverables include requir
 
 Packages:
 
-- `Avalonia.RemoteControl.Server` - embeddable server SDK for debuggee applications.
-- `Avalonia.RemoteControl.Tool` - .NET tool that launches the remote-control client through `avalonia-remote`.
+- `SharpNinja.Avalonia.RemoteControl.Protocol` - shared gRPC and bridge protocol contracts.
+- `SharpNinja.Avalonia.RemoteControl.Runtime` - Android-compatible shared runtime SDK.
+- `SharpNinja.Avalonia.RemoteControl.Server` - embeddable server SDK for debuggee applications.
+- `SharpNinja.Avalonia.RemoteControl.Tool` - .NET tool that launches the remote-control client through `avalonia-remote`.
 
 Running `avalonia-remote` with no arguments opens the desktop client. `avalonia-remote --help` and `avalonia-remote adb ...` run command-line workflows. The desktop client can save and forget its default endpoint/token profile in user-scoped application data.
 

@@ -53,9 +53,47 @@ jobs:
             Write-Host "NUGET_API_KEY is not configured; skipping publish."
             exit 0
           }
-          Get-ChildItem artifacts/packages -Filter *.nupkg | ForEach-Object {
-            dotnet nuget push $_.FullName --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --skip-duplicate
+
+          $tag = $env:GITHUB_REF -replace '^refs/tags/', ''
+          if ($tag -notmatch '^v?\d+\.\d+\.\d+([.-][0-9A-Za-z][0-9A-Za-z.-]*)?$') {
+            Write-Host "Tag '$tag' is not a version tag; skipping nuget.org publish."
+            exit 0
           }
-          Get-ChildItem artifacts/packages -Filter *.snupkg | ForEach-Object {
-            dotnet nuget push $_.FullName --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --skip-duplicate
+
+          if ($tag -match '-') {
+            throw "Tag '$tag' is a prerelease tag. Full release publish requires a stable version tag like v1.2.3."
+          }
+
+          $expectedVersion = $tag -replace '^v', ''
+          $packagePrefixes = @(
+            'SharpNinja.Avalonia.RemoteControl.Protocol.',
+            'SharpNinja.Avalonia.RemoteControl.Runtime.',
+            'SharpNinja.Avalonia.RemoteControl.Server.',
+            'SharpNinja.Avalonia.RemoteControl.Tool.'
+          )
+
+          $packages = Get-ChildItem artifacts/packages -Filter *.nupkg | Select-Object -ExpandProperty FullName
+          foreach ($package in $packages) {
+            $packageName = Split-Path -Leaf $package
+            $baseName = [System.IO.Path]::GetFileNameWithoutExtension($packageName)
+            $packageVersion = $null
+            foreach ($prefix in $packagePrefixes) {
+              if ($baseName.StartsWith($prefix, [System.StringComparison]::Ordinal)) {
+                $packageVersion = $baseName.Substring($prefix.Length)
+                break
+              }
+            }
+
+            if ([string]::IsNullOrWhiteSpace($packageVersion)) {
+              throw "Could not parse package version from $packageName."
+            }
+
+            if ($packageVersion -ne $expectedVersion) {
+              throw "Version tag '$tag' produced $packageName version '$packageVersion'; expected '$expectedVersion'."
+            }
+
+            dotnet nuget push $package --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --skip-duplicate
+            if ($LASTEXITCODE -ne 0) {
+              throw "dotnet nuget push failed for $package"
+            }
           }

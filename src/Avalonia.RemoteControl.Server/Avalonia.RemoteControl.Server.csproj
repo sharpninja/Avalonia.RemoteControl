@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>true</IsPackable>
-    <PackageId>Avalonia.RemoteControl.Server</PackageId>
+    <PackageId>SharpNinja.Avalonia.RemoteControl.Server</PackageId>
     <Title>Avalonia Remote Control Server</Title>
     <Description>Embeddable remote inspection and control server for Avalonia applications.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

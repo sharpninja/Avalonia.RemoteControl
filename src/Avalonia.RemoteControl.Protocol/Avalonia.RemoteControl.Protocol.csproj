@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net10.0;net10.0-android</TargetFrameworks>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
+    <PackageId>SharpNinja.Avalonia.RemoteControl.Protocol</PackageId>
+    <Title>Avalonia Remote Control Protocol</Title>
+    <Description>Versioned gRPC and bridge protocol contracts for Avalonia Remote Control.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
