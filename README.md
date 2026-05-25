@@ -13,6 +13,15 @@ Packages:
 
 Running `avalonia-remote` with no arguments opens the desktop client. `avalonia-remote --help` and `avalonia-remote adb ...` run command-line workflows. The desktop client can save and forget its default endpoint/token profile in user-scoped application data.
 
+User docs:
+
+- [Getting started](docs/user/getting-started.md)
+- [Server integration](docs/user/server-integration.md)
+- [Client tool](docs/user/client-tool.md)
+- [Android ADB connections](docs/user/android-adb.md)
+- [Security guide](docs/user/security.md)
+- [Troubleshooting](docs/user/troubleshooting.md)
+
 Security posture:
 
 - disabled by default

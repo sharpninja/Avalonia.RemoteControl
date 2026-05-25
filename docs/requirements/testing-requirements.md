@@ -68,6 +68,10 @@
 - `TEST-CI-001`: GitHub Actions runs restore/build/test/pack.
 - `TEST-CI-002`: Azure Pipelines runs restore/build/test/pack.
 
+## Documentation Tests
+
+- `TEST-DOC-001`: User docs are present and linked from the README, with commands for tool install, server package install, local connection, ADB connection, security, and troubleshooting.
+
 ## Manual Acceptance
 
 - `TEST-MANUAL-001`: Launch sample debuggee and connect from client over loopback.

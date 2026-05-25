@@ -385,3 +385,25 @@ Implemented evidence:
 - `azure-pipelines.yml` restores, builds, tests, packs, publishes build artifacts, and can publish tagged `v*` packages only when `NuGetApiKey` is configured.
 - `docs/release.md` documents GitHub as public release source of truth, Azure as private validation/mirror, tagged release shape, owner-controlled `SharpNinja.Avalonia.RemoteControl.*` package IDs, and duplicate publish prevention through `--skip-duplicate`.
 - Azure Pipelines definition `Avalonia.RemoteControl-CI` has run successfully against `master`; GitHub Actions is defined but current hosted runs are blocked before job start by the GitHub account billing lock.
+
+## Iteration 8 - User Documentation
+
+Requirements:
+
+- `TR-DOC-USER-001`
+
+Tests/evidence:
+
+- `TEST-DOC-001`
+- README user-doc links
+- user documentation files under `docs/user`
+
+Implemented evidence:
+
+- `docs/user/index.md` provides the user documentation entry point.
+- `docs/user/getting-started.md` covers tool installation, server package installation, loopback server setup, and first connection.
+- `docs/user/server-integration.md` covers service registration, root providers, options, mutation policy, logging, TLS, and manual start/stop.
+- `docs/user/client-tool.md` covers desktop client launch, connection fields, saved profiles, tree inspection, actions, property edits, and logs.
+- `docs/user/android-adb.md` covers ADB device listing, explicit port/token connection, package marker discovery, cleanup, and Android bridge responsibilities.
+- `docs/user/security.md` documents the safety model, tokens, TLS, mutation policy, redaction, ADB posture, and enablement checklist.
+- `docs/user/troubleshooting.md` covers common install, startup, connection, authentication, tree, mutation, action, logging, ADB, and NuGet package-name issues.

@@ -1,0 +1,122 @@
+# Troubleshooting
+
+## Tool Command Not Found
+
+Install or update the .NET tool:
+
+```powershell
+dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.1.2
+dotnet tool update --global SharpNinja.Avalonia.RemoteControl.Tool
+```
+
+Make sure the .NET global tools directory is on `PATH`.
+
+## Server Does Not Start
+
+Check startup validation:
+
+- `IsEnabled` must be true.
+- `AuthenticationToken` is required when authentication is enabled.
+- Non-loopback listeners need `TlsCertificatePath`.
+- Cleartext without TLS is accepted only for loopback or explicit ADB tunnel sessions.
+
+Check debuggee logs for:
+
+```text
+Avalonia.RemoteControl startup validation failed
+```
+
+## Client Cannot Connect
+
+Verify:
+
+- Endpoint host and port.
+- Token matches the debuggee.
+- The debuggee process is still running.
+- The server logged its bound address.
+- TLS certificate trust is configured for network endpoints.
+
+For local cleartext HTTP/2, use `http://127.0.0.1:<port>`.
+
+## Authentication Fails
+
+Bearer token authentication is required for all transports. Recreate the token, restart the debuggee, and reconnect with the same value.
+
+Do not include `Bearer ` in the token field unless a specific API asks for a full authorization header.
+
+## Tree Is Empty
+
+The root provider probably returned null. Confirm that your `IRemoteControlRootProvider` is registered after `AddAvaloniaRemoteControl` and returns the current `Window`, `TopLevel`, or root `Control`.
+
+## Property Edit Is Denied
+
+Mutation can fail when:
+
+- The property is not in `AllowedMutableProperties`.
+- The property is sensitive by name.
+- The property is not public and settable.
+- The value cannot be converted to the target type.
+- The selected node is stale.
+
+Refresh the tree after stale-node errors.
+
+## Click Or Focus Is Denied
+
+Remote actions require:
+
+```csharp
+options.AllowRemoteActions = true;
+```
+
+The selected control must also still exist and support the requested action.
+
+## Logs Are Missing
+
+Confirm that the debuggee uses `Microsoft.Extensions.Logging` and that remote-control services are registered in the same service provider as the app logging pipeline.
+
+If log volume is high, check dropped-message counts and increase:
+
+```csharp
+options.LogBufferCapacity = 4096;
+```
+
+## ADB Device Not Listed
+
+Run:
+
+```powershell
+adb devices -l
+```
+
+Fix the Android SDK path, emulator/device state, or device authorization before using `avalonia-remote adb`.
+
+## ADB Package Marker Cannot Be Read
+
+Package marker discovery uses:
+
+```text
+adb shell run-as <package> cat files/avalonia-remote-control.json
+```
+
+Common causes:
+
+- App is not debuggable.
+- Package name is wrong.
+- App did not start the bridge listener.
+- App did not write the marker file.
+- Device has stale app data from a previous build.
+
+Fallback:
+
+```powershell
+avalonia-remote adb connect --serial <serial> --device-port 47100 --token <token>
+```
+
+## NuGet Restore Cannot Resolve Packages
+
+Use the `SharpNinja.Avalonia.RemoteControl.*` package IDs. The older `Avalonia.RemoteControl.*` IDs are not the public package names.
+
+```powershell
+dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.1.2
+dotnet add package SharpNinja.Avalonia.RemoteControl.Runtime --version 0.1.2
+```

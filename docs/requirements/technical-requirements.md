@@ -106,3 +106,7 @@
 - `TR-CI-RELEASE-003`: Tagged `v*` releases publish packages through protected secrets/service connections.
 - `TR-CI-RELEASE-004`: Duplicate publish prevention exists across GitHub and Azure release paths.
 - `TR-CI-RELEASE-005`: Public GitHub and private Azure DevOps source-of-truth policy is documented before first package publish.
+
+## Documentation
+
+- `TR-DOC-USER-001`: User documentation covers installation, server integration, client operation, Android ADB connection, security posture, and troubleshooting for published packages.
