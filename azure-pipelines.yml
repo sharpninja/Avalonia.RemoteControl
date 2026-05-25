@@ -1,0 +1,42 @@
+trigger:
+  branches:
+    include:
+      - master
+      - main
+
+pr:
+  branches:
+    include:
+      - master
+      - main
+
+pool:
+  vmImage: windows-latest
+
+variables:
+  BuildConfiguration: Release
+
+steps:
+  - task: UseDotNet@2
+    displayName: Use .NET SDK
+    inputs:
+      packageType: sdk
+      version: 10.0.x
+
+  - script: dotnet restore Avalonia.RemoteControl.slnx
+    displayName: Restore
+
+  - script: dotnet build Avalonia.RemoteControl.slnx --configuration $(BuildConfiguration) --no-restore
+    displayName: Build
+
+  - script: dotnet test Avalonia.RemoteControl.slnx --configuration $(BuildConfiguration) --no-build --logger trx
+    displayName: Test
+
+  - script: dotnet pack Avalonia.RemoteControl.slnx --configuration $(BuildConfiguration) --no-build --output $(Build.ArtifactStagingDirectory)/packages
+    displayName: Pack
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish package artifacts
+    inputs:
+      PathtoPublish: $(Build.ArtifactStagingDirectory)/packages
+      ArtifactName: nuget-packages

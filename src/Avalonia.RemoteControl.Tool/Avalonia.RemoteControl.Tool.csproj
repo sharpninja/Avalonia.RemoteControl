@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>avalonia-remote</ToolCommandName>
+    <PackageId>Avalonia.RemoteControl.Tool</PackageId>
+    <Title>Avalonia Remote Control Tool</Title>
+    <Description>Command-line launcher for the Avalonia Remote Control client.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Avalonia.RemoteControl.Client\Avalonia.RemoteControl.Client.csproj" />
+  </ItemGroup>
+</Project>

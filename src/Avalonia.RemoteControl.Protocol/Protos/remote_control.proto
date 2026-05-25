@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+option csharp_namespace = "Avalonia.RemoteControl.Protocol.V1";
+
+package avalonia.remotecontrol.v1;
+
+service RemoteControl {
+  rpc GetCapabilities(GetCapabilitiesRequest) returns (GetCapabilitiesResponse);
+  rpc GetSnapshot(GetSnapshotRequest) returns (TreeSnapshot);
+  rpc WatchTree(WatchTreeRequest) returns (stream TreeUpdate);
+  rpc InvokeClick(InvokeClickRequest) returns (CommandResult);
+  rpc SetProperty(SetPropertyRequest) returns (CommandResult);
+  rpc WatchLogs(WatchLogsRequest) returns (stream LogEntry);
+}
+
+message GetCapabilitiesRequest {
+}
+
+message GetCapabilitiesResponse {
+  string protocol_version = 1;
+  bool supports_tree_snapshots = 2;
+  bool supports_tree_streaming = 3;
+  bool supports_click_invocation = 4;
+  bool supports_property_mutation = 5;
+  bool supports_log_streaming = 6;
+}
+
+message GetSnapshotRequest {
+}
+
+message WatchTreeRequest {
+}
+
+message TreeSnapshot {
+  uint64 sequence = 1;
+  repeated TreeNode nodes = 2;
+}
+
+message TreeUpdate {
+  uint64 sequence = 1;
+  TreeSnapshot snapshot = 2;
+  string reason = 3;
+}
+
+message TreeNode {
+  string id = 1;
+  string parent_id = 2;
+  string type_name = 3;
+  string name = 4;
+  string automation_id = 5;
+  Rect bounds = 6;
+  bool is_visible = 7;
+  bool is_enabled = 8;
+  bool is_focused = 9;
+  repeated PropertyValue properties = 10;
+  repeated string classes = 11;
+  string automation_name = 12;
+}
+
+message Rect {
+  double x = 1;
+  double y = 2;
+  double width = 3;
+  double height = 4;
+}
+
+message PropertyValue {
+  string name = 1;
+  string declaring_type = 2;
+  string value = 3;
+  string value_type = 4;
+  bool can_write = 5;
+  bool is_redacted = 6;
+}
+
+message InvokeClickRequest {
+  string node_id = 1;
+}
+
+message SetPropertyRequest {
+  string node_id = 1;
+  string property_name = 2;
+  string value = 3;
+}
+
+message CommandResult {
+  bool succeeded = 1;
+  string message = 2;
+}
+
+message WatchLogsRequest {
+  string minimum_level = 1;
+  string category_prefix = 2;
+}
+
+message LogEntry {
+  uint64 sequence = 1;
+  string timestamp_utc = 2;
+  string level = 3;
+  string category = 4;
+  int32 event_id = 5;
+  string message = 6;
+  string exception_summary = 7;
+  uint64 dropped_count = 8;
+  string structured_state = 9;
+  string scope_summary = 10;
+}
