@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Avalonia.RemoteControl.Server.Threading;
 using Microsoft.Extensions.Logging;
@@ -172,6 +173,51 @@ public sealed class RemoteControlPropertyMutationService
                 return true;
             }
 
+            if (actualType == typeof(Thickness))
+            {
+                convertedValue = ParseThickness(value);
+                return true;
+            }
+
+            if (actualType == typeof(CornerRadius))
+            {
+                convertedValue = ParseCornerRadius(value);
+                return true;
+            }
+
+            if (actualType == typeof(Point))
+            {
+                var values = ParseDoubles(value, 2);
+                convertedValue = new Point(values[0], values[1]);
+                return true;
+            }
+
+            if (actualType == typeof(Size))
+            {
+                var values = ParseDoubles(value, 2);
+                convertedValue = new Size(values[0], values[1]);
+                return true;
+            }
+
+            if (actualType == typeof(Rect))
+            {
+                var values = ParseDoubles(value, 4);
+                convertedValue = new Rect(values[0], values[1], values[2], values[3]);
+                return true;
+            }
+
+            if (actualType == typeof(Color))
+            {
+                convertedValue = Color.Parse(value);
+                return true;
+            }
+
+            if (actualType.IsAssignableFrom(typeof(SolidColorBrush)))
+            {
+                convertedValue = new SolidColorBrush(Color.Parse(value));
+                return true;
+            }
+
             convertedValue = Convert.ChangeType(value, actualType, CultureInfo.InvariantCulture);
             return true;
         }
@@ -180,5 +226,39 @@ public sealed class RemoteControlPropertyMutationService
             convertedValue = null;
             return false;
         }
+    }
+
+    private static Thickness ParseThickness(string value)
+    {
+        var values = ParseDoubles(value, 1, 4);
+
+        return values.Length == 1
+            ? new Thickness(values[0])
+            : new Thickness(values[0], values[1], values[2], values[3]);
+    }
+
+    private static CornerRadius ParseCornerRadius(string value)
+    {
+        var values = ParseDoubles(value, 1, 4);
+
+        return values.Length == 1
+            ? new CornerRadius(values[0])
+            : new CornerRadius(values[0], values[1], values[2], values[3]);
+    }
+
+    private static double[] ParseDoubles(string value, params int[] acceptedCounts)
+    {
+        var values = value
+            .Split([',', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(part => double.Parse(part, CultureInfo.InvariantCulture))
+            .ToArray();
+
+        if (!acceptedCounts.Contains(values.Length))
+        {
+            throw new FormatException(
+                $"Expected {string.Join(" or ", acceptedCounts)} numeric values.");
+        }
+
+        return values;
     }
 }

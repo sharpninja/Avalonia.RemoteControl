@@ -9,6 +9,7 @@ service RemoteControl {
   rpc GetSnapshot(GetSnapshotRequest) returns (TreeSnapshot);
   rpc WatchTree(WatchTreeRequest) returns (stream TreeUpdate);
   rpc InvokeClick(InvokeClickRequest) returns (CommandResult);
+  rpc InvokeFocus(InvokeFocusRequest) returns (CommandResult);
   rpc SetProperty(SetPropertyRequest) returns (CommandResult);
   rpc WatchLogs(WatchLogsRequest) returns (stream LogEntry);
 }
@@ -74,6 +75,10 @@ message PropertyValue {
 }
 
 message InvokeClickRequest {
+  string node_id = 1;
+}
+
+message InvokeFocusRequest {
   string node_id = 1;
 }
 

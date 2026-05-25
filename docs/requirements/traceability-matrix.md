@@ -164,7 +164,9 @@ Implemented evidence:
 
 - `RemoteControlTreeStreamTests` covers periodic live snapshot streaming and cancellation.
 - `RemoteControlCommandTests` covers deny-by-default mutation, allow-listed mutation, sensitive mutation blocking, guarded click invocation, and gRPC command mapping.
-- Focus invocation and pointer-center synthesis remain planned.
+- `RemoteControlCommandTests` covers guarded focus invocation and gRPC focus command mapping.
+- `RemoteControlCommandTests` covers configured mutation for string, `Thickness`, `CornerRadius`, `Point`, `Size`, `Rect`, and solid color brush values.
+- Pointer-center synthesis remains planned; current click support uses button semantic invocation.
 
 ## Iteration 3 - Logging
 

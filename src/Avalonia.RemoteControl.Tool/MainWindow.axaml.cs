@@ -141,6 +141,26 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private async void InvokeFocusClicked(object? sender, RoutedEventArgs e)
+    {
+        if (session is null || selectedNode is null)
+        {
+            StatusText.Text = "Select a node before requesting focus.";
+            return;
+        }
+
+        try
+        {
+            var result = await session.InvokeFocusAsync(selectedNode.Id);
+            StatusText.Text = result.Message;
+            await RefreshSnapshotAsync();
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"Focus failed: {ex.Message}";
+        }
+    }
+
     private async void SetPropertyClicked(object? sender, RoutedEventArgs e)
     {
         if (session is null || selectedNode is null)

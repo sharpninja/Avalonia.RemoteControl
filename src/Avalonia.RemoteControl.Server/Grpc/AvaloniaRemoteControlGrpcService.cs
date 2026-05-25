@@ -102,6 +102,15 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
     }
 
     /// <inheritdoc />
+    public override async Task<CommandResult> InvokeFocus(
+        InvokeFocusRequest request,
+        ServerCallContext context)
+    {
+        var result = await actionInvoker.InvokeFocusAsync(request.NodeId);
+        return result.ToGrpc();
+    }
+
+    /// <inheritdoc />
     public override async Task<CommandResult> SetProperty(
         SetPropertyRequest request,
         ServerCallContext context)

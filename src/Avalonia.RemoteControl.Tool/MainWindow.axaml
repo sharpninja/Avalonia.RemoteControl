@@ -48,9 +48,12 @@
       </Border>
 
       <Border Grid.Column="2" Padding="10" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
-        <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="8">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="8">
           <TextBlock Text="Actions" FontWeight="SemiBold" />
-          <Button Grid.Row="1" Content="Invoke Click" Click="InvokeClickClicked" HorizontalAlignment="Left" />
+          <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+            <Button Content="Invoke Click" Click="InvokeClickClicked" />
+            <Button Content="Focus" Click="InvokeFocusClicked" />
+          </StackPanel>
           <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="8">
             <TextBox x:Name="PropertyNameBox" PlaceholderText="Property name" />
             <TextBox x:Name="PropertyValueBox" Grid.Column="1" PlaceholderText="Value" />

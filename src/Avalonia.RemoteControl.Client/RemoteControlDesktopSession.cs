@@ -92,6 +92,22 @@ public sealed class RemoteControlDesktopSession : IDisposable
     }
 
     /// <summary>
+    /// Requests focus on a remote node.
+    /// </summary>
+    /// <param name="nodeId">Stable remote node ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Command result.</returns>
+    public async Task<CommandResult> InvokeFocusAsync(
+        string nodeId,
+        CancellationToken cancellationToken = default)
+    {
+        return await client.InvokeFocusAsync(
+            new InvokeFocusRequest { NodeId = nodeId },
+            headers,
+            cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
     /// Sets a remote property.
     /// </summary>
     /// <param name="nodeId">Stable remote node ID.</param>

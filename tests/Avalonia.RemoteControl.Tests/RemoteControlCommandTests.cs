@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.RemoteControl.Server;
 using Avalonia.RemoteControl.Server.Commands;
 using Avalonia.RemoteControl.Server.Grpc;
@@ -41,6 +43,38 @@ public sealed class RemoteControlCommandTests
 
         Assert.True(result.Succeeded);
         Assert.Equal("After", root.Text);
+    }
+
+    [Fact]
+    public async Task PropertyMutationSetsAllowedAvaloniaValueTypes()
+    {
+        var root = new ConversionActionTestControl();
+        var provider = CreateSnapshotProvider();
+        var snapshot = await provider.CaptureSnapshotAsync(root);
+        var options = new AvaloniaRemoteControlOptions();
+        options.AllowedMutableProperties.Add(nameof(ConversionActionTestControl.TestThickness));
+        options.AllowedMutableProperties.Add(nameof(ConversionActionTestControl.TestCornerRadius));
+        options.AllowedMutableProperties.Add(nameof(ConversionActionTestControl.TestPoint));
+        options.AllowedMutableProperties.Add(nameof(ConversionActionTestControl.TestSize));
+        options.AllowedMutableProperties.Add(nameof(ConversionActionTestControl.TestRect));
+        options.AllowedMutableProperties.Add(nameof(ConversionActionTestControl.TestBrush));
+        var mutation = CreateMutationService(provider, options);
+        var nodeId = snapshot.Nodes[0].Id;
+
+        Assert.True((await mutation.SetPropertyAsync(nodeId, nameof(ConversionActionTestControl.TestThickness), "1,2,3,4")).Succeeded);
+        Assert.True((await mutation.SetPropertyAsync(nodeId, nameof(ConversionActionTestControl.TestCornerRadius), "5")).Succeeded);
+        Assert.True((await mutation.SetPropertyAsync(nodeId, nameof(ConversionActionTestControl.TestPoint), "6,7")).Succeeded);
+        Assert.True((await mutation.SetPropertyAsync(nodeId, nameof(ConversionActionTestControl.TestSize), "8,9")).Succeeded);
+        Assert.True((await mutation.SetPropertyAsync(nodeId, nameof(ConversionActionTestControl.TestRect), "10,11,12,13")).Succeeded);
+        Assert.True((await mutation.SetPropertyAsync(nodeId, nameof(ConversionActionTestControl.TestBrush), "#ff336699")).Succeeded);
+
+        Assert.Equal(new Thickness(1, 2, 3, 4), root.TestThickness);
+        Assert.Equal(new CornerRadius(5), root.TestCornerRadius);
+        Assert.Equal(new Point(6, 7), root.TestPoint);
+        Assert.Equal(new Size(8, 9), root.TestSize);
+        Assert.Equal(new Rect(10, 11, 12, 13), root.TestRect);
+        var brush = Assert.IsType<SolidColorBrush>(root.TestBrush);
+        Assert.Equal(Color.Parse("#ff336699"), brush.Color);
     }
 
     [Fact]
@@ -92,6 +126,32 @@ public sealed class RemoteControlCommandTests
     }
 
     [Fact]
+    public async Task FocusInvocationRequiresExplicitActionEnablement()
+    {
+        var root = new Button();
+        var provider = CreateSnapshotProvider();
+        var snapshot = await provider.CaptureSnapshotAsync(root);
+        var invoker = CreateActionInvoker(provider, new AvaloniaRemoteControlOptions());
+
+        var result = await invoker.InvokeFocusAsync(snapshot.Nodes[0].Id);
+
+        Assert.False(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task FocusInvocationRequestsFocusWhenEnabled()
+    {
+        var root = new Button();
+        var provider = CreateSnapshotProvider();
+        var snapshot = await provider.CaptureSnapshotAsync(root);
+        var invoker = CreateActionInvoker(provider, new AvaloniaRemoteControlOptions { AllowRemoteActions = true });
+
+        var result = await invoker.InvokeFocusAsync(snapshot.Nodes[0].Id);
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
     public async Task GrpcSetPropertyUsesMutationPolicy()
     {
         var root = new TextBlock { Text = "Before" };
@@ -131,6 +191,22 @@ public sealed class RemoteControlCommandTests
 
         Assert.True(result.Succeeded);
         Assert.True(clicked);
+    }
+
+    [Fact]
+    public async Task GrpcInvokeFocusUsesActionPolicy()
+    {
+        var root = new Button();
+        var provider = CreateSnapshotProvider();
+        var options = new AvaloniaRemoteControlOptions { AllowRemoteActions = true };
+        var grpc = CreateGrpcService(root, provider, options);
+        var snapshot = await grpc.GetSnapshot(new GetSnapshotRequest(), context: null!);
+
+        var result = await grpc.InvokeFocus(
+            new InvokeFocusRequest { NodeId = snapshot.Nodes[0].Id },
+            context: null!);
+
+        Assert.True(result.Succeeded);
     }
 
     private static AvaloniaControlTreeSnapshotProvider CreateSnapshotProvider()
@@ -186,5 +262,20 @@ public sealed class RemoteControlCommandTests
     private sealed class SensitiveActionTestControl : Control
     {
         public string AuthToken { get; set; } = string.Empty;
+    }
+
+    private sealed class ConversionActionTestControl : Control
+    {
+        public Thickness TestThickness { get; set; }
+
+        public CornerRadius TestCornerRadius { get; set; }
+
+        public Point TestPoint { get; set; }
+
+        public Size TestSize { get; set; }
+
+        public Rect TestRect { get; set; }
+
+        public IBrush? TestBrush { get; set; }
     }
 }

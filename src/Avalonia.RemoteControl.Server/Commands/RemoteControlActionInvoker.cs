@@ -47,6 +47,17 @@ public sealed class RemoteControlActionInvoker
         return dispatcher.InvokeAsync(() => InvokeClick(nodeId));
     }
 
+    /// <summary>
+    /// Requests focus for a stable node ID.
+    /// </summary>
+    /// <param name="nodeId">The stable node ID.</param>
+    /// <returns>The sanitized command result.</returns>
+    public ValueTask<RemoteControlCommandResult> InvokeFocusAsync(string nodeId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(nodeId);
+        return dispatcher.InvokeAsync(() => InvokeFocus(nodeId));
+    }
+
     private RemoteControlCommandResult InvokeClick(string nodeId)
     {
         if (!options.AllowRemoteActions)
@@ -82,5 +93,24 @@ public sealed class RemoteControlActionInvoker
         }
 
         return new RemoteControlCommandResult(false, "Control does not support click invocation.");
+    }
+
+    private RemoteControlCommandResult InvokeFocus(string nodeId)
+    {
+        if (!options.AllowRemoteActions)
+        {
+            logger.LogWarning("Remote focus rejected because remote actions are disabled for node {NodeId}", nodeId);
+            return new RemoteControlCommandResult(false, "Remote actions are disabled by policy.");
+        }
+
+        if (!nodeResolver.TryResolve(nodeId, out var control))
+        {
+            logger.LogWarning("Remote focus rejected for stale node {NodeId}", nodeId);
+            return new RemoteControlCommandResult(false, "Node is no longer available.");
+        }
+
+        control.Focus();
+        logger.LogInformation("Remote focus requested for node {NodeId}", nodeId);
+        return new RemoteControlCommandResult(true, "Focus requested.");
     }
 }
