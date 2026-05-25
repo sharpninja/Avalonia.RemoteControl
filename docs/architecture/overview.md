@@ -53,15 +53,22 @@ Command:
 avalonia-remote
 ```
 
+Implemented client areas:
+
+- endpoint/token connection controls
+- visual/control tree view
+- selected-node property list
+- property mutation command
+- click command
+- log stream viewer
+- connection/status line
+
 Planned client areas:
 
-- connection profile screen
-- visual/control tree view
-- selected-node details
-- property inspector/editor
-- action controls
-- log viewer
-- connection/audit status
+- richer connection profiles with saved user-scoped settings
+- certificate management and forget-settings workflow
+- visual polish and larger interaction coverage
+- authenticated audit identity display
 
 ## Android
 
@@ -73,9 +80,9 @@ The Android app-side transport is not yet proven. Technical Spike 0 must decide 
 
 - `Avalonia.RemoteControl.Protocol` defines the versioned gRPC contract.
 - `Avalonia.RemoteControl.Server` starts a Kestrel HTTP/2 gRPC endpoint, enforces bearer authentication, validates listener/TLS startup policy, captures stable tree snapshots, streams snapshots, exposes guarded actions/property mutation, and captures sanitized logs through a bounded `ILoggerProvider`.
-- `Avalonia.RemoteControl.Tool` is a packaged command with ADB device listing, forwarding, package marker discovery, authenticated endpoint probing, and cleanup commands.
+- `Avalonia.RemoteControl.Tool` opens the desktop client UI by default and also provides ADB device listing, forwarding, package marker discovery, authenticated endpoint probing, and cleanup commands.
 - CI files exist for GitHub Actions and Azure Pipelines.
-- Android app-side transport proof, Avalonia lifetime helper APIs, non-loopback TLS manual acceptance, authenticated audit identity, and full desktop client UI remain future slices.
+- Android app-side transport proof, Avalonia lifetime helper APIs, saved client profiles, non-loopback TLS manual acceptance, and authenticated audit identity remain future slices.
 
 ## Security
 

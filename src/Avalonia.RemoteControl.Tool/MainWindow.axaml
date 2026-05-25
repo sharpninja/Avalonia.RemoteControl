@@ -1,0 +1,74 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:tool="using:Avalonia.RemoteControl.Tool"
+        x:Class="Avalonia.RemoteControl.Tool.MainWindow"
+        Title="Avalonia Remote Control"
+        Width="1180"
+        Height="760"
+        MinWidth="920"
+        MinHeight="560">
+
+  <Window.DataTemplates>
+    <TreeDataTemplate DataType="{x:Type tool:RemoteTreeItem}" ItemsSource="{Binding Children}">
+      <TextBlock Text="{Binding Header}" />
+    </TreeDataTemplate>
+  </Window.DataTemplates>
+
+  <Grid RowDefinitions="Auto,*" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+    <Border Grid.Row="0" Padding="12" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,*,220,Auto,Auto,Auto" ColumnSpacing="8" VerticalAlignment="Center">
+        <TextBlock Text="Endpoint" VerticalAlignment="Center" />
+        <TextBox x:Name="EndpointBox"
+                 Grid.Column="1"
+                 Text="http://127.0.0.1:47100"
+                 PlaceholderText="http://127.0.0.1:47100" />
+        <TextBox x:Name="TokenBox"
+                 Grid.Column="2"
+                 PasswordChar="*"
+                 PlaceholderText="Bearer token" />
+        <Button Grid.Column="3" Content="Connect" Click="ConnectClicked" />
+        <Button Grid.Column="4" Content="Snapshot" Click="RefreshSnapshotClicked" />
+        <Button Grid.Column="5" Content="Logs" Click="ToggleLogsClicked" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="340,*,390" RowDefinitions="*,220" ColumnSpacing="1" RowSpacing="1">
+      <Border Grid.RowSpan="2" Padding="10" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="Control Tree" FontWeight="SemiBold" Margin="0,0,0,8" />
+          <TreeView x:Name="ControlTree" SelectionChanged="ControlTreeSelectionChanged" />
+        </DockPanel>
+      </Border>
+
+      <Border Grid.Column="1" Padding="10" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="Properties" FontWeight="SemiBold" Margin="0,0,0,8" />
+          <ListBox x:Name="PropertyList" SelectionChanged="PropertySelectionChanged" />
+        </DockPanel>
+      </Border>
+
+      <Border Grid.Column="2" Padding="10" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="8">
+          <TextBlock Text="Actions" FontWeight="SemiBold" />
+          <Button Grid.Row="1" Content="Invoke Click" Click="InvokeClickClicked" HorizontalAlignment="Left" />
+          <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="8">
+            <TextBox x:Name="PropertyNameBox" PlaceholderText="Property name" />
+            <TextBox x:Name="PropertyValueBox" Grid.Column="1" PlaceholderText="Value" />
+          </Grid>
+          <Button Grid.Row="3" Content="Set Property" Click="SetPropertyClicked" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Padding="10" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="Logs" FontWeight="SemiBold" Margin="0,0,0,8" />
+          <ListBox x:Name="LogList" />
+        </DockPanel>
+      </Border>
+    </Grid>
+
+    <Border Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Padding="10,6" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+      <TextBlock x:Name="StatusText" Text="Disconnected" />
+    </Border>
+  </Grid>
+</Window>

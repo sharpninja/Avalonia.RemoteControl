@@ -223,6 +223,14 @@ Tests/evidence:
 - `TEST-MANUAL-006`
 - `TEST-MANUAL-007`
 
+Implemented evidence:
+
+- `RemoteControlDesktopSessionTests` covers authenticated desktop client session capability probing against the hosted server.
+- `RemoteControlDesktopSession` provides authenticated gRPC client calls for capabilities, snapshots, click invocation, property mutation, and log streaming.
+- `Avalonia.RemoteControl.Tool` launches a basic Avalonia desktop UI when run without arguments.
+- The desktop UI includes endpoint/token connection controls, tree rendering, selected-node properties, invoke-click, set-property, log streaming, and status feedback.
+- Saved profiles, certificate management, and manual UI acceptance remain future work.
+
 ## Iteration 5 - ADB Client UX
 
 Requirements:

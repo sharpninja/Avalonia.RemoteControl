@@ -12,6 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
     <ProjectReference Include="..\Avalonia.RemoteControl.Client\Avalonia.RemoteControl.Client.csproj" />
+    <ProjectReference Include="..\Avalonia.RemoteControl.Protocol\Avalonia.RemoteControl.Protocol.csproj" />
   </ItemGroup>
 </Project>

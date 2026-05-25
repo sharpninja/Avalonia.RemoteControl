@@ -46,7 +46,7 @@ public static class RemoteControlClientInfo
           adb      Android emulator/device connection through adb forward.
 
         Current status:
-          Early implementation build. ADB list/connect/cleanup are available; full client UI is planned.
+          Desktop UI and ADB list/connect/cleanup are available; Android app-side proof remains.
         """;
     }
 }
