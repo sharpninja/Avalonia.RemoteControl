@@ -46,7 +46,7 @@ public static class RemoteControlClientInfo
           adb      Android emulator/device connection through adb forward.
 
         Current status:
-          Desktop UI and ADB list/connect/cleanup are available; Android app-side proof remains.
+          Desktop UI, TLS certificate acceptance, and ADB list/connect/cleanup are available; Android bridge proof is implemented.
         """;
     }
 }

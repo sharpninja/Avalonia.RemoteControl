@@ -268,6 +268,7 @@ Implemented evidence:
 - `RemoteControlDesktopSessionTests` covers accepted SHA-256 fingerprint trust, mismatched fingerprint rejection, and certificate inspection.
 - `RemoteControlProfileStoreTests` covers accepted SHA-256 fingerprint persistence and deletion through profile forget.
 - The desktop UI exposes inspect, accept, and reject controls for manual TLS certificate trust.
+- `docs/requirements/manual-acceptance-evidence.md` records the current manual acceptance evidence for loopback, TLS/token, live tree, logs, click, property edit, audit trail, and Android ADB workflows.
 
 ## Iteration 5 - ADB Client UX
 
