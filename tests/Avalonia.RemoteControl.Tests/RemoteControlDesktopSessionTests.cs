@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Avalonia.RemoteControl.Client;
+using Avalonia.RemoteControl.Client.Security;
 using Avalonia.RemoteControl.Protocol;
 using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server;
@@ -139,6 +140,150 @@ public sealed class RemoteControlDesktopSessionTests
             await host.StopAsync();
             File.Delete(certificatePath);
             File.Delete(trustPath);
+        }
+    }
+
+    [Fact]
+    public async Task DesktopSessionTrustsAcceptedTlsCertificateFingerprint()
+    {
+        var certificatePath = Path.Combine(Path.GetTempPath(), $"arc-{Guid.NewGuid():N}.pfx");
+        const string certificatePassword = "test-password";
+
+        var certificateBytes = CreateCertificateBytes(certificatePassword);
+        await File.WriteAllBytesAsync(
+            certificatePath,
+            certificateBytes.Pfx);
+
+        using var trustedCertificate =
+            X509CertificateLoader.LoadCertificate(certificateBytes.Cert);
+        var acceptedFingerprint =
+            RemoteControlServerCertificateTrust.GetSha256Fingerprint(trustedCertificate);
+
+        var services = new ServiceCollection();
+        services.AddAvaloniaRemoteControl(options =>
+        {
+            options.IsEnabled = true;
+            options.Host = IPAddress.Loopback;
+            options.Port = 0;
+            options.AuthenticationToken = "dev-token";
+            options.AllowCleartextForLoopbackOrAdb = false;
+            options.TlsCertificatePath = certificatePath;
+            options.TlsCertificatePassword = certificatePassword;
+        });
+
+        await using var provider = services.BuildServiceProvider();
+        var host = provider.GetRequiredService<AvaloniaRemoteControlServerHost>();
+
+        try
+        {
+            await host.StartAsync();
+
+            using var session = RemoteControlDesktopSession.Create(
+                host.BoundAddress!,
+                "dev-token",
+                acceptedServerCertificateSha256Fingerprint: acceptedFingerprint);
+
+            var capabilities = await session.GetCapabilitiesAsync();
+
+            Assert.Equal(RemoteControlProtocol.DisplayVersion, capabilities.ProtocolVersion);
+        }
+        finally
+        {
+            await host.StopAsync();
+            File.Delete(certificatePath);
+        }
+    }
+
+    [Fact]
+    public async Task DesktopSessionRejectsMismatchedAcceptedTlsCertificateFingerprint()
+    {
+        var certificatePath = Path.Combine(Path.GetTempPath(), $"arc-{Guid.NewGuid():N}.pfx");
+        const string certificatePassword = "test-password";
+
+        var certificateBytes = CreateCertificateBytes(certificatePassword);
+        await File.WriteAllBytesAsync(
+            certificatePath,
+            certificateBytes.Pfx);
+
+        var services = new ServiceCollection();
+        services.AddAvaloniaRemoteControl(options =>
+        {
+            options.IsEnabled = true;
+            options.Host = IPAddress.Loopback;
+            options.Port = 0;
+            options.AuthenticationToken = "dev-token";
+            options.AllowCleartextForLoopbackOrAdb = false;
+            options.TlsCertificatePath = certificatePath;
+            options.TlsCertificatePassword = certificatePassword;
+        });
+
+        await using var provider = services.BuildServiceProvider();
+        var host = provider.GetRequiredService<AvaloniaRemoteControlServerHost>();
+
+        try
+        {
+            await host.StartAsync();
+
+            using var session = RemoteControlDesktopSession.Create(
+                host.BoundAddress!,
+                "dev-token",
+                acceptedServerCertificateSha256Fingerprint:
+                    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+
+            await Assert.ThrowsAnyAsync<Exception>(() => session.GetCapabilitiesAsync());
+        }
+        finally
+        {
+            await host.StopAsync();
+            File.Delete(certificatePath);
+        }
+    }
+
+    [Fact]
+    public async Task CertificateInspectorReadsServerCertificateFingerprint()
+    {
+        var certificatePath = Path.Combine(Path.GetTempPath(), $"arc-{Guid.NewGuid():N}.pfx");
+        const string certificatePassword = "test-password";
+
+        var certificateBytes = CreateCertificateBytes(certificatePassword);
+        await File.WriteAllBytesAsync(
+            certificatePath,
+            certificateBytes.Pfx);
+
+        using var trustedCertificate =
+            X509CertificateLoader.LoadCertificate(certificateBytes.Cert);
+        var expectedFingerprint =
+            RemoteControlServerCertificateTrust.GetSha256Fingerprint(trustedCertificate);
+
+        var services = new ServiceCollection();
+        services.AddAvaloniaRemoteControl(options =>
+        {
+            options.IsEnabled = true;
+            options.Host = IPAddress.Loopback;
+            options.Port = 0;
+            options.AuthenticationToken = "dev-token";
+            options.AllowCleartextForLoopbackOrAdb = false;
+            options.TlsCertificatePath = certificatePath;
+            options.TlsCertificatePassword = certificatePassword;
+        });
+
+        await using var provider = services.BuildServiceProvider();
+        var host = provider.GetRequiredService<AvaloniaRemoteControlServerHost>();
+
+        try
+        {
+            await host.StartAsync();
+
+            var certificateInfo =
+                await RemoteControlServerCertificateInspector.InspectAsync(host.BoundAddress!);
+
+            Assert.Equal(expectedFingerprint, certificateInfo.Sha256Fingerprint);
+            Assert.Contains("CN=localhost", certificateInfo.Subject, StringComparison.Ordinal);
+        }
+        finally
+        {
+            await host.StopAsync();
+            File.Delete(certificatePath);
         }
     }
 

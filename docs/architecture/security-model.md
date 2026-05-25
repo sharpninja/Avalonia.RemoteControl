@@ -121,11 +121,15 @@ The client must let users forget saved connection settings.
 
 The client must not log tokens.
 
+Manual certificate acceptance stores only the SHA-256 fingerprint of the inspected server certificate. A later TLS connection is trusted only when the presented server certificate matches the accepted fingerprint or the configured certificate file.
+
 Current client implementation:
 
 - `FileRemoteControlProfileStore` saves the default endpoint, bearer token, and certificate path under user-scoped application data.
 - The desktop client exposes Save and Forget controls for the default profile.
 - `RemoteControlDesktopSession` can trust a configured server certificate file by matching the peer certificate SHA-256 hash.
+- `RemoteControlServerCertificateInspector` reads the presented TLS server certificate for display before trust persistence.
+- `RemoteControlDesktopSession` can trust a manually accepted SHA-256 certificate fingerprint and rejects mismatched presented certificates.
 - Profile operations do not write tokens to logs or status text.
 
 ## Requirement Mapping
@@ -141,6 +145,7 @@ Functional requirements:
 - `FR-SEC-007`
 - `FR-SEC-008`
 - `FR-SEC-009`
+- `FR-SEC-010`
 
 Technical requirements:
 
@@ -160,6 +165,7 @@ Technical requirements:
 - `TR-SEC-SECURITY-014`
 - `TR-SEC-SECURITY-015`
 - `TR-SEC-SECURITY-016`
+- `TR-SEC-SECURITY-017`
 
 Testing requirements:
 
@@ -170,3 +176,4 @@ Testing requirements:
 - `TEST-SEC-005`
 - `TEST-SEC-006`
 - `TEST-SEC-007`
+- `TEST-SEC-008`

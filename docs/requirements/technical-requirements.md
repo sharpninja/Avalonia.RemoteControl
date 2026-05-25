@@ -96,6 +96,7 @@
 - `TR-SEC-SECURITY-014`: Rejected authentication, rejected authorization, blocked property access, and failed mutation attempts emit audit logs.
 - `TR-SEC-SECURITY-015`: ADB forwarding cleanup runs by default when the client disconnects.
 - `TR-SEC-SECURITY-016`: Client persists connection settings only in user-scoped storage and never logs tokens.
+- `TR-SEC-SECURITY-017`: Manually accepted TLS certificates are persisted as SHA-256 certificate fingerprints and connections succeed only when the presented server certificate matches the accepted fingerprint or configured certificate file.
 
 ## CI and Release
 

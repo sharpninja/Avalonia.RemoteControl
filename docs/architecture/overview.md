@@ -64,10 +64,10 @@ Implemented client areas:
 - connection/status line
 - user-scoped default connection profile save/forget for endpoint, token, and certificate path
 - TLS connection trust through a configured server certificate file
+- manual TLS certificate inspection and acceptance by SHA-256 fingerprint
 
 Planned client areas:
 
-- manual certificate acceptance workflow
 - visual polish and larger interaction coverage
 - authenticated audit identity display
 
@@ -84,9 +84,9 @@ The package-private Android marker is the negotiation point for this split. Miss
 - `Avalonia.RemoteControl.Protocol` defines the versioned gRPC and bridge contracts.
 - `Avalonia.RemoteControl.Runtime` provides host-independent runtime services for dispatcher-safe tree snapshots, mutation/action services, logging, bearer authentication, bridge dispatch, and Android-compatible builds.
 - `Avalonia.RemoteControl.Server` starts a Kestrel HTTP/2 gRPC endpoint, enforces bearer authentication, validates listener/TLS startup policy, and hosts the runtime services for desktop/server-capable targets.
-- `Avalonia.RemoteControl.Tool` opens the desktop client UI by default and also provides ADB device listing, forwarding, package marker discovery, authenticated endpoint probing, and cleanup commands.
+- `Avalonia.RemoteControl.Tool` opens the desktop client UI by default and also provides ADB device listing, forwarding, package marker discovery, authenticated endpoint probing, manual TLS certificate acceptance, and cleanup commands.
 - CI files exist for GitHub Actions and Azure Pipelines.
-- Broader Android emulator/device matrix coverage, non-loopback TLS manual certificate acceptance, and richer client profile management remain future slices.
+- Broader Android emulator/device matrix coverage and richer client profile management remain future slices.
 
 ## Security
 

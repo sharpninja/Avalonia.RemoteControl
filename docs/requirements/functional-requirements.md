@@ -59,3 +59,4 @@
 - `FR-SEC-007`: Remote actions and property changes are auditable.
 - `FR-SEC-008`: Sensitive control properties and log fields are redacted by default.
 - `FR-SEC-009`: The client can forget saved endpoint/token/certificate settings.
+- `FR-SEC-010`: The client can inspect a TLS server certificate fingerprint and explicitly accept it for a later connection.

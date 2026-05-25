@@ -1,8 +1,7 @@
 using Avalonia.RemoteControl.Protocol.V1;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using Avalonia.RemoteControl.Client.Bridge;
+using Avalonia.RemoteControl.Client.Security;
 using Avalonia.RemoteControl.Protocol;
 using Grpc.Net.Client;
 
@@ -17,12 +16,11 @@ public sealed class RemoteControlDesktopSession : IDisposable
     private readonly Protocol.V1.RemoteControl.RemoteControlClient? client;
     private readonly global::Grpc.Core.Metadata? headers;
     private readonly RemoteControlBridgeClient? bridgeClient;
-    private readonly X509Certificate2? trustedServerCertificate;
 
     private RemoteControlDesktopSession(
         Uri endpoint,
         string token,
-        string? trustedServerCertificatePath,
+        RemoteControlServerCertificateTrust certificateTrust,
         string transportProtocol)
     {
         Endpoint = endpoint;
@@ -37,8 +35,7 @@ public sealed class RemoteControlDesktopSession : IDisposable
             RemoteControlProtocol.GrpcTransportProtocol,
             StringComparison.OrdinalIgnoreCase))
         {
-            trustedServerCertificate = LoadTrustedServerCertificate(trustedServerCertificatePath);
-            channel = CreateChannel(endpoint, trustedServerCertificate);
+            channel = CreateChannel(endpoint, certificateTrust);
             client = new Protocol.V1.RemoteControl.RemoteControlClient(channel);
             headers = new global::Grpc.Core.Metadata
             {
@@ -64,12 +61,15 @@ public sealed class RemoteControlDesktopSession : IDisposable
     /// <param name="endpoint">Remote endpoint.</param>
     /// <param name="token">Bearer token.</param>
     /// <param name="trustedServerCertificatePath">Optional certificate file whose thumbprint is trusted for TLS connections.</param>
+    /// <param name="transportProtocol">Transport protocol used by the endpoint.</param>
+    /// <param name="acceptedServerCertificateSha256Fingerprint">Optional accepted server certificate SHA-256 fingerprint.</param>
     /// <returns>A connected session object.</returns>
     public static RemoteControlDesktopSession Create(
         Uri endpoint,
         string token,
         string? trustedServerCertificatePath = null,
-        string transportProtocol = RemoteControlProtocol.GrpcTransportProtocol)
+        string transportProtocol = RemoteControlProtocol.GrpcTransportProtocol,
+        string? acceptedServerCertificateSha256Fingerprint = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
@@ -80,7 +80,9 @@ public sealed class RemoteControlDesktopSession : IDisposable
         return new RemoteControlDesktopSession(
             endpoint,
             token,
-            trustedServerCertificatePath,
+            RemoteControlServerCertificateTrust.Create(
+                trustedServerCertificatePath,
+                acceptedServerCertificateSha256Fingerprint),
             transportProtocol);
     }
 
@@ -242,24 +244,13 @@ public sealed class RemoteControlDesktopSession : IDisposable
     {
         bridgeClient?.Dispose();
         channel?.Dispose();
-        trustedServerCertificate?.Dispose();
-    }
-
-    private static X509Certificate2? LoadTrustedServerCertificate(string? trustedServerCertificatePath)
-    {
-        if (string.IsNullOrWhiteSpace(trustedServerCertificatePath))
-        {
-            return null;
-        }
-
-        return X509CertificateLoader.LoadCertificateFromFile(trustedServerCertificatePath);
     }
 
     private static GrpcChannel CreateChannel(
         Uri endpoint,
-        X509Certificate2? trustedServerCertificate)
+        RemoteControlServerCertificateTrust certificateTrust)
     {
-        if (trustedServerCertificate is null)
+        if (!certificateTrust.HasTrustMaterial)
         {
             return GrpcChannel.ForAddress(endpoint);
         }
@@ -267,25 +258,11 @@ public sealed class RemoteControlDesktopSession : IDisposable
         var handler = new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = (_, certificate, _, _) =>
-                IsTrustedServerCertificate(certificate, trustedServerCertificate),
+                certificateTrust.IsTrusted(certificate),
         };
 
         return GrpcChannel.ForAddress(
             endpoint,
             new GrpcChannelOptions { HttpHandler = handler });
-    }
-
-    private static bool IsTrustedServerCertificate(
-        X509Certificate2? certificate,
-        X509Certificate2 trustedServerCertificate)
-    {
-        if (certificate is null)
-        {
-            return false;
-        }
-
-        return CryptographicOperations.FixedTimeEquals(
-            certificate.GetCertHash(HashAlgorithmName.SHA256),
-            trustedServerCertificate.GetCertHash(HashAlgorithmName.SHA256));
     }
 }

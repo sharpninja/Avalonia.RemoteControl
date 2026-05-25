@@ -41,6 +41,7 @@
 - `TEST-SEC-005`: Blocked mutations are rejected and audited.
 - `TEST-SEC-006`: Authorized mutations are audited.
 - `TEST-SEC-007`: Failed commands do not leak raw exception dumps.
+- `TEST-SEC-008`: Unit or integration tests verify certificate inspection, accepted fingerprint trust, rejected fingerprint mismatch, and profile forget behavior for saved certificate trust.
 
 ## Android/ADB Tests
 

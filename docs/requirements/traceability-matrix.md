@@ -238,15 +238,18 @@ Requirements:
 - `FR-CLIENT-005`
 - `FR-CLIENT-006`
 - `FR-SEC-009`
+- `FR-SEC-010`
 - `TR-PACK-PACKAGE-002`
 - `TR-PACK-PACKAGE-003`
 - `TR-SEC-SECURITY-016`
+- `TR-SEC-SECURITY-017`
 
 Tests/evidence:
 
 - `TEST-PACK-002`
 - `TEST-PACK-003`
 - `TEST-PACK-004`
+- `TEST-SEC-008`
 - `TEST-MANUAL-001`
 - `TEST-MANUAL-004`
 - `TEST-MANUAL-005`
@@ -260,9 +263,11 @@ Implemented evidence:
 - `Avalonia.RemoteControl.Tool` launches a basic Avalonia desktop UI when run without arguments.
 - The desktop UI includes endpoint/token connection controls, tree rendering, selected-node properties, invoke-click, set-property, log streaming, and status feedback.
 - `RemoteControlProfileStoreTests` covers saving, loading, and forgetting the default user-scoped connection profile.
-- The desktop UI exposes Save and Forget controls for endpoint/token/certificate-path profile state.
+- The desktop UI exposes Save and Forget controls for endpoint/token/certificate-path/fingerprint profile state.
 - `RemoteControlDesktopSessionTests` covers connecting to a hosted TLS endpoint with a configured trusted server certificate file.
-- Manual certificate acceptance remains future work.
+- `RemoteControlDesktopSessionTests` covers accepted SHA-256 fingerprint trust, mismatched fingerprint rejection, and certificate inspection.
+- `RemoteControlProfileStoreTests` covers accepted SHA-256 fingerprint persistence and deletion through profile forget.
+- The desktop UI exposes inspect, accept, and reject controls for manual TLS certificate trust.
 
 ## Iteration 5 - ADB Client UX
 

@@ -21,6 +21,11 @@ public sealed record RemoteControlConnectionProfile
     public string CertificatePath { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the accepted server certificate SHA-256 fingerprint for TLS profiles.
+    /// </summary>
+    public string AcceptedServerCertificateSha256Fingerprint { get; init; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the profile update timestamp.
     /// </summary>
     public DateTimeOffset UpdatedUtc { get; init; } = DateTimeOffset.UtcNow;

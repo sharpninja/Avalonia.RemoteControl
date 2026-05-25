@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.RemoteControl.Client;
 using Avalonia.RemoteControl.Client.Profiles;
+using Avalonia.RemoteControl.Client.Security;
 using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.Threading;
 
@@ -20,6 +21,7 @@ public sealed partial class MainWindow : Window
     private RemoteControlDesktopSession? session;
     private TreeNode? selectedNode;
     private CancellationTokenSource? logStreamCancellation;
+    private RemoteControlServerCertificateInfo? pendingCertificateInfo;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MainWindow"/> class.
@@ -50,7 +52,8 @@ public sealed partial class MainWindow : Window
             session = RemoteControlDesktopSession.Create(
                 new Uri(EndpointBox.Text ?? string.Empty),
                 TokenBox.Text ?? string.Empty,
-                CertificatePathBox.Text);
+                CertificatePathBox.Text,
+                acceptedServerCertificateSha256Fingerprint: AcceptedFingerprintBox.Text);
 
             var capabilities = await session.GetCapabilitiesAsync();
             StatusText.Text = $"Connected: protocol {capabilities.ProtocolVersion}";
@@ -66,15 +69,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            await profileStore.SaveDefaultAsync(new RemoteControlConnectionProfile
-            {
-                Endpoint = EndpointBox.Text ?? string.Empty,
-                Token = TokenBox.Text ?? string.Empty,
-                CertificatePath = CertificatePathBox.Text ?? string.Empty,
-                UpdatedUtc = DateTimeOffset.UtcNow,
-            });
-
-            StatusText.Text = "Connection profile saved.";
+            await SaveCurrentProfileAsync("Connection profile saved.");
         }
         catch (Exception ex)
         {
@@ -89,6 +84,8 @@ public sealed partial class MainWindow : Window
             await profileStore.ForgetDefaultAsync();
             TokenBox.Text = string.Empty;
             CertificatePathBox.Text = string.Empty;
+            AcceptedFingerprintBox.Text = string.Empty;
+            pendingCertificateInfo = null;
             StatusText.Text = "Saved connection profile forgotten.";
         }
         catch (Exception ex)
@@ -111,6 +108,7 @@ public sealed partial class MainWindow : Window
             EndpointBox.Text = profile.Endpoint;
             TokenBox.Text = profile.Token;
             CertificatePathBox.Text = profile.CertificatePath;
+            AcceptedFingerprintBox.Text = profile.AcceptedServerCertificateSha256Fingerprint;
             StatusText.Text = "Saved connection profile loaded.";
         }
         catch (Exception ex)
@@ -290,6 +288,71 @@ public sealed partial class MainWindow : Window
                 StatusText.Text = $"Log stream failed: {ex.Message}";
             });
         }
+    }
+
+    private async void InspectCertificateClicked(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            pendingCertificateInfo =
+                await RemoteControlServerCertificateInspector.InspectAsync(
+                    new Uri(EndpointBox.Text ?? string.Empty));
+
+            StatusText.Text =
+                $"Certificate {pendingCertificateInfo.Subject}; SHA-256 {pendingCertificateInfo.Sha256Fingerprint}";
+        }
+        catch (Exception ex)
+        {
+            pendingCertificateInfo = null;
+            StatusText.Text = $"Certificate inspection failed: {ex.Message}";
+        }
+    }
+
+    private async void AcceptCertificateClicked(object? sender, RoutedEventArgs e)
+    {
+        if (pendingCertificateInfo is null)
+        {
+            StatusText.Text = "Inspect a TLS certificate before accepting it.";
+            return;
+        }
+
+        try
+        {
+            AcceptedFingerprintBox.Text = pendingCertificateInfo.Sha256Fingerprint;
+            await SaveCurrentProfileAsync("Certificate accepted and profile saved.");
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"Certificate accept failed: {ex.Message}";
+        }
+    }
+
+    private async void RejectCertificateClicked(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            pendingCertificateInfo = null;
+            AcceptedFingerprintBox.Text = string.Empty;
+            await SaveCurrentProfileAsync("Certificate trust cleared.");
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"Certificate reject failed: {ex.Message}";
+        }
+    }
+
+    private async Task SaveCurrentProfileAsync(string statusText)
+    {
+        await profileStore.SaveDefaultAsync(new RemoteControlConnectionProfile
+        {
+            Endpoint = EndpointBox.Text ?? string.Empty,
+            Token = TokenBox.Text ?? string.Empty,
+            CertificatePath = CertificatePathBox.Text ?? string.Empty,
+            AcceptedServerCertificateSha256Fingerprint = AcceptedFingerprintBox.Text ?? string.Empty,
+            UpdatedUtc = DateTimeOffset.UtcNow,
+        });
+
+        StatusText.Text = statusText;
     }
 
     private static IReadOnlyList<RemoteTreeItem> BuildTree(TreeSnapshot snapshot)

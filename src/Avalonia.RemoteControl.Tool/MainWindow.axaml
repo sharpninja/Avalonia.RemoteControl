@@ -16,7 +16,11 @@
 
   <Grid RowDefinitions="Auto,*" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
     <Border Grid.Row="0" Padding="12" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
-      <Grid ColumnDefinitions="Auto,*,220,180,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" VerticalAlignment="Center">
+      <Grid RowDefinitions="Auto,Auto"
+            ColumnDefinitions="Auto,*,220,180,Auto,Auto,Auto,Auto,Auto"
+            ColumnSpacing="8"
+            RowSpacing="8"
+            VerticalAlignment="Center">
         <TextBlock Text="Endpoint" VerticalAlignment="Center" />
         <TextBox x:Name="EndpointBox"
                  Grid.Column="1"
@@ -34,6 +38,17 @@
         <Button Grid.Column="6" Content="Logs" Click="ToggleLogsClicked" />
         <Button Grid.Column="7" Content="Save" Click="SaveProfileClicked" />
         <Button Grid.Column="8" Content="Forget" Click="ForgetProfileClicked" />
+
+        <TextBlock Grid.Row="1" Text="Accepted SHA-256" VerticalAlignment="Center" />
+        <TextBox x:Name="AcceptedFingerprintBox"
+                 Grid.Row="1"
+                 Grid.Column="1"
+                 Grid.ColumnSpan="3"
+                 IsReadOnly="True"
+                 PlaceholderText="Accepted certificate fingerprint" />
+        <Button Grid.Row="1" Grid.Column="4" Content="Inspect Cert" Click="InspectCertificateClicked" />
+        <Button Grid.Row="1" Grid.Column="5" Content="Accept Cert" Click="AcceptCertificateClicked" />
+        <Button Grid.Row="1" Grid.Column="6" Content="Reject Cert" Click="RejectCertificateClicked" />
       </Grid>
     </Border>
 
