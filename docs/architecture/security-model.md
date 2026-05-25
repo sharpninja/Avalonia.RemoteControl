@@ -22,6 +22,12 @@ Every RPC requires bearer authentication, including:
 
 Tokens must be configurable and rotatable. Tokens must not be logged, emitted in exceptions, written to traces, stored in package artifacts, or shown in normal diagnostic output.
 
+Current server implementation:
+
+- `RemoteControlAuthenticationInterceptor` validates `Authorization: Bearer <token>` on unary and streaming gRPC calls.
+- Missing, invalid, or unconfigured required tokens fail with `Unauthenticated`.
+- Authentication rejection logs include the gRPC method but never the presented token.
+
 ## Transport
 
 Default listener behavior:
@@ -40,6 +46,13 @@ ADB behavior:
 - may use cleartext h2c only through an explicitly detected/configured localhost ADB tunnel
 - still requires bearer authentication
 - cleans up forwarding on disconnect by default
+
+Current server implementation:
+
+- `RemoteControlStartupValidator` accepts enabled loopback startup only when required credentials are configured.
+- Non-loopback cleartext startup is rejected.
+- Non-loopback TLS startup requires a configured certificate path.
+- ADB tunnel startup still requires a configured bearer token.
 
 ## Redaction
 

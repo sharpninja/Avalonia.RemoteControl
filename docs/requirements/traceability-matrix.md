@@ -107,6 +107,9 @@ Implemented evidence:
 - `RemoteControlReadOnlyInspectionTests` covers capabilities, stable node IDs, hierarchy, automation metadata, classes, and sensitive property redaction.
 - `AvaloniaControlTreeSnapshotProvider` captures snapshots through `IRemoteControlDispatcher`.
 - `GetCapabilities` and `GetSnapshot` are mapped through `AvaloniaRemoteControlGrpcService`.
+- `RemoteControlSecurityTests` covers bearer-token authentication and startup policy validation for loopback, non-loopback, and ADB tunnel modes.
+- `RemoteControlHostedServerTests` proves the hosted gRPC endpoint rejects unauthenticated calls and serves authenticated calls.
+- `AvaloniaRemoteControlServerHost` starts the HTTP/2 gRPC transport from `IServiceProvider` services.
 
 ## Iteration 2 - Live Updates and Remote Actions
 

@@ -43,14 +43,34 @@ public sealed class AvaloniaRemoteControlOptions
     public bool RequireAuthentication { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets the bearer token expected from clients. This value is never exposed in startup state.
+    /// </summary>
+    public string? AuthenticationToken { get; set; }
+
+    /// <summary>
     /// Gets or sets whether TLS is required for non-loopback listeners.
     /// </summary>
     public bool RequireTlsForNonLoopback { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets the TLS certificate path used for non-loopback listeners.
+    /// </summary>
+    public string? TlsCertificatePath { get; set; }
+
+    /// <summary>
+    /// Gets or sets the TLS certificate password used for non-loopback listeners.
+    /// </summary>
+    public string? TlsCertificatePassword { get; set; }
+
+    /// <summary>
     /// Gets or sets whether cleartext HTTP/2 is allowed for loopback and explicit ADB tunnel sessions.
     /// </summary>
     public bool AllowCleartextForLoopbackOrAdb { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether the listener is reached only through an explicit ADB localhost tunnel.
+    /// </summary>
+    public bool IsAdbTunnel { get; set; }
 
     /// <summary>
     /// Gets or sets whether property mutation starts from a deny-by-default policy.

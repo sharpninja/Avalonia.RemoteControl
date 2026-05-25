@@ -16,16 +16,16 @@ The server SDK will be packaged as `Avalonia.RemoteControl.Server`.
 Implemented responsibilities:
 
 - register services through `IServiceCollection`
+- start the transport through `IServiceProvider`
 - capture Avalonia tree snapshots through the UI dispatcher
 - expose safe property metadata and mutations
 - invoke supported actions
 - capture `ILogger` output through a bounded provider
-- enforce disabled-by-default startup state, redaction, and deny-by-default mutation/action gates
+- enforce disabled-by-default startup state, bearer authentication, listener/TLS policy validation, redaction, and deny-by-default mutation/action gates
 
 Planned responsibilities:
 
-- start the transport through `IServiceProvider`/app lifetime integration
-- enforce bearer authentication and TLS/listener policy on hosted RPCs
+- integrate server start/stop with Avalonia application lifetime helpers
 - emit authenticated audit records for security and command decisions
 
 ## Protocol
@@ -72,10 +72,10 @@ The Android app-side transport is not yet proven. Technical Spike 0 must decide 
 ## Current Implementation Status
 
 - `Avalonia.RemoteControl.Protocol` defines the versioned gRPC contract.
-- `Avalonia.RemoteControl.Server` captures stable tree snapshots, streams snapshots, exposes guarded actions/property mutation, and captures sanitized logs through a bounded `ILoggerProvider`.
+- `Avalonia.RemoteControl.Server` starts a Kestrel HTTP/2 gRPC endpoint, enforces bearer authentication, validates listener/TLS startup policy, captures stable tree snapshots, streams snapshots, exposes guarded actions/property mutation, and captures sanitized logs through a bounded `ILoggerProvider`.
 - `Avalonia.RemoteControl.Tool` is a packaged command stub with Local, Network, and ADB workflow help.
 - CI files exist for GitHub Actions and Azure Pipelines.
-- Android ADB transport, hosted server startup, authentication middleware, TLS binding, and full desktop client UI remain future slices.
+- Android ADB transport, Avalonia lifetime helper APIs, non-loopback TLS manual acceptance, authenticated audit identity, and full desktop client UI remain future slices.
 
 ## Security
 

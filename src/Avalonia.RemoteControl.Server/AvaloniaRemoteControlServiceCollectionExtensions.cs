@@ -34,6 +34,9 @@ public static class AvaloniaRemoteControlServiceCollectionExtensions
         services.AddSingleton<AvaloniaRemoteControlService>();
         services.AddSingleton<Grpc.AvaloniaRemoteControlGrpcService>();
         services.AddSingleton<IRemoteControlRootProvider, EmptyRemoteControlRootProvider>();
+        services.AddSingleton<Security.RemoteControlStartupValidator>();
+        services.AddSingleton<Security.RemoteControlAuthenticationInterceptor>();
+        services.AddSingleton<Hosting.AvaloniaRemoteControlServerHost>();
         services.AddSingleton<Logging.RemoteControlLogBuffer>();
         services.AddSingleton<Logging.RemoteControlLogStreamService>();
         services.AddSingleton<Logging.RemoteControlLoggerProvider>();

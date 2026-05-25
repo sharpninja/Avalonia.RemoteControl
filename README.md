@@ -2,7 +2,7 @@
 
 Avalonia.RemoteControl is a debugging and remote-control system for Avalonia 12 applications.
 
-The project is in early Byrd implementation. Current deliverables include requirements, architecture, solution skeleton, package metadata, CI scaffolding, gRPC protocol contracts, read-only tree snapshots, live tree streaming, guarded property mutation, guarded click invocation, and bounded `ILogger` streaming.
+The project is in early Byrd implementation. Current deliverables include requirements, architecture, solution skeleton, package metadata, CI scaffolding, gRPC protocol contracts, hosted gRPC startup, bearer-token RPC authentication, read-only tree snapshots, live tree streaming, guarded property mutation, guarded click invocation, and bounded `ILogger` streaming.
 
 Planned packages:
 
