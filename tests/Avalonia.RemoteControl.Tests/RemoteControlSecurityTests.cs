@@ -73,6 +73,28 @@ public sealed class RemoteControlSecurityTests
     }
 
     [Fact]
+    public async Task AuthenticationInterceptorStampsSanitizedClientIdentity()
+    {
+        var interceptor = CreateInterceptor(new AvaloniaRemoteControlOptions
+        {
+            AuthenticationToken = "dev-token",
+            AuthenticatedClientIdentity = "desktop-client",
+        });
+
+        var context = new TestServerCallContext(new global::Grpc.Core.Metadata
+        {
+            { "authorization", "Bearer dev-token" },
+        });
+
+        await interceptor.UnaryServerHandler(
+            new GetCapabilitiesRequest(),
+            context,
+            (_, _) => Task.FromResult(new GetCapabilitiesResponse()));
+
+        Assert.Equal("desktop-client", context.UserState[RemoteControlClientIdentity.UserStateKey]);
+    }
+
+    [Fact]
     public void StartupPolicyAcceptsEnabledLoopbackWithToken()
     {
         var result = Validate(new AvaloniaRemoteControlOptions

@@ -48,6 +48,11 @@ public sealed class AvaloniaRemoteControlOptions
     public string? AuthenticationToken { get; set; }
 
     /// <summary>
+    /// Gets or sets the sanitized identity assigned to successfully authenticated clients.
+    /// </summary>
+    public string AuthenticatedClientIdentity { get; set; } = "remote-client";
+
+    /// <summary>
     /// Gets or sets whether TLS is required for non-loopback listeners.
     /// </summary>
     public bool RequireTlsForNonLoopback { get; set; } = true;

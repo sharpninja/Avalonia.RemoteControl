@@ -94,6 +94,10 @@ public sealed class RemoteControlAuthenticationInterceptor : Interceptor
                 StatusCode.Unauthenticated,
                 "Authentication is required."));
         }
+
+        context.UserState[RemoteControlClientIdentity.UserStateKey] = string.IsNullOrWhiteSpace(options.AuthenticatedClientIdentity)
+            ? RemoteControlClientIdentity.Unknown
+            : options.AuthenticatedClientIdentity;
     }
 
     private static string? GetBearerToken(global::Grpc.Core.Metadata requestHeaders)

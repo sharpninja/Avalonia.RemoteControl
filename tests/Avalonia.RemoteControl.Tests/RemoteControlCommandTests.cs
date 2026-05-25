@@ -5,9 +5,11 @@ using Avalonia.RemoteControl.Server;
 using Avalonia.RemoteControl.Server.Commands;
 using Avalonia.RemoteControl.Server.Grpc;
 using Avalonia.RemoteControl.Server.Logging;
+using Avalonia.RemoteControl.Server.Security;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Avalonia.RemoteControl.Server.Threading;
 using Avalonia.RemoteControl.Protocol.V1;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -126,6 +128,24 @@ public sealed class RemoteControlCommandTests
     }
 
     [Fact]
+    public async Task ClickInvocationAuditLogIncludesClientIdentity()
+    {
+        var root = new Button();
+        var provider = CreateSnapshotProvider();
+        var snapshot = await provider.CaptureSnapshotAsync(root);
+        var logger = new CapturingLogger<RemoteControlActionInvoker>();
+        var invoker = new RemoteControlActionInvoker(
+            provider,
+            Options.Create(new AvaloniaRemoteControlOptions { AllowRemoteActions = true }),
+            new InlineRemoteControlDispatcher(),
+            logger);
+
+        await invoker.InvokeClickAsync(snapshot.Nodes[0].Id, "desktop-client");
+
+        Assert.Contains(logger.Messages, message => message.Contains("desktop-client", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task FocusInvocationRequiresExplicitActionEnablement()
     {
         var root = new Button();
@@ -209,6 +229,26 @@ public sealed class RemoteControlCommandTests
         Assert.True(result.Succeeded);
     }
 
+    [Fact]
+    public async Task PropertyMutationAuditLogIncludesClientIdentity()
+    {
+        var root = new TextBlock { Text = "Before" };
+        var provider = CreateSnapshotProvider();
+        var snapshot = await provider.CaptureSnapshotAsync(root);
+        var options = new AvaloniaRemoteControlOptions();
+        options.AllowedMutableProperties.Add(nameof(TextBlock.Text));
+        var logger = new CapturingLogger<RemoteControlPropertyMutationService>();
+        var mutation = new RemoteControlPropertyMutationService(
+            provider,
+            Options.Create(options),
+            new InlineRemoteControlDispatcher(),
+            logger);
+
+        await mutation.SetPropertyAsync(snapshot.Nodes[0].Id, nameof(TextBlock.Text), "After", "desktop-client");
+
+        Assert.Contains(logger.Messages, message => message.Contains("desktop-client", StringComparison.Ordinal));
+    }
+
     private static AvaloniaControlTreeSnapshotProvider CreateSnapshotProvider()
     {
         return new AvaloniaControlTreeSnapshotProvider(
@@ -277,5 +317,31 @@ public sealed class RemoteControlCommandTests
         public Rect TestRect { get; set; }
 
         public IBrush? TestBrush { get; set; }
+    }
+
+    private sealed class CapturingLogger<T> : ILogger<T>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull
+        {
+            return null;
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Messages.Add(formatter(state, exception));
+        }
     }
 }

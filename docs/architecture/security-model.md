@@ -27,6 +27,7 @@ Current server implementation:
 - `RemoteControlAuthenticationInterceptor` validates `Authorization: Bearer <token>` on unary and streaming gRPC calls.
 - Missing, invalid, or unconfigured required tokens fail with `Unauthenticated`.
 - Authentication rejection logs include the gRPC method but never the presented token.
+- Successfully authenticated calls receive a sanitized client identity stored in gRPC call state for downstream audit logs.
 
 ## Transport
 
@@ -105,6 +106,11 @@ Security failures also emit audit logs:
 - rejected authorization
 - blocked property access
 - failed mutation attempts
+
+Current server implementation:
+
+- Click, focus, and property mutation audit logs include the stable node ID, command outcome, and sanitized client identity.
+- The default authenticated identity is `remote-client` and can be configured through `AvaloniaRemoteControlOptions.AuthenticatedClientIdentity`.
 
 ## Client Storage
 

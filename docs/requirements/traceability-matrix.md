@@ -108,6 +108,7 @@ Implemented evidence:
 - `AvaloniaControlTreeSnapshotProvider` captures snapshots through `IRemoteControlDispatcher`.
 - `GetCapabilities` and `GetSnapshot` are mapped through `AvaloniaRemoteControlGrpcService`.
 - `RemoteControlSecurityTests` covers bearer-token authentication and startup policy validation for loopback, non-loopback, and ADB tunnel modes.
+- `RemoteControlSecurityTests` covers authenticated client identity stamping in gRPC call state.
 - `RemoteControlHostedServerTests` proves the hosted gRPC endpoint rejects unauthenticated calls and serves authenticated calls.
 - `AvaloniaRemoteControlServerHost` starts the HTTP/2 gRPC transport from `IServiceProvider` services.
 
@@ -166,6 +167,7 @@ Implemented evidence:
 - `RemoteControlCommandTests` covers deny-by-default mutation, allow-listed mutation, sensitive mutation blocking, guarded click invocation, and gRPC command mapping.
 - `RemoteControlCommandTests` covers guarded focus invocation and gRPC focus command mapping.
 - `RemoteControlCommandTests` covers configured mutation for string, `Thickness`, `CornerRadius`, `Point`, `Size`, `Rect`, and solid color brush values.
+- `RemoteControlCommandTests` covers action and mutation audit log messages containing sanitized client identity.
 - Pointer-center synthesis remains planned; current click support uses button semantic invocation.
 
 ## Iteration 3 - Logging

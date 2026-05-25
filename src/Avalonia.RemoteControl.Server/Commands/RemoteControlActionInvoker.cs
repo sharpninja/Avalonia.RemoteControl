@@ -40,35 +40,47 @@ public sealed class RemoteControlActionInvoker
     /// Invokes a basic click action for a stable node ID.
     /// </summary>
     /// <param name="nodeId">The stable node ID.</param>
+    /// <param name="clientIdentity">Sanitized authenticated client identity.</param>
     /// <returns>The sanitized command result.</returns>
-    public ValueTask<RemoteControlCommandResult> InvokeClickAsync(string nodeId)
+    public ValueTask<RemoteControlCommandResult> InvokeClickAsync(
+        string nodeId,
+        string clientIdentity = "unknown")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(nodeId);
-        return dispatcher.InvokeAsync(() => InvokeClick(nodeId));
+        return dispatcher.InvokeAsync(() => InvokeClick(nodeId, clientIdentity));
     }
 
     /// <summary>
     /// Requests focus for a stable node ID.
     /// </summary>
     /// <param name="nodeId">The stable node ID.</param>
+    /// <param name="clientIdentity">Sanitized authenticated client identity.</param>
     /// <returns>The sanitized command result.</returns>
-    public ValueTask<RemoteControlCommandResult> InvokeFocusAsync(string nodeId)
+    public ValueTask<RemoteControlCommandResult> InvokeFocusAsync(
+        string nodeId,
+        string clientIdentity = "unknown")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(nodeId);
-        return dispatcher.InvokeAsync(() => InvokeFocus(nodeId));
+        return dispatcher.InvokeAsync(() => InvokeFocus(nodeId, clientIdentity));
     }
 
-    private RemoteControlCommandResult InvokeClick(string nodeId)
+    private RemoteControlCommandResult InvokeClick(string nodeId, string clientIdentity)
     {
         if (!options.AllowRemoteActions)
         {
-            logger.LogWarning("Remote click rejected because remote actions are disabled for node {NodeId}", nodeId);
+            logger.LogWarning(
+                "Remote click rejected because remote actions are disabled for node {NodeId} from {ClientIdentity}",
+                nodeId,
+                clientIdentity);
             return new RemoteControlCommandResult(false, "Remote actions are disabled by policy.");
         }
 
         if (!nodeResolver.TryResolve(nodeId, out var control))
         {
-            logger.LogWarning("Remote click rejected for stale node {NodeId}", nodeId);
+            logger.LogWarning(
+                "Remote click rejected for stale node {NodeId} from {ClientIdentity}",
+                nodeId,
+                clientIdentity);
             return new RemoteControlCommandResult(false, "Node is no longer available.");
         }
 
@@ -88,29 +100,41 @@ public sealed class RemoteControlActionInvoker
                 button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             }
 
-            logger.LogInformation("Remote click succeeded for node {NodeId}", nodeId);
+            logger.LogInformation(
+                "Remote click succeeded for node {NodeId} from {ClientIdentity}",
+                nodeId,
+                clientIdentity);
             return new RemoteControlCommandResult(true, "Click invoked.");
         }
 
         return new RemoteControlCommandResult(false, "Control does not support click invocation.");
     }
 
-    private RemoteControlCommandResult InvokeFocus(string nodeId)
+    private RemoteControlCommandResult InvokeFocus(string nodeId, string clientIdentity)
     {
         if (!options.AllowRemoteActions)
         {
-            logger.LogWarning("Remote focus rejected because remote actions are disabled for node {NodeId}", nodeId);
+            logger.LogWarning(
+                "Remote focus rejected because remote actions are disabled for node {NodeId} from {ClientIdentity}",
+                nodeId,
+                clientIdentity);
             return new RemoteControlCommandResult(false, "Remote actions are disabled by policy.");
         }
 
         if (!nodeResolver.TryResolve(nodeId, out var control))
         {
-            logger.LogWarning("Remote focus rejected for stale node {NodeId}", nodeId);
+            logger.LogWarning(
+                "Remote focus rejected for stale node {NodeId} from {ClientIdentity}",
+                nodeId,
+                clientIdentity);
             return new RemoteControlCommandResult(false, "Node is no longer available.");
         }
 
         control.Focus();
-        logger.LogInformation("Remote focus requested for node {NodeId}", nodeId);
+        logger.LogInformation(
+            "Remote focus requested for node {NodeId} from {ClientIdentity}",
+            nodeId,
+            clientIdentity);
         return new RemoteControlCommandResult(true, "Focus requested.");
     }
 }

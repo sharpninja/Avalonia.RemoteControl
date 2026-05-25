@@ -45,42 +45,53 @@ public sealed class RemoteControlPropertyMutationService
     /// <param name="nodeId">The stable node ID.</param>
     /// <param name="propertyName">The public property name.</param>
     /// <param name="value">The requested string value.</param>
+    /// <param name="clientIdentity">Sanitized authenticated client identity.</param>
     /// <returns>The sanitized command result.</returns>
     public ValueTask<RemoteControlCommandResult> SetPropertyAsync(
         string nodeId,
         string propertyName,
-        string value)
+        string value,
+        string clientIdentity = "unknown")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(nodeId);
         ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
 
-        return dispatcher.InvokeAsync(() => SetProperty(nodeId, propertyName, value));
+        return dispatcher.InvokeAsync(() => SetProperty(nodeId, propertyName, value, clientIdentity));
     }
 
-    private RemoteControlCommandResult SetProperty(string nodeId, string propertyName, string value)
+    private RemoteControlCommandResult SetProperty(
+        string nodeId,
+        string propertyName,
+        string value,
+        string clientIdentity)
     {
         if (!nodeResolver.TryResolve(nodeId, out var control))
         {
-            logger.LogWarning("Remote property mutation rejected for stale node {NodeId}", nodeId);
+            logger.LogWarning(
+                "Remote property mutation rejected for stale node {NodeId} from {ClientIdentity}",
+                nodeId,
+                clientIdentity);
             return new RemoteControlCommandResult(false, "Node is no longer available.");
         }
 
         if (IsSensitive(propertyName))
         {
             logger.LogWarning(
-                "Remote property mutation blocked for sensitive property {PropertyName} on node {NodeId}",
+                "Remote property mutation blocked for sensitive property {PropertyName} on node {NodeId} from {ClientIdentity}",
                 propertyName,
-                nodeId);
+                nodeId,
+                clientIdentity);
             return new RemoteControlCommandResult(false, "Property is blocked by redaction policy.");
         }
 
         if (!IsPropertyAllowed(control.GetType(), propertyName))
         {
             logger.LogWarning(
-                "Remote property mutation denied by policy for {ControlType}.{PropertyName} on node {NodeId}",
+                "Remote property mutation denied by policy for {ControlType}.{PropertyName} on node {NodeId} from {ClientIdentity}",
                 control.GetType().Name,
                 propertyName,
-                nodeId);
+                nodeId,
+                clientIdentity);
             return new RemoteControlCommandResult(false, "Property mutation is not allowed by policy.");
         }
 
@@ -100,20 +111,22 @@ public sealed class RemoteControlPropertyMutationService
         {
             property.SetValue(control, convertedValue);
             logger.LogInformation(
-                "Remote property mutation succeeded for {ControlType}.{PropertyName} on node {NodeId}",
+                "Remote property mutation succeeded for {ControlType}.{PropertyName} on node {NodeId} from {ClientIdentity}",
                 control.GetType().Name,
                 propertyName,
-                nodeId);
+                nodeId,
+                clientIdentity);
 
             return new RemoteControlCommandResult(true, "Property updated.");
         }
         catch (Exception ex) when (ex is ArgumentException or TargetInvocationException or MethodAccessException)
         {
             logger.LogWarning(
-                "Remote property mutation failed for {ControlType}.{PropertyName} on node {NodeId}",
+                "Remote property mutation failed for {ControlType}.{PropertyName} on node {NodeId} from {ClientIdentity}",
                 control.GetType().Name,
                 propertyName,
-                nodeId);
+                nodeId,
+                clientIdentity);
 
             return new RemoteControlCommandResult(false, "Property update failed.");
         }

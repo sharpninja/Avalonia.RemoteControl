@@ -1,6 +1,7 @@
 using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server.Commands;
 using Avalonia.RemoteControl.Server.Logging;
+using Avalonia.RemoteControl.Server.Security;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
@@ -97,7 +98,9 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         InvokeClickRequest request,
         ServerCallContext context)
     {
-        var result = await actionInvoker.InvokeClickAsync(request.NodeId);
+        var result = await actionInvoker.InvokeClickAsync(
+            request.NodeId,
+            RemoteControlClientIdentity.From(context));
         return result.ToGrpc();
     }
 
@@ -106,7 +109,9 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         InvokeFocusRequest request,
         ServerCallContext context)
     {
-        var result = await actionInvoker.InvokeFocusAsync(request.NodeId);
+        var result = await actionInvoker.InvokeFocusAsync(
+            request.NodeId,
+            RemoteControlClientIdentity.From(context));
         return result.ToGrpc();
     }
 
@@ -118,7 +123,8 @@ public sealed class AvaloniaRemoteControlGrpcService : RemoteControlGrpc.RemoteC
         var result = await propertyMutationService.SetPropertyAsync(
             request.NodeId,
             request.PropertyName,
-            request.Value);
+            request.Value,
+            RemoteControlClientIdentity.From(context));
 
         return result.ToGrpc();
     }
