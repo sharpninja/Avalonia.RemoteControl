@@ -2,7 +2,7 @@
 
 ## Status
 
-Partially implemented for `ADB-BRIDGE-001`.
+Implemented through app-side listener, Android probe build evidence, and physical-device ADB acceptance for `ADB-BRIDGE-001`.
 
 ## Context
 
@@ -34,9 +34,9 @@ Supported marker protocol values:
 
 The client must reject unknown marker protocols before creating an ADB forward. The current client supports `grpc` and `arc-protobuf-v1` for authenticated unary bridge operations.
 
-## Planned Bridge Shape
+## Bridge Shape
 
-The Android app-side bridge should be a small loopback TCP listener using an explicit length-prefixed protobuf request/response envelope. It must avoid `Microsoft.AspNetCore.App`, Kestrel, and `Grpc.AspNetCore` in the Android target.
+The Android app-side bridge is a small loopback TCP listener using an explicit length-prefixed protobuf request/response envelope. It avoids `Microsoft.AspNetCore.App`, Kestrel, and `Grpc.AspNetCore` in the Android target.
 
 The protocol project defines `BridgeRequest`, `BridgeResponse`, `BridgeMethod`, and `BridgeStatus` protobuf contract types plus a host-agnostic frame codec for the length-prefixed envelope. This establishes the wire shape before Android app-side implementation starts.
 
@@ -56,7 +56,14 @@ The desktop tool should select the transport from the marker:
 - `grpc` uses the existing `GrpcRemoteControlProbe` and gRPC desktop session.
 - `arc-protobuf-v1` uses the bridge client adapter behind the same desktop session/probe workflow for capabilities, snapshots, click, focus, and property mutation.
 
-Bridge tree/log streaming and the Android app-side listener remain future work. If an external desktop-facing gRPC endpoint is still required for Android sessions, add a host-side localhost gRPC proxy in a later slice after the Android bridge proof passes.
+Bridge tree/log streaming remains future work. The Android app-side listener starts as a loopback-only TCP listener, dispatches authenticated unary requests through the runtime bridge handler, publishes package-private marker metadata, and stops with the debuggee lifecycle. The Android probe sample writes a per-process debug token into package-private marker JSON, so normal client discovery still uses `adb shell run-as` and does not log the token. If an external desktop-facing gRPC endpoint is still required for Android sessions, add a host-side localhost gRPC proxy in a later slice after the Android bridge proof passes.
+
+## Evidence
+
+- `RemoteControlBridgeTcpListenerTests` covers loopback binding, authenticated capabilities over TCP, snapshot response transport, marker creation, and package-private marker JSON writing.
+- `samples/Avalonia.RemoteControl.AndroidProbe.Android` builds for `net10.0-android` and references `Avalonia.RemoteControl.Runtime`, not `Avalonia.RemoteControl.Server`.
+- The Android probe uses `AvaloniaAndroidApplication<App>` plus non-generic `AvaloniaMainActivity`, then starts `RemoteControlBridgeTcpListener` from the activity lifecycle.
+- Physical Android device `ZD222QH58Q` installed and launched the probe, exposed the marker through `adb shell run-as`, completed `avalonia-remote adb connect --keep-forward`, returned a 31-node snapshot over `arc-protobuf-v1`, and cleaned up the ADB forward.
 
 ## Alternatives
 
@@ -76,8 +83,10 @@ Bridge tree/log streaming and the Android app-side listener remain future work. 
 - `TR-ADB-CONNECTIVITY-012`
 - `TR-ADB-CONNECTIVITY-013`
 - `TR-ADB-CONNECTIVITY-014`
+- `TR-ADB-CONNECTIVITY-015`
 - `TR-SEC-SECURITY-002`
 - `TR-SEC-SECURITY-015`
 - `TEST-ADB-008`
 - `TEST-ADB-009`
 - `TEST-ADB-010`
+- `TEST-ADB-011`

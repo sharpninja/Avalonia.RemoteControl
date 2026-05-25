@@ -76,6 +76,7 @@
 - `TR-ADB-CONNECTIVITY-012`: The client must fail closed before creating an ADB forward when a package marker advertises a transport protocol the client does not implement.
 - `TR-ADB-CONNECTIVITY-013`: Android-compatible runtime services must be isolated from ASP.NET Core/Kestrel host dependencies before Android bridge app-side implementation starts.
 - `TR-ADB-CONNECTIVITY-014`: The Android bridge protocol must use a versioned length-prefixed protobuf envelope that carries bearer authentication, request identity, method identity, payload bytes, response status, and sanitized error details.
+- `TR-ADB-CONNECTIVITY-015`: The Android app-side bridge listener must bind to loopback, handle authenticated unary bridge requests, expose package-private marker metadata, and stop cleanly with the debuggee app lifecycle.
 
 ## Security Constraints
 

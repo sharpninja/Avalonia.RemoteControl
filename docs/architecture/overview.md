@@ -86,7 +86,7 @@ The package-private Android marker is the negotiation point for this split. Miss
 - `Avalonia.RemoteControl.Server` starts a Kestrel HTTP/2 gRPC endpoint, enforces bearer authentication, validates listener/TLS startup policy, and hosts the runtime services for desktop/server-capable targets.
 - `Avalonia.RemoteControl.Tool` opens the desktop client UI by default and also provides ADB device listing, forwarding, package marker discovery, authenticated endpoint probing, and cleanup commands.
 - CI files exist for GitHub Actions and Azure Pipelines.
-- Android app-side bridge listener/probe sample, non-loopback TLS manual certificate acceptance, and richer client profile management remain future slices.
+- Broader Android emulator/device matrix coverage, non-loopback TLS manual certificate acceptance, and richer client profile management remain future slices.
 
 ## Security
 

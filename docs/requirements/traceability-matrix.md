@@ -51,6 +51,7 @@ Requirements:
 - `TR-ADB-CONNECTIVITY-012`
 - `TR-ADB-CONNECTIVITY-013`
 - `TR-ADB-CONNECTIVITY-014`
+- `TR-ADB-CONNECTIVITY-015`
 - `TR-SEC-SECURITY-002`
 - `TR-SEC-SECURITY-005`
 
@@ -66,6 +67,7 @@ Tests/evidence:
 - `TEST-ADB-008`
 - `TEST-ADB-009`
 - `TEST-ADB-010`
+- `TEST-ADB-011`
 - documented decision on Android app-side transport
 
 Evidence:
@@ -75,6 +77,9 @@ Evidence:
 - A generated Avalonia `net10.0-android` app referencing `Avalonia.RemoteControl.Server` failed packaging with `NETSDK1082` because `Microsoft.AspNetCore.App` has no `android-arm64` runtime pack.
 - Decision: Android app-side support needs an Android-compatible bridge or transport behind the same desktop-facing protocol; the current AspNetCore/Kestrel server remains viable for desktop/server-capable targets only.
 - `Avalonia.RemoteControl.Runtime` targets `net10.0-android` and builds without `Microsoft.AspNetCore.App`, Kestrel, or `Grpc.AspNetCore`.
+- `RemoteControlBridgeTcpListenerTests` covers loopback binding, authenticated unary bridge requests, snapshot response transport, marker creation, and package-private marker JSON writing.
+- `samples/Avalonia.RemoteControl.AndroidProbe.Android` builds directly for `net10.0-android` and starts the runtime bridge listener without adding ASP.NET Core/Kestrel dependencies.
+- Physical Android device `ZD222QH58Q` installed and launched the probe package, exposed a package-private `arc-protobuf-v1` marker through `run-as`, completed `avalonia-remote adb connect --keep-forward`, returned a live 31-node snapshot over the forwarded bridge, and removed the ADB forward with `avalonia-remote adb cleanup`.
 
 ## Iteration 1 - Protocol and Read-Only Inspection
 
@@ -295,7 +300,7 @@ Implemented evidence:
 - `AdbClient` creates `adb -s <serial> forward tcp:<hostPort> tcp:<devicePort>` and removes forwards with `adb -s <serial> forward --remove tcp:<hostPort>`.
 - `AdbCommandLine` wires `adb list`, `adb connect`, and `adb cleanup` into the .NET tool workflow.
 - `GrpcRemoteControlProbe` authenticates `GetCapabilities` over the forwarded localhost endpoint.
-- Real emulator/device acceptance remains under Technical Spike 0 and `TEST-MANUAL-003`.
+- Physical-device acceptance for the Android bridge probe is recorded under Technical Spike 0 and `TEST-MANUAL-003`; broader emulator/device matrix coverage remains future compatibility work.
 
 ## Iteration 7 - Android Bridge Transport
 
@@ -317,6 +322,7 @@ Tests/evidence:
 - `TEST-ADB-008`
 - `TEST-ADB-009`
 - `TEST-ADB-010`
+- `TEST-ADB-011`
 - `TEST-MANUAL-003`
 - Android bridge sample package
 - package marker read through `adb shell run-as`
@@ -335,6 +341,7 @@ Implemented evidence:
 - `RemoteControlBridgeRequestHandlerTests` covers bridge bearer authentication, capabilities, snapshot dispatch, and property mutation through the runtime policy.
 - `RemoteControlDesktopSessionTests` covers capabilities over a loopback TCP `arc-protobuf-v1` bridge connection.
 - `RemoteControlAdbClientTests` covers marker-discovered `arc-protobuf-v1` ADB connect flow and protocol handoff to probing.
+- App-side bridge listener tests, Android probe build evidence, and physical device acceptance cover `TR-ADB-CONNECTIVITY-015`, `TEST-ADB-011`, and `TEST-MANUAL-003`.
 - Technical Spike 0 rejected ASP.NET Core/Kestrel gRPC as the Android app-side transport and created the bridge requirement.
 
 ## Iteration 6 - CI, Packaging, and Release

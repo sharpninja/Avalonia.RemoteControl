@@ -48,7 +48,7 @@ Key gates:
 
 ## Current Workspace State
 
-This repository has completed foundation work and contains implementation evidence through protocol/read-only inspection, remote actions, logging, desktop client/tool, host-side ADB client workflow, CI, and packaging slices. Technical Spike 0 for real Android app-side transport remains the next product-blocking proof.
+This repository has completed foundation work and contains implementation evidence through protocol/read-only inspection, remote actions, logging, desktop client/tool, host-side ADB client workflow, Android bridge listener/probe build, physical-device ADB bridge acceptance, CI, and packaging slices. Broader Android emulator/device matrix coverage remains future compatibility work.
 
 Configured remotes:
 

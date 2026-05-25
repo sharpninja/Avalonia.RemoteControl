@@ -55,6 +55,6 @@ The product is valuable only if it is easy to add to an app, easy to connect fro
 ## Open Product Risks
 
 - The ASP.NET Core/Kestrel gRPC host is not packageable as the Android app-side transport because `Microsoft.AspNetCore.App` has no `android-arm64` runtime pack; Android uses the runtime/bridge path instead.
-- The Android app-side bridge listener and probe package still need real emulator/device proof.
+- Physical-device Android bridge acceptance has passed for the probe package; broader emulator/device matrix coverage remains future compatibility work.
 - Property mutation can produce app side effects and needs strict policy controls.
 - Public GitHub plus private Azure DevOps needs a clear release/source-of-truth policy before publishing.

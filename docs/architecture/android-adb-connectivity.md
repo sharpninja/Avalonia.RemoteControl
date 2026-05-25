@@ -79,6 +79,7 @@ Technical requirements:
 - `TR-ADB-CONNECTIVITY-012`
 - `TR-ADB-CONNECTIVITY-013`
 - `TR-ADB-CONNECTIVITY-014`
+- `TR-ADB-CONNECTIVITY-015`
 
 Security requirements:
 
@@ -108,7 +109,7 @@ Current status: host-side ADB workflow is implemented and unit-tested. `adb` is 
 
 Technical Spike 0 found that the current Kestrel/AspNetCore gRPC server transport is not viable as the Android app-side transport. A throwaway `net10.0-android` app referencing `Avalonia.RemoteControl.Server` restored and compiled project references, then failed Android packaging with `NETSDK1082` because `Microsoft.AspNetCore.App` has no `android-arm64` runtime pack. Android support therefore needs an Android-compatible app-side bridge or transport behind the same desktop-facing protocol instead of directly hosting the current AspNetCore server in-process.
 
-The `arc-protobuf-v1` marker value and bridge envelope contract are defined in the protocol package. `Avalonia.RemoteControl.Runtime` now builds for `net10.0-android` without ASP.NET Core/Kestrel dependencies, and the desktop client can probe `arc-protobuf-v1` endpoints through the bridge adapter. The Android app-side listener and Android probe sample remain open.
+The `arc-protobuf-v1` marker value and bridge envelope contract are defined in the protocol package. `Avalonia.RemoteControl.Runtime` now builds for `net10.0-android` without ASP.NET Core/Kestrel dependencies, and the desktop client can probe `arc-protobuf-v1` endpoints through the bridge adapter. The Android app-side listener and Android probe sample build and run on a physical Android device, including marker discovery, ADB forward/probe, snapshot capture, and cleanup.
 
 Minimal proof commands used:
 
@@ -121,11 +122,19 @@ dotnet new avalonia.xplat -o $tmp -n AdbSpikeProbe -f net10.0 -av 12.0.3 --no-up
 dotnet add "$tmp\AdbSpikeProbe.Android\AdbSpikeProbe.Android.csproj" reference "F:\GitHub\Avalonia.RemoteControl\src\Avalonia.RemoteControl.Server\Avalonia.RemoteControl.Server.csproj"
 dotnet build "$tmp\AdbSpikeProbe.Android\AdbSpikeProbe.Android.csproj" -c Debug
 adb -s <serial> shell run-as <debuggable-package> cat files/avalonia-remote-control.json
+dotnet build .\samples\Avalonia.RemoteControl.AndroidProbe.Android\Avalonia.RemoteControl.AndroidProbe.Android.csproj -c Debug -f net10.0-android
+dotnet build .\samples\Avalonia.RemoteControl.AndroidProbe.Android\Avalonia.RemoteControl.AndroidProbe.Android.csproj -c Debug -f net10.0-android -t:Install -p:AndroidDeviceSerial=ZD222QH58Q
+adb -s ZD222QH58Q shell am start -W -n com.sharpninja.avalonia.remotecontrol.androidprobe/crc648b1415297009bbf4.MainActivity
+adb -s ZD222QH58Q shell run-as com.sharpninja.avalonia.remotecontrol.androidprobe cat files/avalonia-remote-control.json
+dotnet run --project .\src\Avalonia.RemoteControl.Tool\Avalonia.RemoteControl.Tool.csproj --configuration Release --no-build -- adb connect --serial ZD222QH58Q --package com.sharpninja.avalonia.remotecontrol.androidprobe --keep-forward
+dotnet run --project .\src\Avalonia.RemoteControl.Tool\Avalonia.RemoteControl.Tool.csproj --configuration Release --no-build -- adb cleanup --serial ZD222QH58Q --host-port 47100
 ```
 
 Spike decision: keep the host-side ADB workflow, package-private marker model, bearer authentication, and cleanup behavior. Replace the Android app-side transport plan with an Android-compatible bridge/transport that does not depend on `Microsoft.AspNetCore.App`.
 
-Bridge proof commands once the bridge sample exists:
+Bridge proof result: physical device `ZD222QH58Q` launched the probe, wrote a package-private marker with `bridgeProtocol: arc-protobuf-v1`, completed authenticated capabilities probing through `avalonia-remote adb connect`, returned a 31-node snapshot over the forwarded bridge, and removed the ADB forward.
+
+Bridge proof commands:
 
 ```powershell
 $serial = "<serial>"
@@ -142,7 +151,6 @@ dotnet run --project .\src\Avalonia.RemoteControl.Tool\Avalonia.RemoteControl.To
 ## Open Design Questions
 
 - The default Android endpoint metadata location is the debuggable package-private marker file `files/avalonia-remote-control.json`; explicit CLI flags remain the fallback path.
-- Which Android-compatible bridge protocol should back the ADB tunnel while preserving the client capability contract?
 - What cancellation and backpressure rules should `arc-protobuf-v1` enforce for streamed tree/log updates?
 - How should generated debug tokens be surfaced to the developer without logging secrets?
 - Should ADB cleanup remove only forwards created by this client instance or all forwards for the configured port?

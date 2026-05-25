@@ -43,6 +43,7 @@ public static class AvaloniaRemoteControlRuntimeServiceCollectionExtensions
         services.AddSingleton<Commands.RemoteControlPropertyMutationService>();
         services.AddSingleton<Runtime.IRemoteControlRuntime, Runtime.RemoteControlRuntime>();
         services.AddSingleton<Bridge.RemoteControlBridgeRequestHandler>();
+        services.AddSingleton<Bridge.RemoteControlBridgeTcpListener>();
         services.AddSingleton<Threading.IRemoteControlDispatcher, Threading.AvaloniaUiThreadRemoteControlDispatcher>();
         services.AddSingleton<Snapshots.RemoteControlTreeStreamService>();
         services.AddSingleton<Snapshots.AvaloniaControlTreeSnapshotProvider>();

@@ -4,6 +4,7 @@ using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server;
 using Avalonia.RemoteControl.Server.Bridge;
 using Avalonia.RemoteControl.Server.Snapshots;
+using Avalonia.RemoteControl.Server.Threading;
 using Google.Protobuf;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -131,6 +132,7 @@ public sealed class RemoteControlBridgeRequestHandlerTests
     {
         var services = new ServiceCollection();
         services.AddAvaloniaRemoteControl(configure);
+        services.AddSingleton<IRemoteControlDispatcher, InlineRemoteControlDispatcher>();
         services.AddSingleton<IRemoteControlRootProvider>(new StaticRemoteControlRootProvider(root));
 
         return services.BuildServiceProvider();

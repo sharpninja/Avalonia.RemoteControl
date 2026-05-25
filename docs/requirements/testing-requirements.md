@@ -54,6 +54,7 @@
 - `TEST-ADB-008`: Unit tests verify versioned Android marker protocol parsing and fail-closed handling for unsupported marker transports.
 - `TEST-ADB-009`: Unit tests verify the `arc-protobuf-v1` bridge envelope encodes and decodes length-prefixed protobuf request/response frames and rejects oversized frames.
 - `TEST-ADB-010`: Unit tests and build checks verify the host-independent runtime builds for `net10.0-android`, dispatches bridge requests with bearer authentication, and lets the host client probe marker-discovered `arc-protobuf-v1` endpoints.
+- `TEST-ADB-011`: Unit tests and build checks verify the app-side bridge listener accepts authenticated length-prefixed protobuf requests, writes Android marker metadata, and can be referenced by the Android probe sample without ASP.NET Core/Kestrel dependencies.
 
 ## Packaging and CI Tests
 
