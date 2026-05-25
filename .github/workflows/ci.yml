@@ -72,7 +72,9 @@ jobs:
             'SharpNinja.Avalonia.RemoteControl.Tool.'
           )
 
-          $packages = Get-ChildItem artifacts/packages -Filter *.nupkg | Select-Object -ExpandProperty FullName
+          $packages = Get-ChildItem artifacts/packages |
+            Where-Object { $_.Extension -eq '.nupkg' } |
+            Select-Object -ExpandProperty FullName
           foreach ($package in $packages) {
             $packageName = Split-Path -Leaf $package
             $baseName = [System.IO.Path]::GetFileNameWithoutExtension($packageName)
