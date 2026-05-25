@@ -111,6 +111,7 @@ Implemented evidence:
 - `RemoteControlSecurityTests` covers authenticated client identity stamping in gRPC call state.
 - `RemoteControlHostedServerTests` proves the hosted gRPC endpoint rejects unauthenticated calls and serves authenticated calls.
 - `AvaloniaRemoteControlServerHost` starts the HTTP/2 gRPC transport from `IServiceProvider` services.
+- `RemoteControlHostingTests` covers the `IServiceProvider.StartAvaloniaRemoteControlAsync` and `StopAvaloniaRemoteControlAsync` helper path when the server is disabled.
 
 ## Iteration 2 - Live Updates and Remote Actions
 
