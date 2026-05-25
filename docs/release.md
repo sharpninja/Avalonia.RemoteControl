@@ -22,6 +22,8 @@ Release builds produce:
 
 - `Avalonia.RemoteControl.Server.<version>.nupkg`
 - `Avalonia.RemoteControl.Server.<version>.snupkg`
+- `Avalonia.RemoteControl.Runtime.<version>.nupkg`
+- `Avalonia.RemoteControl.Runtime.<version>.snupkg`
 - `Avalonia.RemoteControl.Tool.<version>.nupkg`
 - `Avalonia.RemoteControl.Tool.<version>.snupkg`
 
@@ -36,6 +38,6 @@ dotnet test Avalonia.RemoteControl.slnx --configuration Release --no-build
 dotnet pack Avalonia.RemoteControl.slnx --configuration Release --no-build --output <artifact-dir>
 ```
 
-Tagged `v*` builds publish only when package secrets are configured.
+Tagged `v*` builds publish only when package secrets are configured. Azure follows the aiUnit pattern: the secret pipeline variable is named `NuGetApiKey`, exposed to the publish step as `NUGET_API_KEY`, and read only through `$env:NUGET_API_KEY` inside the script.
 
-Duplicate publish prevention uses `dotnet nuget push --skip-duplicate` in both GitHub and Azure release paths.
+Duplicate publish prevention uses `dotnet nuget push --skip-duplicate` in both GitHub and Azure release paths. Azure publishes the primary `.nupkg` packages and keeps `.snupkg` symbol packages in the build artifact.
