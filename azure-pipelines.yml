@@ -3,6 +3,9 @@ trigger:
     include:
       - master
       - main
+  tags:
+    include:
+      - v*
 
 pr:
   branches:
@@ -15,6 +18,7 @@ pool:
 
 variables:
   BuildConfiguration: Release
+  CI: true
 
 steps:
   - task: UseDotNet@2
@@ -40,3 +44,13 @@ steps:
     inputs:
       PathtoPublish: $(Build.ArtifactStagingDirectory)/packages
       ArtifactName: nuget-packages
+
+  - pwsh: |
+      Get-ChildItem "$(Build.ArtifactStagingDirectory)/packages" -Filter *.nupkg | ForEach-Object {
+        dotnet nuget push $_.FullName --source https://api.nuget.org/v3/index.json --api-key "$(NuGetApiKey)" --skip-duplicate
+      }
+      Get-ChildItem "$(Build.ArtifactStagingDirectory)/packages" -Filter *.snupkg | ForEach-Object {
+        dotnet nuget push $_.FullName --source https://api.nuget.org/v3/index.json --api-key "$(NuGetApiKey)" --skip-duplicate
+      }
+    displayName: Publish tagged packages
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), ne(variables['NuGetApiKey'], ''))

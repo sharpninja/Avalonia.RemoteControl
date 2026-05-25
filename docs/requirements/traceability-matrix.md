@@ -294,3 +294,11 @@ Tests/evidence:
 - `TEST-CI-002`
 - package artifacts
 - tagged release dry run before first public publish
+
+Implemented evidence:
+
+- `Directory.Build.props` enables repository URL metadata, SourceLink, embedded untracked sources, `.nupkg`, and `.snupkg` package outputs.
+- `Microsoft.SourceLink.GitHub` is centrally versioned in `Directory.Packages.props`.
+- `.github/workflows/ci.yml` restores, builds, tests, packs, uploads artifacts, and publishes tagged `v*` packages only when `NUGET_API_KEY` is configured.
+- `azure-pipelines.yml` restores, builds, tests, packs, publishes build artifacts, and can publish tagged `v*` packages only when `NuGetApiKey` is configured.
+- `docs/release.md` documents GitHub as public release source of truth, Azure as private validation/mirror, tagged release shape, and duplicate publish prevention through `--skip-duplicate`.
