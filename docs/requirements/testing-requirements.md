@@ -49,14 +49,21 @@
 - `TEST-CLIENT-001`: Client tests verify live-view coordinate mapping, frame updates, input batching, and tree-replica model updates.
 - `TEST-CLIENT-002`: Client tests verify the supported log verbosity options and selected minimum level mapping for Debug, Information, Warning, and Error.
 - `TEST-CLIENT-003`: Unit tests verify live-view hit testing chooses the deepest visible node whose absolute bounds contain the clicked root-relative point and ignores invisible or out-of-bounds nodes.
-- `TEST-CLIENT-004`: Unit tests verify the reusable live-view surface keeps the existing hit-test selection behavior while enabling both generic floating tool-window and right-side dock hosting paths.
+- `TEST-CLIENT-004`: Unit tests verify the reusable live-view surface keeps the existing hit-test selection behavior while enabling both generic floating tool-window and direct right-side dock-tab hosting paths without nested live-view dock chrome.
 - `TEST-CLIENT-005`: Build validation verifies the Avalonia XAML styles for Visual Studio-like dockable panels compile, and the existing client tests continue to verify docked and floating log/live-view behavior after styling changes.
 - `TEST-CLIENT-006`: Unit tests verify project documents preserve app connection profiles, sessions, log history, replay steps, and artifact references across save/load round trips.
 - `TEST-CLIENT-007`: Unit tests verify replay diff generation reports added, removed, changed, and unchanged control-tree state for each replayed interaction step.
 - `TEST-CLIENT-008`: Unit tests verify replay records can mark sensitive payload fields and do not format bearer tokens or typed text into diagnostic log messages.
-- `TEST-CLIENT-009`: Build and unit validation verify the live-view float command opens a generic floating tool window and keeps Visual Studio-style shell XAML compiling.
+- `TEST-CLIENT-009`: Build and unit validation verify the live-view float command opens a generic floating tool window and the right-side Live View tab hosts constrained live-view content directly without nested tool-window chrome or toolbar overflow.
 - `TEST-CLIENT-010`: Unit tests verify project documents persist and restore client layout state including window dimensions, splitter sizes, selected panel tab, log floating state, live-view dock state, and dock-pane auto-hide state.
 - `TEST-CLIENT-011`: Build and unit validation verify the dock chrome model persists panel state and that the Avalonia XAML for icon commands, draggable headers, floating windows, dock-back commands, and hidden or auto-hide states compiles without regressing existing log and live-view behavior.
+- `TEST-CLIENT-014`: Unit tests verify both the legacy diagnostic stdio server and the in-process Streamable HTTP MCP endpoint handle initialize, tool listing, and tool call JSON-RPC messages without emitting non-MCP payloads.
+- `TEST-CLIENT-015`: Unit tests verify the embedded terminal Codex MCP preset registers the running app's loopback MCP URL, seeds guidance for using capabilities, snapshots, focus, click, and property tools with tree-first node discovery instead of screenshots, uses the captured tool startup working directory instead of a later process current directory, returns equivalent MCP initialize instructions, and does not pass remote endpoint, transport, bearer token, environment variable names, profile arguments, or `avalonia-remote mcp` child-process commands.
+
+## MCP Server aiUnit Integration Tests
+
+- `TEST-MCP-001`: Tests verify MCP Server marker evidence loading, aiUnit prompt and JSON response validation, and an explicit opt-in live aiUnit MCP Server contract review that fails on high or critical findings when `ARC_AIUNIT_MCP_SERVER_TESTS_ENABLED` is enabled.
+- `TEST-MCP-002`: Tests verify `appsettings.aiunit.json` is copied to the test output and configures the active aiUnit strategy as the installed Codex CLI strategy before any opt-in live MCP Server review is attempted.
 
 ## Security Tests
 

@@ -9,6 +9,12 @@ namespace Avalonia.RemoteControl.Tool;
 public sealed class DockLayout : Panel
 {
     /// <summary>
+    /// Defines the collapsed auto-hide strip thickness property.
+    /// </summary>
+    public static readonly StyledProperty<double> AutoHideStripThicknessProperty =
+        AvaloniaProperty.Register<DockLayout, double>(nameof(AutoHideStripThickness), 34);
+
+    /// <summary>
     /// Defines the dock region attached property.
     /// </summary>
     public static readonly AttachedProperty<DockRegion> RegionProperty =
@@ -47,6 +53,7 @@ public sealed class DockLayout : Panel
             WestWidthProperty,
             EastWidthProperty,
             SouthHeightProperty,
+            AutoHideStripThicknessProperty,
             DockSpacingProperty);
         RegionProperty.Changed.AddClassHandler<Control>((control, _) =>
         {
@@ -82,6 +89,15 @@ public sealed class DockLayout : Panel
     {
         get => GetValue(SouthHeightProperty);
         set => SetValue(SouthHeightProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the width or height reserved for an auto-hidden dock strip.
+    /// </summary>
+    public double AutoHideStripThickness
+    {
+        get => GetValue(AutoHideStripThicknessProperty);
+        set => SetValue(AutoHideStripThicknessProperty, value);
     }
 
     /// <summary>
@@ -149,49 +165,50 @@ public sealed class DockLayout : Panel
 
     private RegionSizes CalculateRegionSizes(Size availableSize)
     {
-        var visibleRegions = GetVisibleRegions();
+        var westState = GetVisibleRegionState(DockRegion.West);
+        var eastState = GetVisibleRegionState(DockRegion.East);
+        var southState = GetVisibleRegionState(DockRegion.South);
         var spacing = Math.Max(0, DockSpacing);
+        var stripThickness = Math.Max(0, AutoHideStripThickness);
         var width = Math.Max(0, availableSize.Width);
         var height = Math.Max(0, availableSize.Height);
-        var west = visibleRegions.West ? Clamp(WestWidth, 0, Math.Max(0, width - spacing)) : 0;
-        var east = visibleRegions.East ? Clamp(EastWidth, 0, Math.Max(0, width - west - spacing)) : 0;
+        var west = westState.IsVisible
+            ? Clamp(westState.IsAutoHidden ? stripThickness : WestWidth, 0, Math.Max(0, width - spacing))
+            : 0;
+        var east = eastState.IsVisible
+            ? Clamp(eastState.IsAutoHidden ? stripThickness : EastWidth, 0, Math.Max(0, width - west - spacing))
+            : 0;
         var contentWidth = Math.Max(
             0,
             width - west - east - (HasSideRegion(west) ? spacing : 0) - (HasSideRegion(east) ? spacing : 0));
-        var south = visibleRegions.South ? Clamp(SouthHeight, 0, Math.Max(0, height - spacing)) : 0;
+        var south = southState.IsVisible
+            ? Clamp(southState.IsAutoHidden ? stripThickness : SouthHeight, 0, Math.Max(0, height - spacing))
+            : 0;
         var contentHeight = Math.Max(0, height - south - (south > 0 ? spacing : 0));
 
         return new RegionSizes(west, east, south, contentWidth, contentHeight, spacing);
     }
 
-    private VisibleRegions GetVisibleRegions()
+    private VisibleRegionState GetVisibleRegionState(DockRegion region)
     {
-        var west = false;
-        var east = false;
-        var south = false;
+        var hasVisible = false;
+        var hasExpanded = false;
 
         foreach (var child in Children)
         {
-            if (!child.IsVisible)
+            if (!child.IsVisible || GetRegion(child) != region)
             {
                 continue;
             }
 
-            switch (GetRegion(child))
+            hasVisible = true;
+            if (child is not IDockAutoHideHost { IsAutoHidden: true })
             {
-                case DockRegion.West:
-                    west = true;
-                    break;
-                case DockRegion.East:
-                    east = true;
-                    break;
-                case DockRegion.South:
-                    south = true;
-                    break;
+                hasExpanded = true;
             }
         }
 
-        return new VisibleRegions(west, east, south);
+        return new VisibleRegionState(hasVisible, hasVisible && !hasExpanded);
     }
 
     private static Size GetConstraintForRegion(DockRegion region, RegionSizes sizes)
@@ -239,7 +256,18 @@ public sealed class DockLayout : Panel
         double ContentHeight,
         double Spacing);
 
-    private readonly record struct VisibleRegions(bool West, bool East, bool South);
+    private readonly record struct VisibleRegionState(bool IsVisible, bool IsAutoHidden);
+}
+
+/// <summary>
+/// Allows a docked child to tell <see cref="DockLayout"/> it should reserve only an auto-hide strip.
+/// </summary>
+public interface IDockAutoHideHost
+{
+    /// <summary>
+    /// Gets a value indicating whether the docked child is collapsed to an auto-hide strip.
+    /// </summary>
+    bool IsAutoHidden { get; }
 }
 
 /// <summary>

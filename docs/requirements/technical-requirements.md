@@ -58,6 +58,17 @@
 - `TR-CLIENT-REPLAY-001`: The client records replay steps with command type, order, timing, target node, connection context, before/after tree artifact references, and replay results; replay diffs compare original and replayed tree snapshots per step.
 - `TR-CLIENT-REPLAY-002`: Interaction replay artifacts are user-scoped project data; bearer tokens, certificates, and typed text must not be written to `ILogger` diagnostics, and replay records must identify sensitive payload fields.
 
+## Client MCP Host
+
+- `TR-CLIENT-MCP-001`: The desktop application starts an in-process Streamable HTTP MCP endpoint by default on loopback, validates the request path and Origin header, serves JSON-RPC requests over HTTP POST, returns `405` for unsupported GET streams, and never requires Codex to launch `avalonia-remote mcp` as a child server process.
+- `TR-CLIENT-MCP-002`: The MCP host exposes approved tools for remote capabilities, tree snapshot, click, focus, and property mutation by adapting `RemoteControlDesktopSession` with the configured endpoint, token, transport protocol, and certificate trust settings.
+- `TR-CLIENT-MCP-003`: The embedded terminal's Codex launch profile registers the running app's MCP Streamable HTTP URL through Codex `mcp_servers` configuration, passing only the in-process loopback URL plus a seed prompt, launching from the tool process startup working directory by default, documenting the available remote-control tools, requiring snapshot/tree-first node discovery, and avoiding screenshots or pixel inspection as the primary control-selection path; it must not pass remote endpoint, transport, bearer token, profile, environment variable, or `avalonia-remote` child-process arguments.
+
+## MCP Server Validation
+
+- `TR-MCP-AIUNIT-001`: MCP Server integration tests use `SharpNinja.aiUnit` to build a JSON-only frontier review request from sanitized marker and health evidence, remain explicit opt-in for live AI execution through `ARC_AIUNIT_MCP_SERVER_TESTS_ENABLED`, and keep the normal test suite deterministic with zero skipped tests when no aiUnit strategy is configured.
+- `TR-MCP-AIUNIT-002`: The test project supplies an `appsettings.aiunit.json` aiUnit strategy named `codex-subscription` with `Kind=cli` and `Command=codex`, causing opt-in live aiUnit MCP Server reviews to run through the operator's installed Codex CLI and existing subscription authentication by default.
+
 ## Property Mutation
 
 - `TR-PROP-MUTATION-001`: Property mutation is deny-by-default unless allowed by configured policy.
@@ -77,7 +88,7 @@
 ## Client Live View
 
 - `TR-LIVE-VIEW-011`: The live remote UI window maps pointer-click coordinates to root-relative DIPs, hit-tests the latest visible tree nodes using absolute bounds from deepest/topmost node to root, raises the selected node ID to the main window, and the main window selects and reveals the matching control-tree item when present.
-- `TR-LIVE-VIEW-012`: The desktop client factors the live-view rendering and input surface into a reusable control that can be hosted either in a generic floating tool window or in a right-side dock area of the main window, with only one stream per hosted live-view instance and the same node-selection callback behavior.
+- `TR-LIVE-VIEW-012`: The desktop client factors the live-view rendering and input surface into a reusable control that can be hosted either in a generic floating tool window or directly in the right-side Remote Tools tab area, with no nested live-view dock chrome, constrained or scrollable content, only one stream per hosted live-view instance, and the same node-selection callback behavior.
 - `TR-LIVE-VIEW-013`: The docked live-view float command moves the hosted live-view experience into a generic `FloatingDockPaneWindow` with the same session, capability, selection, and input recording callbacks.
 
 ## Logging

@@ -21,16 +21,6 @@ public sealed partial class RemoteToolsPanel : UserControl
     public event EventHandler? SelectedTabChanged;
 
     /// <summary>
-    /// Raised when the nested live-view chrome emits a command.
-    /// </summary>
-    public event EventHandler<DockPaneCommandEventArgs>? LiveViewCommandRequested;
-
-    /// <summary>
-    /// Raised when the nested live-view header is dragged.
-    /// </summary>
-    public event EventHandler<DockPaneDragCompletedEventArgs>? LiveViewHeaderDragCompleted;
-
-    /// <summary>
     /// Gets or sets the panel view model.
     /// </summary>
     public RemoteToolsPanelViewModel? ViewModel
@@ -79,13 +69,4 @@ public sealed partial class RemoteToolsPanel : UserControl
         SelectedTabChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private void LiveViewChromeCommandRequested(object? sender, DockPaneCommandEventArgs e)
-    {
-        LiveViewCommandRequested?.Invoke(this, e);
-    }
-
-    private void LiveViewChromeHeaderDragCompleted(object? sender, DockPaneDragCompletedEventArgs e)
-    {
-        LiveViewHeaderDragCompleted?.Invoke(this, e);
-    }
 }

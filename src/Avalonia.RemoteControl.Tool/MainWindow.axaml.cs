@@ -36,6 +36,7 @@ public sealed partial class MainWindow : Window
         RemoteControlProjectDocument.Create(RemoteControlProjectIds.DefaultProjectId, RemoteControlProjectIds.DefaultProjectName);
     private RemoteControlProjectSessionRecorder? projectRecorder;
     private RemoteControlDesktopSession? session;
+    private RemoteControlMcpHttpServer? mcpHttpServer;
     private RemoteLiveViewCapabilities liveViewCapabilities = RemoteLiveViewCapabilities.None;
     private TreeNode? selectedNode;
     private TreeSnapshot? lastSnapshot;
@@ -71,8 +72,6 @@ public sealed partial class MainWindow : Window
         WorkspacePanel.Properties.PropertySelected += (_, row) => PropertySelectionChanged(row);
         RemoteToolsPanel.ViewModel = remoteToolsView;
         RemoteToolsPanel.SelectedTabChanged += (_, _) => ScheduleLayoutSave();
-        RemoteToolsPanel.LiveViewCommandRequested += DockPaneCommandRequested;
-        RemoteToolsPanel.LiveViewHeaderDragCompleted += DockPaneHeaderDragCompleted;
         RemoteToolsPanel.Actions.InvokeClickRequested += (_, _) => InvokeClickClicked(null, new RoutedEventArgs());
         RemoteToolsPanel.Actions.FocusRequested += (_, _) => InvokeFocusClicked(null, new RoutedEventArgs());
         RemoteToolsPanel.Actions.SetPropertyRequested += (_, _) => SetPropertyClicked(null, new RoutedEventArgs());
@@ -89,6 +88,13 @@ public sealed partial class MainWindow : Window
             RemoteControlProtocol.AndroidBridgeTransportProtocol,
         };
         TransportProtocolBox.SelectedItem = RemoteControlProtocol.GrpcTransportProtocol;
+        mcpHttpServer = RemoteControlMcpHttpServer.Start(CreateMcpOptionsFromTerminalState);
+        workspaceView.Terminal.RemoteControlMcpUrl = mcpHttpServer.Endpoint.ToString();
+        EndpointBox.TextChanged += (_, _) => UpdateTerminalMcpProfileFromFields();
+        TokenBox.TextChanged += (_, _) => UpdateTerminalMcpProfileFromFields();
+        CertificatePathBox.TextChanged += (_, _) => UpdateTerminalMcpProfileFromFields();
+        AcceptedFingerprintBox.TextChanged += (_, _) => UpdateTerminalMcpProfileFromFields();
+        TransportProtocolBox.SelectionChanged += (_, _) => UpdateTerminalMcpProfileFromFields();
         AdbPathBox.Text = ProcessAdbCommandRunner.ResolveDefaultAdbPath();
         SizeChanged += (_, _) => ScheduleLayoutSave();
         Opened += (_, _) => RestoreFloatingLogIfNeeded();
@@ -99,6 +105,7 @@ public sealed partial class MainWindow : Window
         };
         UpdateLogStreamStatus("Log stream stopped.");
         UpdateLogPresentationState();
+        UpdateTerminalMcpProfileFromFields();
         UpdateProjectStatus();
 
         Closing += (_, _) =>
@@ -110,6 +117,7 @@ public sealed partial class MainWindow : Window
             StopDockedLiveView();
             projectRecorder?.Complete();
             CloseFloatingToolWindows();
+            mcpHttpServer?.Dispose();
             session?.Dispose();
             _ = SaveProjectAsync(captureLayout: false);
         };
@@ -640,7 +648,6 @@ public sealed partial class MainWindow : Window
         {
             "controlTree" => CreateControlTreePanel(),
             "properties" => CreatePropertiesPanel(),
-            "workspace" => CreateWorkspacePanel(),
             "remoteTools" => CreateRemoteToolsPanel(floating),
             _ => null,
         };
@@ -695,8 +702,6 @@ public sealed partial class MainWindow : Window
     private void WireRemoteToolsPanel(RemoteToolsPanel panel)
     {
         panel.SelectedTabChanged += (_, _) => ScheduleLayoutSave();
-        panel.LiveViewCommandRequested += DockPaneCommandRequested;
-        panel.LiveViewHeaderDragCompleted += DockPaneHeaderDragCompleted;
         panel.Actions.InvokeClickRequested += (_, _) => InvokeClickClicked(null, new RoutedEventArgs());
         panel.Actions.FocusRequested += (_, _) => InvokeFocusClicked(null, new RoutedEventArgs());
         panel.Actions.SetPropertyRequested += (_, _) => SetPropertyClicked(null, new RoutedEventArgs());
@@ -709,7 +714,6 @@ public sealed partial class MainWindow : Window
         return panelId switch
         {
             "controlTree" => ControlTreePane,
-            "workspace" => WorkspacePane,
             "remoteTools" => RemoteToolsPane,
             "logs" => LogsPane,
             _ => null,
@@ -1255,7 +1259,7 @@ public sealed partial class MainWindow : Window
         layout.LogsPoppedOut = logView.IsPoppedOut;
         layout.LiveViewDocked = dockedLiveViewControl is not null || restoreDockedLiveViewOnConnect;
         layout.ControlTreeAutoHidden = ControlTreePane.IsAutoHidden;
-        layout.PropertiesAutoHidden = WorkspacePane.IsAutoHidden;
+        layout.PropertiesAutoHidden = false;
         layout.RemoteToolsAutoHidden = RemoteToolsPane.IsAutoHidden;
         layout.LogsAutoHidden = LogsPane.IsAutoHidden;
     }
@@ -1291,7 +1295,6 @@ public sealed partial class MainWindow : Window
             WorkspacePanel.SelectedTabIndex = Math.Clamp(layout.WorkspaceTabIndex, 0, 1);
             restoreDockedLiveViewOnConnect = layout.LiveViewDocked;
             ControlTreePane.IsAutoHidden = layout.ControlTreeAutoHidden;
-            WorkspacePane.IsAutoHidden = layout.PropertiesAutoHidden;
             RemoteToolsPane.IsAutoHidden = layout.RemoteToolsAutoHidden;
             LogsPane.IsAutoHidden = layout.LogsAutoHidden;
 
@@ -1643,12 +1646,54 @@ public sealed partial class MainWindow : Window
         {
             AdbHostPortBox.Text = profile.AdbHostPort.Value.ToString();
         }
+
+        UpdateTerminalMcpProfileFromFields();
     }
 
     private string GetSelectedTransportProtocol()
     {
         return TransportProtocolBox.SelectedItem as string
             ?? RemoteControlProtocol.GrpcTransportProtocol;
+    }
+
+    private void UpdateTerminalMcpProfileFromFields()
+    {
+        workspaceView.Terminal.RemoteControlEndpoint = EndpointBox.Text ?? string.Empty;
+        workspaceView.Terminal.RemoteControlToken = TokenBox.Text ?? string.Empty;
+        workspaceView.Terminal.RemoteControlTransportProtocol = GetSelectedTransportProtocol();
+        workspaceView.Terminal.RemoteControlCertificatePath = CertificatePathBox.Text ?? string.Empty;
+        workspaceView.Terminal.RemoteControlAcceptedFingerprint = AcceptedFingerprintBox.Text ?? string.Empty;
+        if (mcpHttpServer is not null)
+        {
+            workspaceView.Terminal.RemoteControlMcpUrl = mcpHttpServer.Endpoint.ToString();
+        }
+    }
+
+    private RemoteControlMcpOptions CreateMcpOptionsFromTerminalState()
+    {
+        var terminal = workspaceView.Terminal;
+        var endpointText = string.IsNullOrWhiteSpace(terminal.RemoteControlEndpoint)
+            ? RemoteControlMcpOptions.DefaultEndpoint.ToString()
+            : terminal.RemoteControlEndpoint.Trim();
+
+        if (!Uri.TryCreate(endpointText, UriKind.Absolute, out var endpoint))
+        {
+            throw new InvalidOperationException("Remote-control endpoint must be an absolute URI.");
+        }
+
+        if (string.IsNullOrWhiteSpace(terminal.RemoteControlToken))
+        {
+            throw new InvalidOperationException("Remote-control bearer token is required before Codex can drive the target.");
+        }
+
+        return RemoteControlMcpOptions.Create(
+            endpoint,
+            terminal.RemoteControlToken.Trim(),
+            string.IsNullOrWhiteSpace(terminal.RemoteControlTransportProtocol)
+                ? RemoteControlProtocol.GrpcTransportProtocol
+                : terminal.RemoteControlTransportProtocol.Trim(),
+            terminal.RemoteControlCertificatePath,
+            terminal.RemoteControlAcceptedFingerprint);
     }
 
     private AdbClient CreateAdbClient()

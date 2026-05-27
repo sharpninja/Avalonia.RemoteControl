@@ -120,16 +120,7 @@
         </tool:DockPaneChrome.Body>
       </tool:DockPaneChrome>
 
-      <tool:DockPaneChrome x:Name="WorkspacePane"
-                           PanelId="workspace"
-                           Title="Workspace"
-                           Glyph="&#xE756;"
-                           CommandRequested="DockPaneCommandRequested"
-                           HeaderDragCompleted="DockPaneHeaderDragCompleted">
-        <tool:DockPaneChrome.Body>
-          <tool:WorkspacePanel x:Name="WorkspacePanel" />
-        </tool:DockPaneChrome.Body>
-      </tool:DockPaneChrome>
+      <tool:WorkspacePanel x:Name="WorkspacePanel" />
     </tool:DockLayout>
 
     <Border Grid.Row="1" Classes="vs-status-bar" VerticalAlignment="Bottom" HorizontalAlignment="Stretch">

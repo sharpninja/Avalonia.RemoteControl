@@ -101,12 +101,10 @@ public sealed partial class TerminalPanel : UserControl
 
         try
         {
-            var workingDirectory = string.IsNullOrWhiteSpace(viewModel.WorkingDirectory)
-                ? null
-                : viewModel.WorkingDirectory.Trim();
+            var workingDirectory = viewModel.EffectiveWorkingDirectory;
             var args = TerminalCommandLine.ParseArguments(viewModel.Arguments);
-
             Terminal.LaunchProcess(workingDirectory, process, args);
+
             viewModel.IsRunning = true;
             viewModel.ExitCode = null;
             viewModel.ProcessId = Terminal.Pid > 0 ? Terminal.Pid : null;

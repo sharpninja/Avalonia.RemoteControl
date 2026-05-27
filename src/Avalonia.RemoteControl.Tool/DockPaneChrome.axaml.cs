@@ -9,7 +9,7 @@ namespace Avalonia.RemoteControl.Tool;
 /// <summary>
 /// Visual Studio-like chrome for a dockable tool panel.
 /// </summary>
-public sealed partial class DockPaneChrome : UserControl
+public sealed partial class DockPaneChrome : UserControl, IDockAutoHideHost
 {
     /// <summary>
     /// Defines the <see cref="PanelId"/> property.
@@ -75,7 +75,11 @@ public sealed partial class DockPaneChrome : UserControl
         GlyphProperty.Changed.AddClassHandler<DockPaneChrome>((control, _) => control.UpdateVisualState());
         BodyProperty.Changed.AddClassHandler<DockPaneChrome>((control, _) => control.UpdateVisualState());
         IsFloatingProperty.Changed.AddClassHandler<DockPaneChrome>((control, _) => control.UpdateVisualState());
-        IsAutoHiddenProperty.Changed.AddClassHandler<DockPaneChrome>((control, _) => control.UpdateVisualState());
+        IsAutoHiddenProperty.Changed.AddClassHandler<DockPaneChrome>((control, _) =>
+        {
+            control.UpdateVisualState();
+            control.InvalidateDockParentLayout();
+        });
         CanFloatProperty.Changed.AddClassHandler<DockPaneChrome>((control, _) => control.UpdateVisualState());
         CanDockProperty.Changed.AddClassHandler<DockPaneChrome>((control, _) => control.UpdateVisualState());
         CanAutoHideProperty.Changed.AddClassHandler<DockPaneChrome>((control, _) => control.UpdateVisualState());
@@ -295,16 +299,33 @@ public sealed partial class DockPaneChrome : UserControl
         AutoHideTitleText.Text = Title;
         GlyphText.Text = Glyph;
         BodyHost.Content = Body;
+        GlyphText.IsVisible = !IsAutoHidden;
+        TitleText.IsVisible = !IsAutoHidden;
+        BodyBorder.IsVisible = !IsAutoHidden;
         BodyHost.IsVisible = !IsAutoHidden;
-        AutoHidePlaceholder.IsVisible = IsAutoHidden;
+        AutoHidePlaceholder.IsVisible = false;
         AutoHideButton.IsEnabled = CanAutoHide;
-        FloatButton.IsEnabled = CanFloat && !IsFloating;
+        FloatButton.IsEnabled = CanFloat && !IsFloating && !IsAutoHidden;
+        FloatButton.IsVisible = !IsAutoHidden;
         DockButton.IsEnabled = CanDock;
-        DockButton.IsVisible = IsFloating;
+        DockButton.IsVisible = IsFloating && !IsAutoHidden;
+        MenuButton.IsVisible = !IsAutoHidden;
+        CloseButton.IsVisible = !IsAutoHidden;
         RootBorder.Classes.Set("vs-active-dock", !IsFloating);
         HeaderBorder.Classes.Set("vs-active-header", !IsFloating);
         AutoHideButton.Content = IsAutoHidden ? "\uE77A" : "\uE718";
         ToolTip.SetTip(AutoHideButton, IsAutoHidden ? "Pin" : "Auto Hide");
+    }
+
+    private void InvalidateDockParentLayout()
+    {
+        if (Parent is not DockLayout layout)
+        {
+            return;
+        }
+
+        layout.InvalidateMeasure();
+        layout.InvalidateArrange();
     }
 }
 

@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Text;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using Avalonia.RemoteControl.Client.Logging;
+using Avalonia.RemoteControl.Protocol;
 
 namespace Avalonia.RemoteControl.Tool;
 
@@ -198,9 +200,26 @@ public sealed class WorkspacePanelViewModel : ToolPanelViewModel
     private int selectedTabIndex;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="WorkspacePanelViewModel"/> class.
+    /// </summary>
+    public WorkspacePanelViewModel()
+        : this(ToolProcessContext.StartupWorkingDirectory)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WorkspacePanelViewModel"/> class.
+    /// </summary>
+    /// <param name="startupWorkingDirectory">The working directory captured when the tool process started.</param>
+    public WorkspacePanelViewModel(string startupWorkingDirectory)
+    {
+        Terminal = new TerminalPanelViewModel(startupWorkingDirectory);
+    }
+
+    /// <summary>
     /// Gets the embedded terminal panel view model.
     /// </summary>
-    public TerminalPanelViewModel Terminal { get; } = new();
+    public TerminalPanelViewModel Terminal { get; }
 
     /// <summary>
     /// Gets the selected-node property panel view model.
@@ -256,11 +275,36 @@ public sealed class TerminalPanelViewModel : ToolPanelViewModel
 {
     private string command = GetDefaultShellProcess();
     private string arguments = "-NoLogo -NoProfile";
-    private string workingDirectory = Environment.CurrentDirectory;
+    private readonly string startupWorkingDirectory;
+    private string workingDirectory;
     private string statusText = "Terminal stopped.";
+    private string remoteControlEndpoint = "http://127.0.0.1:47100/";
+    private string remoteControlToken = string.Empty;
+    private string remoteControlTransportProtocol = RemoteControlProtocol.GrpcTransportProtocol;
+    private string remoteControlCertificatePath = string.Empty;
+    private string remoteControlAcceptedFingerprint = string.Empty;
+    private string remoteControlMcpUrl = string.Empty;
     private bool isRunning;
     private int? processId;
     private int? exitCode;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TerminalPanelViewModel"/> class.
+    /// </summary>
+    public TerminalPanelViewModel()
+        : this(ToolProcessContext.StartupWorkingDirectory)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TerminalPanelViewModel"/> class.
+    /// </summary>
+    /// <param name="startupWorkingDirectory">The working directory captured when the tool process started.</param>
+    public TerminalPanelViewModel(string startupWorkingDirectory)
+    {
+        this.startupWorkingDirectory = ToolProcessContext.NormalizeWorkingDirectory(startupWorkingDirectory);
+        workingDirectory = this.startupWorkingDirectory;
+    }
 
     /// <summary>
     /// Gets or sets the executable or shell command to launch.
@@ -290,12 +334,79 @@ public sealed class TerminalPanelViewModel : ToolPanelViewModel
     }
 
     /// <summary>
+    /// Gets the working directory captured when the tool process started.
+    /// </summary>
+    public string StartupWorkingDirectory => startupWorkingDirectory;
+
+    /// <summary>
+    /// Gets the working directory to use when launching the configured process.
+    /// </summary>
+    public string EffectiveWorkingDirectory =>
+        string.IsNullOrWhiteSpace(WorkingDirectory)
+            ? StartupWorkingDirectory
+            : ToolProcessContext.NormalizeWorkingDirectory(WorkingDirectory, StartupWorkingDirectory);
+
+    /// <summary>
     /// Gets or sets the terminal status text.
     /// </summary>
     public string StatusText
     {
         get => statusText;
         set => SetField(ref statusText, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the remote-control endpoint used by the Codex MCP preset.
+    /// </summary>
+    public string RemoteControlEndpoint
+    {
+        get => remoteControlEndpoint;
+        set => SetField(ref remoteControlEndpoint, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the remote-control bearer token used by the Codex MCP preset.
+    /// </summary>
+    public string RemoteControlToken
+    {
+        get => remoteControlToken;
+        set => SetField(ref remoteControlToken, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the remote-control transport protocol used by the Codex MCP preset.
+    /// </summary>
+    public string RemoteControlTransportProtocol
+    {
+        get => remoteControlTransportProtocol;
+        set => SetField(ref remoteControlTransportProtocol, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the optional certificate path used by the Codex MCP preset.
+    /// </summary>
+    public string RemoteControlCertificatePath
+    {
+        get => remoteControlCertificatePath;
+        set => SetField(ref remoteControlCertificatePath, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the optional accepted certificate fingerprint used by the Codex MCP preset.
+    /// </summary>
+    public string RemoteControlAcceptedFingerprint
+    {
+        get => remoteControlAcceptedFingerprint;
+        set => SetField(ref remoteControlAcceptedFingerprint, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the in-process MCP Streamable HTTP URL exposed by the running tool.
+    /// </summary>
+    public string RemoteControlMcpUrl
+    {
+        get => remoteControlMcpUrl;
+        set => SetField(ref remoteControlMcpUrl, value);
     }
 
     /// <summary>
@@ -330,13 +441,28 @@ public sealed class TerminalPanelViewModel : ToolPanelViewModel
     /// </summary>
     public void ApplyCodexPreset()
     {
+        ApplyCodexMcpPreset();
+    }
+
+    /// <summary>
+    /// Applies the default Codex launch command with the Avalonia.RemoteControl MCP server registered.
+    /// </summary>
+    public void ApplyCodexMcpPreset()
+    {
         Command = GetDefaultShellProcess();
-        Arguments = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? "-NoLogo -NoProfile -Command codex"
-            : "-NoLogo -NoProfile -Command codex";
+        var serverOverride = "mcp_servers." + RemoteControlMcpToolCatalog.CodexServerConfigName + "={ url = "
+            + ToTomlString(GetRequiredMcpUrl())
+            + " }";
+        var codexCommand = "codex -c "
+            + PowerShellSingleQuote(serverOverride)
+            + " "
+            + PowerShellSingleQuote(RemoteControlMcpToolCatalog.CreateCodexSeedPrompt());
+
+        Arguments = "-NoLogo -NoProfile -Command " + QuoteForTerminalArgumentParser(codexCommand);
+
         if (string.IsNullOrWhiteSpace(WorkingDirectory))
         {
-            WorkingDirectory = Environment.CurrentDirectory;
+            WorkingDirectory = StartupWorkingDirectory;
         }
     }
 
@@ -349,12 +475,52 @@ public sealed class TerminalPanelViewModel : ToolPanelViewModel
         Arguments = "-NoLogo -NoProfile";
         if (string.IsNullOrWhiteSpace(WorkingDirectory))
         {
-            WorkingDirectory = Environment.CurrentDirectory;
+            WorkingDirectory = StartupWorkingDirectory;
         }
     }
 
     private static string GetDefaultShellProcess()
     {
         return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "pwsh.exe" : "pwsh";
+    }
+
+    private string GetRequiredMcpUrl()
+    {
+        if (string.IsNullOrWhiteSpace(RemoteControlMcpUrl))
+        {
+            throw new InvalidOperationException("The in-process MCP host URL is not available.");
+        }
+
+        return RemoteControlMcpUrl.Trim();
+    }
+
+    private static string ToTomlString(string value)
+    {
+        var builder = new StringBuilder("\"");
+        foreach (var character in value)
+        {
+            builder.Append(character switch
+            {
+                '\\' => "\\\\",
+                '"' => "\\\"",
+                '\r' => "\\r",
+                '\n' => "\\n",
+                '\t' => "\\t",
+                _ => character,
+            });
+        }
+
+        builder.Append('"');
+        return builder.ToString();
+    }
+
+    private static string PowerShellSingleQuote(string value)
+    {
+        return "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
+    }
+
+    private static string QuoteForTerminalArgumentParser(string value)
+    {
+        return "\"" + value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal) + "\"";
     }
 }

@@ -418,7 +418,8 @@ Evidence required:
 - gRPC and Android bridge transports both support live tree/frame streaming and remote input.
 - The desktop client opens a generic floating live-view tool window with screenshot and tree replica modes.
 - `RemoteControlLiveClientTests` covers live-view hit testing against absolute bounds so clicks resolve to the deepest visible node and ignore hidden or out-of-bounds controls.
-- The live-view surface is hosted by both `FloatingDockPaneWindow` and the main window's right-side dock host.
+- The live-view surface is hosted by both `FloatingDockPaneWindow` and the main window's right-side Remote Tools tab without adding nested live-view dock chrome.
+- The docked live-view host constrains or scrolls content inside the available tab space so the live surface and toolbar do not overflow the right dock area.
 - The docked live-view float command transfers the view into a generic `FloatingDockPaneWindow` instead of merely stopping the docked stream.
 
 ## Iteration 7 - Android Bridge Transport
@@ -574,3 +575,47 @@ Implemented evidence:
 - `RemoteControlProjectDocument` persists `ClientLayout` beside project profiles, sessions, logs, interactions, and replay artifacts.
 - `MainWindow` captures layout state before project saves and closing, restores valid saved dimensions and dock-pane auto-hide state after project load, reopens floating logs on startup, and re-docks live view after the next successful connection when that preference was saved.
 - `RemoteControlProjectSystemTests` covers layout state round-trip persistence in the project store.
+
+## Iteration 11 - MCP Server aiUnit Validation
+
+Requirements:
+
+- `FR-MCP-001`
+- `TR-MCP-AIUNIT-001`
+- `TR-MCP-AIUNIT-002`
+
+Tests/evidence:
+
+- `TEST-MCP-001`
+- `TEST-MCP-002`
+- `AiUnitMcpServerIntegrationTests` validates marker evidence loading, aiUnit prompt construction, response schema validation, and the explicit opt-in live aiUnit review gate.
+
+Implemented evidence:
+
+- `SharpNinja.aiUnit` is referenced by the test project through central package management.
+- `tests/Avalonia.RemoteControl.Tests/appsettings.aiunit.json` configures `codex-subscription` as a CLI-backed strategy using the installed `codex` executable and is copied to the test output directory.
+- The live aiUnit review is disabled by default unless `ARC_AIUNIT_MCP_SERVER_TESTS_ENABLED` is `true` or `1`, avoiding default skipped tests while preserving an explicit integration gate.
+
+## Iteration 12 - Tool-Side MCP Host
+
+Requirements:
+
+- `FR-CLIENT-024`
+- `TR-CLIENT-MCP-001`
+- `TR-CLIENT-MCP-002`
+- `TR-CLIENT-MCP-003`
+
+Tests/evidence:
+
+- `TEST-CLIENT-014`
+- `TEST-CLIENT-015`
+
+Implementation evidence:
+
+- The running desktop tool starts an in-process loopback MCP Streamable HTTP endpoint and registers that URL with the embedded Codex terminal.
+- The legacy stdio server remains available for diagnostics and shares the same JSON-RPC dispatcher without becoming the GUI/Codex integration path.
+- The exposed tool set is limited to existing remote-control client operations and preserves server-side policy gates for click, focus, and property mutation.
+- The Codex terminal preset uses `mcp_servers.avalonia_remote_control` configuration for the installed `codex` CLI with only the loopback MCP URL; it does not pass remote endpoint, transport, bearer token, profile, environment variable, or `avalonia-remote mcp` child-process settings.
+- The Codex terminal preset seeds a prompt explaining the exposed MCP tools, instructing Codex to use capabilities and snapshot/tree metadata to find controls, and avoiding screenshots as the primary control-selection mechanism.
+- The tool captures the process startup working directory at entry and uses it as the embedded Codex/AI agent default working directory, even if the process current directory changes before launch.
+- MCP initialize instructions return the same tree-first guidance and identify server name `avalonia-remote-control` with title `Avalonia Remote Control`.

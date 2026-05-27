@@ -3,12 +3,18 @@
              x:Class="Avalonia.RemoteControl.Tool.RemoteViewControl">
   <Grid RowDefinitions="Auto,*" Background="{StaticResource VsShellBackgroundBrush}">
     <Border Grid.Row="0" Classes="vs-tool-window-header">
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <Button x:Name="ScreenshotModeButton" Classes="vs-tool-button" Content="Screenshot" Click="ScreenshotModeClicked" />
-        <Button x:Name="TreeModeButton" Classes="vs-tool-button" Content="Tree Replica" Click="TreeModeClicked" />
-        <CheckBox x:Name="OverlayCheckBox" Content="Overlay" IsChecked="True" Click="OverlayChanged" />
-        <TextBlock x:Name="StatusText" Classes="vs-muted" Text="Connecting..." />
-      </StackPanel>
+      <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                    VerticalScrollBarVisibility="Disabled">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button x:Name="ScreenshotModeButton" Classes="vs-tool-button" Content="Screenshot" Click="ScreenshotModeClicked" />
+          <Button x:Name="TreeModeButton" Classes="vs-tool-button" Content="Tree Replica" Click="TreeModeClicked" />
+          <CheckBox x:Name="OverlayCheckBox" Content="Overlay" IsChecked="True" Click="OverlayChanged" />
+          <TextBlock x:Name="StatusText"
+                     Classes="vs-muted"
+                     Text="Connecting..."
+                     VerticalAlignment="Center" />
+        </StackPanel>
+      </ScrollViewer>
     </Border>
 
     <Border x:Name="ViewportBorder"

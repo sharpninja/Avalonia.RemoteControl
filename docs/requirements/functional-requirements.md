@@ -50,7 +50,7 @@
 - `FR-CLIENT-009`: The live remote UI window responds to changes in the remote UI without manual refresh.
 - `FR-CLIENT-010`: The live remote UI window renders the same top-level visual surface a user sees on the target device, including application background, popup, flyout, and overlay layers when Avalonia exposes them.
 - `FR-CLIENT-011`: When a user clicks a rendered control in the live remote UI window, the desktop client selects the corresponding node in the main control tree when that node is present in the current tree model.
-- `FR-CLIENT-012`: The desktop client allows the live remote UI view to be docked on the right side of the main client window while preserving the generic floating tool-window option.
+- `FR-CLIENT-012`: The desktop client allows the live remote UI view to be docked on the right side of the main client window while preserving the generic floating tool-window option; the docked Live View tab hosts the live-view panel directly without nested tool-window chrome and constrains or scrolls the surface inside the available tab space.
 - `FR-CLIENT-013`: The desktop client provides Visual Studio-style tool-window chrome with visible icon commands for dock, float, auto-hide or pin, and close or hide actions; docked panels, floating generic tool windows, and dock commands clearly separate draggable headers, content regions, active docked surfaces, and docking commands.
 - `FR-CLIENT-014`: The desktop client stores connection settings by project and app so users can reconnect to local, network, or ADB debug targets without re-entering transport-specific settings.
 - `FR-CLIENT-015`: Each project records connection sessions with metadata and log history so previous debugging sessions can be reviewed after disconnecting.
@@ -60,6 +60,12 @@
 - `FR-CLIENT-019`: The desktop client uses Visual Studio 2026-like dark shell styling across command bars, status bar, tool windows, tabs, dock headers, buttons, text inputs, lists, and generic floating tool windows.
 - `FR-CLIENT-020`: The desktop client remembers layout state such as window size, split sizes, selected right-side tab, log floating ownership, dock-pane auto-hide state, and docked live-view preference and restores that state on startup.
 - `FR-CLIENT-021`: Dockable client panels expose interactive Visual Studio-like behavior, including draggable headers, icon-based panel management, floating generic tool windows, docking back into the shell, close or hide commands, persisted dock state, and clear user feedback for drag/drop dock targets.
+- `FR-CLIENT-022`: The desktop client hosts an embedded terminal panel that can launch Codex or another configured command inside the remote-control shell, and the Codex AI agent starts in the same working directory that was current when the tool process was launched unless the user explicitly edits the terminal working directory field.
+- `FR-CLIENT-024`: The desktop tool exposes an in-process Model Context Protocol host enabled by default so Codex or another MCP client can inspect and invoke approved remote-control operations against the currently configured debug target without launching a second `avalonia-remote` child process; the embedded Codex preset seeds guidance that explains the exposed tools, directs Codex to inspect the control tree first, and forbids screenshots as the primary control-selection mechanism.
+
+## MCP Server Validation
+
+- `FR-MCP-001`: The repository provides SharpNinja.aiUnit-backed integration tests that can validate the active MCP Server marker, health nonce behavior, plugin contract, and requirements tooling evidence when the live aiUnit review gate is explicitly enabled.
 
 ## Android ADB Connectivity
 

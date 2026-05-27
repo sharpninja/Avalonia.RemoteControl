@@ -31,7 +31,7 @@
       <Grid ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="8">
         <Button x:Name="LaunchCodexButton"
                 Classes="vs-tool-button"
-                Content="Codex"
+                Content="Codex MCP"
                 Click="LaunchCodexClicked" />
         <Button x:Name="LaunchShellButton"
                 Grid.Column="1"

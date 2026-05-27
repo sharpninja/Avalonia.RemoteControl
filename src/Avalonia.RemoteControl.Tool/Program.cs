@@ -11,6 +11,8 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        ToolProcessContext.CaptureStartupWorkingDirectory();
+
         if (args.Length == 0)
         {
             return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
@@ -37,6 +39,13 @@ internal static class Program
                 new FileRemoteControlProfileStore());
 
             return await adbCommandLine.RunAsync(adbArgs, Console.Out, Console.Error).ConfigureAwait(false);
+        }
+
+        if (args is ["mcp", .. var mcpArgs])
+        {
+            return await new RemoteControlMcpCommandLine()
+                .RunAsync(mcpArgs, Console.In, Console.Out, Console.Error)
+                .ConfigureAwait(false);
         }
 
         if (args.Contains("--help", StringComparer.OrdinalIgnoreCase)
