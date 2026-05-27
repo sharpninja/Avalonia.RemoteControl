@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tool="using:Avalonia.RemoteControl.Tool"
+             x:Class="Avalonia.RemoteControl.Tool.WorkspacePanel"
+             x:DataType="tool:WorkspacePanelViewModel">
+  <TabControl x:Name="Tabs"
+              SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+              SelectionChanged="TabsSelectionChanged">
+    <TabItem Header="Terminal">
+      <tool:TerminalPanel x:Name="TerminalPanel" />
+    </TabItem>
+    <TabItem Header="Properties">
+      <tool:PropertiesPanel x:Name="PropertiesPanel" />
+    </TabItem>
+  </TabControl>
+</UserControl>

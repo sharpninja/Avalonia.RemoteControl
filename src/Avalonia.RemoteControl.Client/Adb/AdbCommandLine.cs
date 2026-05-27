@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Avalonia.RemoteControl.Client.Diagnostics;
 using Avalonia.RemoteControl.Client.Profiles;
 using Avalonia.RemoteControl.Protocol;
@@ -67,6 +68,11 @@ public sealed class AdbCommandLine
             await error.WriteLineAsync(ex.Message).ConfigureAwait(false);
             return 1;
         }
+        catch (Win32Exception ex)
+        {
+            await error.WriteLineAsync($"Unable to start adb. {ex.Message}").ConfigureAwait(false);
+            return 1;
+        }
     }
 
     private async Task<int> ListAsync(
@@ -107,91 +113,53 @@ public sealed class AdbCommandLine
         var transportProtocol = NormalizeTransportProtocol(
             GetOptional(parsed, "transport-protocol") ?? RemoteControlProtocol.GrpcTransportProtocol);
 
-        if (devicePort is null)
-        {
-            if (string.IsNullOrWhiteSpace(packageName))
-            {
-                return await WriteUsageErrorAsync(
-                    error,
-                    "adb connect requires --device-port or --package.")
-                    .ConfigureAwait(false);
-            }
-
-            var endpointInfo = await adbClient.DiscoverEndpointAsync(
-                serial,
-                packageName,
-                cancellationToken).ConfigureAwait(false);
-            if (!endpointInfo.IsGrpcProtocol && !endpointInfo.IsAndroidBridgeProtocol)
-            {
-                throw new InvalidOperationException(
-                    $"Android marker protocol '{endpointInfo.Protocol}' is not supported by this client.");
-            }
-
-            devicePort = endpointInfo.DevicePort;
-            token ??= endpointInfo.Token;
-            transportProtocol = endpointInfo.Protocol;
-        }
-
-        if (string.IsNullOrWhiteSpace(token))
+        if (devicePort is null && string.IsNullOrWhiteSpace(packageName))
         {
             return await WriteUsageErrorAsync(
                 error,
-                "adb connect requires --token or package marker token discovery.")
+                "adb connect requires --device-port or --package.")
                 .ConfigureAwait(false);
         }
 
-        var forward = await adbClient.ForwardAsync(
-            serial,
-            hostPort,
-            devicePort.Value,
-            cancellationToken).ConfigureAwait(false);
+        var workflow = new AdbConnectionWorkflow(adbClient, remoteControlProbe, profileStore);
+        var result = await workflow.ConnectAsync(
+            new AdbConnectOptions
+            {
+                Serial = serial,
+                PackageName = packageName,
+                DevicePort = devicePort,
+                HostPort = hostPort,
+                Token = token,
+                TransportProtocol = transportProtocol,
+                LaunchPackageIfStopped = !string.IsNullOrWhiteSpace(packageName),
+                SaveProfile = keepForward,
+                CleanupOnExit = !keepForward,
+            },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        try
+        await output.WriteLineAsync("ADB forward ready.").ConfigureAwait(false);
+        await output.WriteLineAsync($"Serial: {result.Forward.Serial}").ConfigureAwait(false);
+        await output.WriteLineAsync($"Endpoint: {result.Forward.Endpoint}").ConfigureAwait(false);
+        await output.WriteLineAsync($"Protocol: {result.Capabilities.ProtocolVersion}").ConfigureAwait(false);
+        await output.WriteLineAsync($"Frame streaming: {FormatSupported(result.Capabilities.SupportsFrameStreaming)}").ConfigureAwait(false);
+        await output.WriteLineAsync($"Remote input: {FormatSupported(result.Capabilities.SupportsRemoteInput)}").ConfigureAwait(false);
+
+        if (result.PackageLaunched)
         {
-            var capabilities = await remoteControlProbe.ProbeAsync(
-                forward.Endpoint,
-                token,
-                transportProtocol,
-                cancellationToken).ConfigureAwait(false);
-
-            await output.WriteLineAsync("ADB forward ready.").ConfigureAwait(false);
-            await output.WriteLineAsync($"Serial: {forward.Serial}").ConfigureAwait(false);
-            await output.WriteLineAsync($"Endpoint: {forward.Endpoint}").ConfigureAwait(false);
-            await output.WriteLineAsync($"Protocol: {capabilities.ProtocolVersion}").ConfigureAwait(false);
-            await output.WriteLineAsync($"Frame streaming: {FormatSupported(capabilities.SupportsFrameStreaming)}").ConfigureAwait(false);
-            await output.WriteLineAsync($"Remote input: {FormatSupported(capabilities.SupportsRemoteInput)}").ConfigureAwait(false);
-
-            if (keepForward && profileStore is not null)
-            {
-                await profileStore.SaveDefaultAsync(
-                    new RemoteControlConnectionProfile
-                    {
-                        Endpoint = forward.Endpoint.ToString(),
-                        Token = token,
-                        TransportProtocol = transportProtocol,
-                        UpdatedUtc = DateTimeOffset.UtcNow,
-                    },
-                    cancellationToken).ConfigureAwait(false);
-                await output.WriteLineAsync("Connection profile saved for desktop client.").ConfigureAwait(false);
-            }
-
-            if (!keepForward)
-            {
-                await adbClient.RemoveForwardAsync(serial, hostPort, cancellationToken).ConfigureAwait(false);
-                await output.WriteLineAsync("Forward removed after successful probe.").ConfigureAwait(false);
-            }
-
-            return 0;
+            await output.WriteLineAsync("Android package launched.").ConfigureAwait(false);
         }
-        catch
+
+        if (result.ProfileSaved)
         {
-            if (!keepForward)
-            {
-                await adbClient.RemoveForwardAsync(serial, hostPort, cancellationToken).ConfigureAwait(false);
-            }
-
-            throw;
+            await output.WriteLineAsync("Connection profile saved for desktop client.").ConfigureAwait(false);
         }
+
+        if (result.ForwardRemoved)
+        {
+            await output.WriteLineAsync("Forward removed after successful probe.").ConfigureAwait(false);
+        }
+
+        return 0;
     }
 
     private async Task<int> CleanupAsync(

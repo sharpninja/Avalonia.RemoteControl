@@ -8,6 +8,7 @@ namespace Avalonia.RemoteControl.Client.Live;
 public sealed class RemoteLiveTreeModel
 {
     private readonly Dictionary<string, TreeNode> nodesById = new(StringComparer.Ordinal);
+    private readonly List<TreeNode> nodes = [];
 
     /// <summary>
     /// Gets the latest snapshot sequence.
@@ -30,7 +31,7 @@ public sealed class RemoteLiveTreeModel
     /// <summary>
     /// Gets all nodes from the latest snapshot.
     /// </summary>
-    public IReadOnlyCollection<TreeNode> Nodes => nodesById.Values;
+    public IReadOnlyCollection<TreeNode> Nodes => nodes;
 
     /// <summary>
     /// Applies a live tree snapshot.
@@ -42,10 +43,12 @@ public sealed class RemoteLiveTreeModel
 
         Sequence = snapshot.Sequence;
         nodesById.Clear();
+        nodes.Clear();
 
         foreach (var node in snapshot.Nodes)
         {
             nodesById[node.Id] = node;
+            nodes.Add(node);
         }
 
         if (SelectedNodeId is not null && !nodesById.ContainsKey(SelectedNodeId))
@@ -63,5 +66,65 @@ public sealed class RemoteLiveTreeModel
         SelectedNodeId = nodeId is not null && nodesById.ContainsKey(nodeId)
             ? nodeId
             : null;
+    }
+
+    /// <summary>
+    /// Finds the visible node at the supplied root-relative point.
+    /// </summary>
+    /// <param name="x">Root-relative X coordinate in DIPs.</param>
+    /// <param name="y">Root-relative Y coordinate in DIPs.</param>
+    /// <returns>The deepest matching node, or <see langword="null" />.</returns>
+    public TreeNode? HitTest(double x, double y)
+    {
+        var bestIndex = -1;
+        var bestDepth = -1;
+        TreeNode? best = null;
+
+        for (var index = 0; index < nodes.Count; index++)
+        {
+            var node = nodes[index];
+
+            if (!node.IsVisible || !Contains(node, x, y))
+            {
+                continue;
+            }
+
+            var depth = GetDepth(node);
+            if (depth > bestDepth || (depth == bestDepth && index > bestIndex))
+            {
+                best = node;
+                bestDepth = depth;
+                bestIndex = index;
+            }
+        }
+
+        return best;
+    }
+
+    private int GetDepth(TreeNode node)
+    {
+        var depth = 0;
+        var current = node;
+
+        while (!string.IsNullOrWhiteSpace(current.ParentId)
+            && nodesById.TryGetValue(current.ParentId, out var parent))
+        {
+            depth++;
+            current = parent;
+        }
+
+        return depth;
+    }
+
+    private static bool Contains(TreeNode node, double x, double y)
+    {
+        var bounds = node.AbsoluteBounds;
+
+        return bounds.Width > 0
+            && bounds.Height > 0
+            && x >= bounds.X
+            && y >= bounds.Y
+            && x <= bounds.X + bounds.Width
+            && y <= bounds.Y + bounds.Height;
     }
 }

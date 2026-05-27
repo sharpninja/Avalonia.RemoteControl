@@ -158,10 +158,10 @@ internal sealed class RemoteControlBridgeClient : IDisposable
         await using var stream = tcpClient.GetStream();
 
         await BridgeFrameCodec.WriteAsync(stream, request, cancellationToken).ConfigureAwait(false);
-        var response = await BridgeFrameCodec.ReadAsync(
+        var response = await ReadBridgeResponseAsync(
+            method,
             stream,
-            BridgeResponse.Parser,
-            cancellationToken: cancellationToken).ConfigureAwait(false);
+            cancellationToken).ConfigureAwait(false);
 
         if (!string.Equals(response.RequestId, requestId, StringComparison.Ordinal))
         {
@@ -211,10 +211,10 @@ internal sealed class RemoteControlBridgeClient : IDisposable
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            var response = await BridgeFrameCodec.ReadAsync(
+            var response = await ReadBridgeResponseAsync(
+                method,
                 stream,
-                BridgeResponse.Parser,
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+                cancellationToken).ConfigureAwait(false);
 
             ValidateResponse(requestId, response);
 
@@ -247,5 +247,39 @@ internal sealed class RemoteControlBridgeClient : IDisposable
             throw new InvalidOperationException(
                 $"Bridge request failed with status {response.Status}: {response.ErrorMessage}");
         }
+    }
+
+    private static async ValueTask<BridgeResponse> ReadBridgeResponseAsync(
+        BridgeMethod method,
+        Stream stream,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await BridgeFrameCodec.ReadAsync(
+                stream,
+                BridgeResponse.Parser,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (IsClosedBridgeConnection(exception))
+        {
+            throw CreateClosedBridgeConnectionException(method, exception);
+        }
+    }
+
+    private static bool IsClosedBridgeConnection(Exception exception)
+    {
+        return exception is EndOfStreamException or IOException or SocketException;
+    }
+
+    private static InvalidOperationException CreateClosedBridgeConnectionException(
+        BridgeMethod method,
+        Exception innerException)
+    {
+        return new InvalidOperationException(
+            $"Bridge connection for {method} closed before a complete response was received. " +
+            "If this is an ADB connection, launch the Android app, wait for the Avalonia.RemoteControl bridge to start, " +
+            "and remove stale forwards if needed.",
+            innerException);
     }
 }

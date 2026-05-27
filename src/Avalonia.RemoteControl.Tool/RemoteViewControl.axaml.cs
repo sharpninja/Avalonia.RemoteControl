@@ -14,38 +14,38 @@ using Avalonia.Threading;
 namespace Avalonia.RemoteControl.Tool;
 
 /// <summary>
-/// Separate live remote UI window.
+/// Reusable live remote UI surface for windowed and docked hosts.
 /// </summary>
-public sealed partial class RemoteViewWindow : Window
+public sealed partial class RemoteViewControl : UserControl
 {
-    private readonly RemoteControlDesktopSession session;
+    private readonly RemoteControlDesktopSession? session;
     private readonly RemoteLiveViewCapabilities capabilities;
     private readonly RemoteLiveTreeModel treeModel = new();
-    private readonly CancellationTokenSource streamCancellation = new();
+    private CancellationTokenSource? streamCancellation;
     private RemoteViewCoordinateMapper mapper = RemoteViewCoordinateMapper.Create(1, 1, 1, 1);
     private double remoteWidth = 1;
     private double remoteHeight = 1;
     private bool showScreenshot = true;
+    private bool started;
     private bool moveSendScheduled;
     private bool inputUnsupportedStatusShown;
     private RemoteInputEvent? pendingMove;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="RemoteViewWindow"/> class for XAML tooling.
+    /// Initializes a new instance of the <see cref="RemoteViewControl"/> class for XAML tooling.
     /// </summary>
-    public RemoteViewWindow()
+    public RemoteViewControl()
     {
-        session = null!;
-        capabilities = RemoteLiveViewCapabilities.None;
         InitializeComponent();
+        capabilities = RemoteLiveViewCapabilities.None;
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="RemoteViewWindow"/> class.
+    /// Initializes a new instance of the <see cref="RemoteViewControl"/> class.
     /// </summary>
     /// <param name="session">Remote-control session.</param>
     /// <param name="capabilities">Endpoint live-view capabilities.</param>
-    public RemoteViewWindow(
+    public RemoteViewControl(
         RemoteControlDesktopSession session,
         RemoteLiveViewCapabilities capabilities)
     {
@@ -54,19 +54,51 @@ public sealed partial class RemoteViewWindow : Window
         InitializeComponent();
         ApplyCapabilityState();
 
-        Opened += (_, _) =>
-        {
-            ViewportBorder.Focus();
-            _ = WatchTreeOrPollAsync(streamCancellation.Token);
-
-            if (this.capabilities.SupportsFrameStreaming)
-            {
-                _ = WatchFramesAsync(streamCancellation.Token);
-            }
-        };
-
-        Closed += (_, _) => streamCancellation.Cancel();
+        AttachedToVisualTree += (_, _) => Start();
+        DetachedFromVisualTree += (_, _) => Stop();
         ViewportBorder.SizeChanged += (_, _) => UpdateMapper();
+    }
+
+    /// <summary>
+    /// Raised when a live-view click resolves to a remote tree node.
+    /// </summary>
+    public event EventHandler<string>? RemoteNodeClicked;
+
+    /// <summary>
+    /// Raised after live input is sent to the remote app.
+    /// </summary>
+    public event EventHandler<RemoteInputRecordedEventArgs>? RemoteInputSent;
+
+    /// <summary>
+    /// Starts live-view streams if the control is not already running.
+    /// </summary>
+    public void Start()
+    {
+        if (started || session is null)
+        {
+            return;
+        }
+
+        started = true;
+        streamCancellation = new CancellationTokenSource();
+        ViewportBorder.Focus();
+        _ = WatchTreeOrPollAsync(streamCancellation.Token);
+
+        if (capabilities.SupportsFrameStreaming)
+        {
+            _ = WatchFramesAsync(streamCancellation.Token);
+        }
+    }
+
+    /// <summary>
+    /// Stops live-view streams.
+    /// </summary>
+    public void Stop()
+    {
+        started = false;
+        streamCancellation?.Cancel();
+        streamCancellation?.Dispose();
+        streamCancellation = null;
     }
 
     private void ScreenshotModeClicked(object? sender, RoutedEventArgs e)
@@ -140,7 +172,7 @@ public sealed partial class RemoteViewWindow : Window
     {
         try
         {
-            await foreach (var update in session.WatchTreeAsync(cancellationToken))
+            await foreach (var update in session!.WatchTreeAsync(cancellationToken))
             {
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
@@ -165,7 +197,7 @@ public sealed partial class RemoteViewWindow : Window
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var snapshot = await session.GetSnapshotAsync(cancellationToken).ConfigureAwait(false);
+                var snapshot = await session!.GetSnapshotAsync(cancellationToken).ConfigureAwait(false);
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     treeModel.ApplySnapshot(snapshot);
@@ -189,7 +221,7 @@ public sealed partial class RemoteViewWindow : Window
     {
         try
         {
-            await foreach (var frame in session.WatchFramesAsync(cancellationToken))
+            await foreach (var frame in session!.WatchFramesAsync(cancellationToken))
             {
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
@@ -221,6 +253,7 @@ public sealed partial class RemoteViewWindow : Window
     {
         ViewportBorder.Focus();
         var remote = ToRemote(e.GetPosition(ViewportBorder));
+        SelectNodeAt(remote);
         _ = SendInputAsync(new RemoteInputEvent
         {
             Kind = RemoteInputKind.PointerPress,
@@ -309,7 +342,7 @@ public sealed partial class RemoteViewWindow : Window
     {
         try
         {
-            await Task.Delay(16, streamCancellation.Token).ConfigureAwait(false);
+            await Task.Delay(16, streamCancellation?.Token ?? CancellationToken.None).ConfigureAwait(false);
             var move = pendingMove;
             pendingMove = null;
 
@@ -345,7 +378,10 @@ public sealed partial class RemoteViewWindow : Window
 
         try
         {
-            await session.SendInputAsync([inputEvent], streamCancellation.Token).ConfigureAwait(false);
+            await session!.SendInputAsync(
+                [inputEvent],
+                streamCancellation?.Token ?? CancellationToken.None).ConfigureAwait(false);
+            RemoteInputSent?.Invoke(this, new RemoteInputRecordedEventArgs([inputEvent]));
         }
         catch (OperationCanceledException)
         {
@@ -359,6 +395,22 @@ public sealed partial class RemoteViewWindow : Window
     private RemoteViewPoint ToRemote(Point point)
     {
         return mapper.ToRemote(point.X, point.Y);
+    }
+
+    private void SelectNodeAt(RemoteViewPoint remote)
+    {
+        var node = treeModel.HitTest(remote.X, remote.Y);
+        treeModel.SelectNode(node?.Id);
+
+        if (node is not null)
+        {
+            RemoteNodeClicked?.Invoke(this, node.Id);
+            StatusText.Text = string.IsNullOrWhiteSpace(node.Name)
+                ? $"Selected {node.TypeName}"
+                : $"Selected {node.TypeName} {node.Name}";
+        }
+
+        RenderOverlay();
     }
 
     private void UpdateRemoteSizeFromTree()
@@ -412,8 +464,12 @@ public sealed partial class RemoteViewWindow : Window
             {
                 Width = width,
                 Height = height,
-                Stroke = node.IsFocused ? Brushes.DeepSkyBlue : Brushes.LimeGreen,
-                StrokeThickness = node.IsFocused ? 2 : 1,
+                Stroke = node.Id == treeModel.SelectedNodeId
+                    ? Brushes.Gold
+                    : node.IsFocused
+                        ? Brushes.DeepSkyBlue
+                        : Brushes.LimeGreen,
+                StrokeThickness = node.Id == treeModel.SelectedNodeId || node.IsFocused ? 2 : 1,
                 Fill = showScreenshot ? Brushes.Transparent : new SolidColorBrush(Color.FromArgb(32, 0, 200, 120)),
             };
             Canvas.SetLeft(rectangle, topLeft.X);
@@ -437,3 +493,9 @@ public sealed partial class RemoteViewWindow : Window
         }
     }
 }
+
+/// <summary>
+/// Event arguments for live input that was sent to the remote app.
+/// </summary>
+/// <param name="Events">Sent input events.</param>
+public sealed record RemoteInputRecordedEventArgs(IReadOnlyList<RemoteInputEvent> Events);

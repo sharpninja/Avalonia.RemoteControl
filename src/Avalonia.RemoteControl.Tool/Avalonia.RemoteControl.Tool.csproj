@@ -16,6 +16,8 @@
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="GitVersion.MsBuild" PrivateAssets="all" />
+    <PackageReference Include="Iciclecreek.Avalonia.Terminal" />
     <ProjectReference Include="..\Avalonia.RemoteControl.Client\Avalonia.RemoteControl.Client.csproj" />
     <ProjectReference Include="..\Avalonia.RemoteControl.Protocol\Avalonia.RemoteControl.Protocol.csproj" />
   </ItemGroup>

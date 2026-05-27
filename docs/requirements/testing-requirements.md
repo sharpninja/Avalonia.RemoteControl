@@ -15,6 +15,12 @@
 - `TEST-UNIT-005`: Log buffering reports dropped messages.
 - `TEST-UNIT-006`: Auth/TLS option validation enforces safe defaults.
 - `TEST-LOG-001`: Unit tests verify Debug `ILogger` messages for incoming client operations and outgoing runtime responses or stream updates, including non-recursive `WatchLogs` lifecycle behavior.
+- `TEST-LOG-002`: Unit tests verify the Android bridge TCP transport writes Debug diagnostics for bridge request/response frame lifecycle and does not emit per-entry response-frame logs for `WatchLogs` streams.
+- `TEST-LOG-003`: Unit tests verify service registration allows the remote-control `ILoggerProvider` to capture Debug entries while leaving other provider defaults unchanged.
+- `TEST-LOG-004`: Unit tests verify the desktop client log default and row formatter so Warning is requested by default while Debug remains selectable, and visible rows include dropped-count and diagnostic metadata.
+- `TEST-LOG-005`: Unit tests verify the floating log tool panel model shares the same live log rows as the main log panel without starting an additional log stream.
+- `TEST-LOG-006`: Unit tests verify the log view ownership state toggles between embedded and popped-out modes without replacing the shared log rows or creating duplicate stream state.
+- `TEST-LOG-007`: Unit tests verify the shared log view model exposes supported verbosity options, tracks selected verbosity changes, and notifies the client UI so embedded and floating selectors stay synchronized.
 
 ## Avalonia Tests
 
@@ -42,6 +48,15 @@
 
 - `TEST-CLIENT-001`: Client tests verify live-view coordinate mapping, frame updates, input batching, and tree-replica model updates.
 - `TEST-CLIENT-002`: Client tests verify the supported log verbosity options and selected minimum level mapping for Debug, Information, Warning, and Error.
+- `TEST-CLIENT-003`: Unit tests verify live-view hit testing chooses the deepest visible node whose absolute bounds contain the clicked root-relative point and ignores invisible or out-of-bounds nodes.
+- `TEST-CLIENT-004`: Unit tests verify the reusable live-view surface keeps the existing hit-test selection behavior while enabling both generic floating tool-window and right-side dock hosting paths.
+- `TEST-CLIENT-005`: Build validation verifies the Avalonia XAML styles for Visual Studio-like dockable panels compile, and the existing client tests continue to verify docked and floating log/live-view behavior after styling changes.
+- `TEST-CLIENT-006`: Unit tests verify project documents preserve app connection profiles, sessions, log history, replay steps, and artifact references across save/load round trips.
+- `TEST-CLIENT-007`: Unit tests verify replay diff generation reports added, removed, changed, and unchanged control-tree state for each replayed interaction step.
+- `TEST-CLIENT-008`: Unit tests verify replay records can mark sensitive payload fields and do not format bearer tokens or typed text into diagnostic log messages.
+- `TEST-CLIENT-009`: Build and unit validation verify the live-view float command opens a generic floating tool window and keeps Visual Studio-style shell XAML compiling.
+- `TEST-CLIENT-010`: Unit tests verify project documents persist and restore client layout state including window dimensions, splitter sizes, selected panel tab, log floating state, live-view dock state, and dock-pane auto-hide state.
+- `TEST-CLIENT-011`: Build and unit validation verify the dock chrome model persists panel state and that the Avalonia XAML for icon commands, draggable headers, floating windows, dock-back commands, and hidden or auto-hide states compiles without regressing existing log and live-view behavior.
 
 ## Security Tests
 
@@ -69,6 +84,9 @@
 - `TEST-ADB-011`: Unit tests and build checks verify the app-side bridge listener accepts authenticated length-prefixed protobuf requests, writes Android marker metadata, and can be referenced by the Android probe sample without ASP.NET Core/Kestrel dependencies.
 - `TEST-ADB-012`: Unit tests verify ADB connect can save a default profile with the marker-discovered transport protocol and the desktop UI/session factory can reopen that profile without using the gRPC default.
 - `TEST-ADB-013`: Unit tests verify bridge streaming for tree and frame streams, bridge cancellation by socket close, and unsupported capability handling.
+- `TEST-ADB-014`: Unit tests verify package-marker ADB connect fails before forwarding when `pidof` shows the package is stopped, and verify a bridge connection that closes before a response frame is reported as a clean diagnostic.
+- `TEST-ADB-015`: Unit tests verify the reusable ADB desktop/CLI connection workflow can launch a stopped package, wait for it to run, discover marker metadata, create a forward, probe capabilities, and save a transport-aware profile without exposing tokens in status output.
+- `TEST-ADB-016`: Unit tests verify an explicit ADB bridge connection can create a selected-device host-to-device forward, probe the forwarded endpoint, and save a desktop profile with serial, host port, device port, adb mode, and `arc-protobuf-v1` transport metadata.
 
 ## Packaging and CI Tests
 

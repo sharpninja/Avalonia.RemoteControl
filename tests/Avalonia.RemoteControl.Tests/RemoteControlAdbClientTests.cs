@@ -101,6 +101,25 @@ public sealed class RemoteControlAdbClientTests
     }
 
     [Fact]
+    public async Task AdbClientChecksPackageRunningStateThroughPidof()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(0, "1234\n", string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.stopped",
+            new AdbCommandResult(1, string.Empty, string.Empty));
+        var client = new AdbClient(runner);
+
+        var running = await client.IsPackageRunningAsync("emulator-5554", "com.example.app");
+        var stopped = await client.IsPackageRunningAsync("emulator-5554", "com.example.stopped");
+
+        Assert.True(running);
+        Assert.False(stopped);
+    }
+
+    [Fact]
     public async Task AdbCommandLineConnectCreatesForwardAndProbesEndpoint()
     {
         var runner = new RecordingAdbCommandRunner();
@@ -170,6 +189,9 @@ public sealed class RemoteControlAdbClientTests
     {
         var runner = new RecordingAdbCommandRunner();
         runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(0, "1234\n", string.Empty));
+        runner.Respond(
             "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
             new AdbCommandResult(
                 0,
@@ -193,6 +215,7 @@ public sealed class RemoteControlAdbClientTests
         Assert.Equal(AdbEndpointInfo.AndroidBridgeProtocol, probe.TransportProtocol);
         Assert.Equal(
             [
+                "-s emulator-5554 shell pidof com.example.app",
                 "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
                 "-s emulator-5554 forward tcp:47100 tcp:47102",
                 "-s emulator-5554 forward --remove tcp:47100"
@@ -201,9 +224,56 @@ public sealed class RemoteControlAdbClientTests
     }
 
     [Fact]
+    public async Task AdbCommandLineConnectLaunchesStoppedPackageBeforeForwarding()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(1, string.Empty, string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell monkey -p com.example.app 1",
+            AdbCommandResult.Success);
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(0, "1234\n", string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+            new AdbCommandResult(
+                0,
+                """{"devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
+                string.Empty));
+        runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47102", AdbCommandResult.Success);
+        var commandLine = new AdbCommandLine(
+            new AdbClient(runner),
+            new RecordingRemoteControlProbe());
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var exitCode = await commandLine.RunAsync(
+            ["connect", "--serial", "emulator-5554", "--package", "com.example.app", "--keep-forward"],
+            output,
+            error);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("package launched", output.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(
+            [
+                "-s emulator-5554 shell pidof com.example.app",
+                "-s emulator-5554 shell monkey -p com.example.app 1",
+                "-s emulator-5554 shell pidof com.example.app",
+                "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+                "-s emulator-5554 forward tcp:47100 tcp:47102"
+            ],
+            runner.Commands);
+    }
+
+    [Fact]
     public async Task AdbCommandLineConnectKeepForwardSavesBridgeConnectionProfile()
     {
         var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(0, "1234\n", string.Empty));
         runner.Respond(
             "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
             new AdbCommandResult(
@@ -236,6 +306,112 @@ public sealed class RemoteControlAdbClientTests
         Assert.Equal("marker-token", profile.Token);
         Assert.Equal(RemoteControlProtocol.AndroidBridgeTransportProtocol, profile.TransportProtocol);
         Assert.Contains("profile saved", output.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("-s emulator-5554 shell pidof com.example.app", runner.Commands, StringComparer.Ordinal);
+    }
+
+    [Fact]
+    public async Task AdbConnectionWorkflowLaunchesStoppedPackageAndSavesProfile()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(1, string.Empty, string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell monkey -p com.example.app 1",
+            AdbCommandResult.Success);
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(0, "1234\n", string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+            new AdbCommandResult(
+                0,
+                """{"devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
+                string.Empty));
+        runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47102", AdbCommandResult.Success);
+        var profilePath = Path.Combine(
+            Path.GetTempPath(),
+            "Avalonia.RemoteControl.Tests",
+            Guid.NewGuid().ToString("N"),
+            "connection-profile.json");
+        var profileStore = new FileRemoteControlProfileStore(profilePath);
+        var progressMessages = new List<string>();
+        var workflow = new AdbConnectionWorkflow(
+            new AdbClient(runner),
+            new RecordingRemoteControlProbe(),
+            profileStore);
+
+        var result = await workflow.ConnectAsync(
+            new AdbConnectOptions
+            {
+                Serial = "emulator-5554",
+                PackageName = "com.example.app",
+                LaunchPackageIfStopped = true,
+                SaveProfile = true,
+                CleanupOnExit = false,
+                PackageStartTimeout = TimeSpan.FromSeconds(1),
+                PackageStartPollInterval = TimeSpan.FromMilliseconds(1),
+            },
+            new InlineProgress<string>(progressMessages.Add));
+        var profile = await profileStore.LoadDefaultAsync();
+
+        Assert.True(result.PackageLaunched);
+        Assert.True(result.ProfileSaved);
+        Assert.False(result.ForwardRemoved);
+        Assert.Equal("http://127.0.0.1:47100/", result.ConnectionProfile.Endpoint);
+        Assert.Equal(RemoteControlProtocol.AndroidBridgeTransportProtocol, result.ConnectionProfile.TransportProtocol);
+        Assert.NotNull(profile);
+        Assert.Equal("marker-token", profile.Token);
+        Assert.DoesNotContain(progressMessages, message => message.Contains("marker-token", StringComparison.Ordinal));
+        Assert.Equal(
+            [
+                "-s emulator-5554 shell pidof com.example.app",
+                "-s emulator-5554 shell monkey -p com.example.app 1",
+                "-s emulator-5554 shell pidof com.example.app",
+                "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+                "-s emulator-5554 forward tcp:47100 tcp:47102"
+            ],
+            runner.Commands);
+    }
+
+    [Fact]
+    public async Task AdbConnectionWorkflowCanSaveExplicitBridgeForwardProfile()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47100", AdbCommandResult.Success);
+        var profilePath = Path.Combine(
+            Path.GetTempPath(),
+            "Avalonia.RemoteControl.Tests",
+            Guid.NewGuid().ToString("N"),
+            "connection-profile.json");
+        var profileStore = new FileRemoteControlProfileStore(profilePath);
+        var workflow = new AdbConnectionWorkflow(
+            new AdbClient(runner),
+            new RecordingRemoteControlProbe(),
+            profileStore);
+
+        var result = await workflow.ConnectAsync(new AdbConnectOptions
+        {
+            Serial = "emulator-5554",
+            DevicePort = 47100,
+            HostPort = 47100,
+            Token = "dev-token",
+            TransportProtocol = RemoteControlProtocol.AndroidBridgeTransportProtocol,
+            SaveProfile = true,
+            CleanupOnExit = false,
+        });
+        var profile = await profileStore.LoadDefaultAsync();
+
+        Assert.False(result.PackageLaunched);
+        Assert.False(result.ForwardRemoved);
+        Assert.True(result.ProfileSaved);
+        Assert.NotNull(profile);
+        Assert.Equal("emulator-5554", profile.AndroidSerial);
+        Assert.Equal(47100, profile.AdbHostPort);
+        Assert.Equal(47100, profile.AdbDevicePort);
+        Assert.Equal("adb", profile.ConnectionMode);
+        Assert.Equal(RemoteControlProtocol.AndroidBridgeTransportProtocol, profile.TransportProtocol);
+        Assert.Equal(["-s emulator-5554 forward tcp:47100 tcp:47100"], runner.Commands);
     }
 
     [Fact]
@@ -260,13 +436,19 @@ public sealed class RemoteControlAdbClientTests
 
     private sealed class RecordingAdbCommandRunner : IAdbCommandRunner
     {
-        private readonly Dictionary<string, AdbCommandResult> responses = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, Queue<AdbCommandResult>> responses = new(StringComparer.Ordinal);
 
         public List<string> Commands { get; } = [];
 
         public void Respond(string command, AdbCommandResult result)
         {
-            responses[command] = result;
+            if (!responses.TryGetValue(command, out var queue))
+            {
+                queue = new Queue<AdbCommandResult>();
+                responses[command] = queue;
+            }
+
+            queue.Enqueue(result);
         }
 
         public Task<AdbCommandResult> RunAsync(
@@ -276,8 +458,8 @@ public sealed class RemoteControlAdbClientTests
             var command = string.Join(" ", arguments);
             Commands.Add(command);
 
-            return Task.FromResult(responses.TryGetValue(command, out var result)
-                ? result
+            return Task.FromResult(responses.TryGetValue(command, out var queue) && queue.Count > 0
+                ? queue.Dequeue()
                 : new AdbCommandResult(1, string.Empty, $"No fake response for {command}"));
         }
     }
@@ -309,6 +491,14 @@ public sealed class RemoteControlAdbClientTests
                 true,
                 true,
                 true));
+        }
+    }
+
+    private sealed class InlineProgress<T>(Action<T> onReport) : IProgress<T>
+    {
+        public void Report(T value)
+        {
+            onReport(value);
         }
     }
 }

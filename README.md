@@ -17,6 +17,7 @@ User docs:
 
 - [Getting started](docs/user/getting-started.md)
 - [Server integration](docs/user/server-integration.md)
+- [Settings guide](docs/user/settings.md)
 - [Client tool](docs/user/client-tool.md)
 - [Android ADB connections](docs/user/android-adb.md)
 - [Security guide](docs/user/security.md)

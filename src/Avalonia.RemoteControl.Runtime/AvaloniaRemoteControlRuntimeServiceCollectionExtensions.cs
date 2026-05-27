@@ -8,6 +8,9 @@ namespace Avalonia.RemoteControl.Server;
 /// </summary>
 public static class AvaloniaRemoteControlRuntimeServiceCollectionExtensions
 {
+    private static readonly string RemoteControlLoggerProviderName =
+        typeof(Logging.RemoteControlLoggerProvider).FullName!;
+
     /// <summary>
     /// Adds the remote-control runtime services without registering a transport host.
     /// </summary>
@@ -30,6 +33,20 @@ public static class AvaloniaRemoteControlRuntimeServiceCollectionExtensions
         }
 
         services.AddLogging();
+        services.Configure<LoggerFilterOptions>(options =>
+        {
+            if (!options.Rules.Any(static rule => string.Equals(
+                rule.ProviderName,
+                RemoteControlLoggerProviderName,
+                StringComparison.Ordinal)))
+            {
+                options.Rules.Add(new LoggerFilterRule(
+                    RemoteControlLoggerProviderName,
+                    categoryName: null,
+                    LogLevel.Debug,
+                    filter: null));
+            }
+        });
         services.AddSingleton<AvaloniaRemoteControlService>();
         services.AddSingleton<IRemoteControlRootProvider, EmptyRemoteControlRootProvider>();
         services.AddSingleton<Security.RemoteControlStartupValidator>();

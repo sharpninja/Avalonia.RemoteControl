@@ -79,6 +79,88 @@ public sealed class AdbClient
     }
 
     /// <summary>
+    /// Checks whether the selected Android package currently has a running process.
+    /// </summary>
+    /// <param name="serial">The adb serial.</param>
+    /// <param name="packageName">The Android package name.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns><see langword="true"/> when adb reports a process ID; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> IsPackageRunningAsync(
+        string serial,
+        string packageName,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(serial);
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageName);
+
+        var result = await runner.RunAsync(
+            ["-s", serial, "shell", "pidof", packageName],
+            cancellationToken).ConfigureAwait(false);
+
+        return result.ExitCode == 0 && !string.IsNullOrWhiteSpace(result.StandardOutput);
+    }
+
+    /// <summary>
+    /// Launches the selected Android package by asking adb monkey to inject a launcher event.
+    /// </summary>
+    /// <param name="serial">The adb serial.</param>
+    /// <param name="packageName">The Android package name.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the launch request.</returns>
+    public async Task LaunchPackageAsync(
+        string serial,
+        string packageName,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(serial);
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageName);
+
+        var result = await runner.RunAsync(
+            ["-s", serial, "shell", "monkey", "-p", packageName, "1"],
+            cancellationToken).ConfigureAwait(false);
+
+        EnsureSuccess(result, $"Unable to launch Android package '{packageName}'.");
+    }
+
+    /// <summary>
+    /// Waits until adb reports that the selected package has a running process.
+    /// </summary>
+    /// <param name="serial">The adb serial.</param>
+    /// <param name="packageName">The Android package name.</param>
+    /// <param name="timeout">Maximum time to wait.</param>
+    /// <param name="pollInterval">Polling interval.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns><see langword="true" /> when the package starts; otherwise <see langword="false" />.</returns>
+    public async Task<bool> WaitForPackageRunningAsync(
+        string serial,
+        string packageName,
+        TimeSpan timeout,
+        TimeSpan pollInterval,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(serial);
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageName);
+
+        var stopAt = DateTimeOffset.UtcNow + timeout;
+        var delay = pollInterval <= TimeSpan.Zero
+            ? TimeSpan.FromMilliseconds(1)
+            : pollInterval;
+
+        do
+        {
+            if (await IsPackageRunningAsync(serial, packageName, cancellationToken).ConfigureAwait(false))
+            {
+                return true;
+            }
+
+            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+        }
+        while (DateTimeOffset.UtcNow < stopAt);
+
+        return false;
+    }
+
+    /// <summary>
     /// Creates an adb forward from a host port to an Android-side port.
     /// </summary>
     /// <param name="serial">The adb serial.</param>

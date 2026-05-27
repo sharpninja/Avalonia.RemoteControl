@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tool="using:Avalonia.RemoteControl.Tool"
+             x:Class="Avalonia.RemoteControl.Tool.ControlTreePanel"
+             x:DataType="tool:ControlTreePanelViewModel">
+  <UserControl.DataTemplates>
+    <TreeDataTemplate DataType="{x:Type tool:RemoteTreeItem}" ItemsSource="{Binding Children}">
+      <TextBlock Text="{Binding Header}" />
+    </TreeDataTemplate>
+  </UserControl.DataTemplates>
+
+  <TreeView x:Name="Tree"
+            Classes="vs-tool-list"
+            ItemsSource="{Binding Items}"
+            SelectionChanged="TreeSelectionChanged" />
+</UserControl>

@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:terminal="using:Iciclecreek.Terminal"
+             xmlns:tool="using:Avalonia.RemoteControl.Tool"
+             x:Class="Avalonia.RemoteControl.Tool.TerminalPanel"
+             x:DataType="tool:TerminalPanelViewModel">
+  <Grid RowDefinitions="Auto,*" RowSpacing="8">
+    <Grid RowDefinitions="Auto,Auto,Auto"
+          ColumnDefinitions="82,*"
+          ColumnSpacing="8"
+          RowSpacing="6">
+      <TextBlock Classes="vs-muted" Text="Command" />
+      <TextBox Grid.Column="1"
+               Text="{Binding Command, Mode=TwoWay}"
+               PlaceholderText="pwsh.exe" />
+
+      <TextBlock Grid.Row="1" Classes="vs-muted" Text="Arguments" />
+      <TextBox Grid.Row="1"
+               Grid.Column="1"
+               Text="{Binding Arguments, Mode=TwoWay}"
+               PlaceholderText="-NoLogo -NoProfile -Command codex" />
+
+      <TextBlock Grid.Row="2" Classes="vs-muted" Text="Working Dir" />
+      <TextBox Grid.Row="2"
+               Grid.Column="1"
+               Text="{Binding WorkingDirectory, Mode=TwoWay}"
+               PlaceholderText="Terminal working directory" />
+    </Grid>
+
+    <Grid Grid.Row="1" RowDefinitions="Auto,*" RowSpacing="8">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="8">
+        <Button x:Name="LaunchCodexButton"
+                Classes="vs-tool-button"
+                Content="Codex"
+                Click="LaunchCodexClicked" />
+        <Button x:Name="LaunchShellButton"
+                Grid.Column="1"
+                Classes="vs-tool-button"
+                Content="Shell"
+                Click="LaunchShellClicked" />
+        <Button x:Name="StopButton"
+                Grid.Column="2"
+                Classes="vs-tool-button"
+                Content="Stop"
+                Click="StopClicked" />
+        <TextBlock Grid.Column="3"
+                   Classes="vs-muted"
+                   Text="{Binding StatusText}" />
+      </Grid>
+
+      <terminal:TerminalControl x:Name="Terminal"
+                                Grid.Row="1"
+                                FontFamily="Cascadia Mono,Consolas"
+                                FontSize="13"
+                                BufferSize="3000"
+                                Background="#0C0C0C"
+                                Foreground="#F1F1F1"
+                                ProcessExited="TerminalProcessExited" />
+    </Grid>
+  </Grid>
+</UserControl>

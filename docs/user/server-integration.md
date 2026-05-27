@@ -40,6 +40,8 @@ Common options:
 - `LogBufferCapacity`: retained log entries for new subscribers.
 - `SensitiveNameFragments`: default redaction fragments.
 
+See [Settings Guide](settings.md) for the full explanation of defaults, recommended profiles, security tradeoffs, client fields, ADB flags, and common misconfigurations.
+
 ## Mutation Policy
 
 Property mutation is denied unless one of these policy entries matches:
@@ -61,6 +63,8 @@ options.AllowRemoteInput = true;
 ```
 
 Frame streaming captures the Avalonia root with `RenderTargetBitmap` and sends PNG frames to connected clients. Remote input is delivered in root-relative DIPs and is rejected unless both action and input gates are enabled.
+
+Use `FrameStreamInterval` and `MaxFramePixelCount` to tune live screenshot cost. Use `TreeStreamInterval` to tune structural update frequency for the live tree replica and overlay.
 
 ## Logging
 

@@ -206,6 +206,10 @@ Requirements:
 - `FR-LOG-004`
 - `FR-LOG-005`
 - `FR-LOG-006`
+- `FR-LOG-007`
+- `FR-LOG-008`
+- `FR-LOG-009`
+- `FR-LOG-010`
 - `TR-GRPC-PROTOCOL-007`
 - `TR-DI-HOSTING-005`
 - `TR-LOG-STREAMING-001`
@@ -215,12 +219,24 @@ Requirements:
 - `TR-LOG-STREAMING-005`
 - `TR-LOG-STREAMING-006`
 - `TR-LOG-STREAMING-007`
+- `TR-LOG-STREAMING-008`
+- `TR-LOG-STREAMING-009`
+- `TR-LOG-STREAMING-010`
+- `TR-LOG-STREAMING-011`
+- `TR-LOG-STREAMING-012`
+- `TR-LOG-STREAMING-013`
 - `TR-SEC-SECURITY-009`
 
 Tests/evidence:
 
 - `TEST-UNIT-005`
 - `TEST-LOG-001`
+- `TEST-LOG-002`
+- `TEST-LOG-003`
+- `TEST-LOG-004`
+- `TEST-LOG-005`
+- `TEST-LOG-006`
+- `TEST-LOG-007`
 - `TEST-CLIENT-002`
 - `TEST-GRPC-005`
 - `TEST-SEC-004`
@@ -234,6 +250,12 @@ Implemented evidence:
 - `RemoteControlDesktopSessionTests` covers hosted gRPC log streaming from the server log buffer to the desktop client session.
 - `RemoteControlLoggingTests` covers the supported client log verbosity options and the minimum-level names sent to `WatchLogs`.
 - `RemoteControlProtocolEventLoggingTests` covers Debug `ILogger` messages for runtime client request receipt, unary responses, stream updates, and log-stream lifecycle without echoing each outgoing log entry.
+- `RemoteControlBridgeTcpListenerTests` covers Debug `ILogger` diagnostics for bridge TCP request/response frame lifecycle and confirms `WatchLogs` streams do not generate per-entry response-frame diagnostics.
+- `RemoteControlLoggingTests` covers provider-specific Debug capture for `RemoteControlLoggerProvider` without changing unrelated provider defaults.
+- `RemoteControlLoggingTests` covers Warning as the default desktop log verbosity, keeps Debug selectable, and verifies client log row formatting includes stream diagnostic metadata and dropped-entry counts.
+- `RemoteControlLoggingTests` covers the shared log view model used by the embedded and floating log views.
+- `RemoteControlLoggingTests` covers log view ownership state when logs move between the embedded main-window list and the generic floating tool window.
+- `RemoteControlLoggingTests` covers selected log verbosity in shared log view state so embedded and floating selectors remain synchronized.
 
 ## Iteration 4 - Client and Tool
 
@@ -246,10 +268,14 @@ Requirements:
 - `FR-CLIENT-005`
 - `FR-CLIENT-006`
 - `FR-CLIENT-007`
+- `FR-CLIENT-013`
+- `FR-CLIENT-019`
 - `FR-SEC-009`
 - `FR-SEC-010`
 - `TR-PACK-PACKAGE-002`
 - `TR-PACK-PACKAGE-003`
+- `TR-CLIENT-UI-001`
+- `TR-CLIENT-UI-002`
 - `TR-SEC-SECURITY-016`
 - `TR-SEC-SECURITY-017`
 - `TR-ADB-CONNECTIVITY-016`
@@ -259,6 +285,8 @@ Tests/evidence:
 - `TEST-PACK-002`
 - `TEST-PACK-003`
 - `TEST-PACK-004`
+- `TEST-CLIENT-005`
+- `TEST-CLIENT-009`
 - `TEST-SEC-008`
 - `TEST-ADB-012`
 - `TEST-MANUAL-001`
@@ -280,6 +308,9 @@ Implemented evidence:
 - `RemoteControlProfileStoreTests` covers accepted SHA-256 fingerprint persistence and deletion through profile forget.
 - The desktop UI exposes inspect, accept, and reject controls for manual TLS certificate trust.
 - The desktop UI and profile store preserve the selected transport protocol so kept ADB bridge forwards can be reopened with `arc-protobuf-v1`.
+- The desktop UI defines shared Visual Studio-like dockable panel resources for command bars, tool-window headers, content surfaces, active dock borders, generic floating tool windows, and live-view controls.
+- The desktop UI now applies Visual Studio 2026-like styling across the command bar, inputs, buttons, tab strips, tree/list surfaces, status bar, docked tool panels, and generic floating tool windows.
+- The desktop UI now hosts the control tree, properties, remote tools, logs, project, actions, and live view as custom controls backed by view models, with `MainWindow` acting as the shell container and session coordinator.
 - `docs/requirements/manual-acceptance-evidence.md` records the current manual acceptance evidence for loopback, TLS/token, live tree, logs, click, property edit, audit trail, and Android ADB workflows.
 
 ## Iteration 5 - ADB Client UX
@@ -292,6 +323,7 @@ Requirements:
 - `FR-ADB-004`
 - `FR-ADB-005`
 - `FR-ADB-006`
+- `FR-ADB-007`
 - `FR-SEC-004`
 - `TR-ADB-CONNECTIVITY-001`
 - `TR-ADB-CONNECTIVITY-002`
@@ -302,6 +334,9 @@ Requirements:
 - `TR-ADB-CONNECTIVITY-007`
 - `TR-ADB-CONNECTIVITY-009`
 - `TR-ADB-CONNECTIVITY-016`
+- `TR-ADB-CONNECTIVITY-018`
+- `TR-ADB-CONNECTIVITY-019`
+- `TR-ADB-CONNECTIVITY-020`
 - `TR-SEC-SECURITY-015`
 
 Tests/evidence:
@@ -313,13 +348,20 @@ Tests/evidence:
 - `TEST-ADB-005`
 - `TEST-MANUAL-003`
 - `TEST-ADB-012`
+- `TEST-ADB-014`
+- `TEST-ADB-015`
+- `TEST-ADB-016`
 
 Implemented evidence:
 
 - `RemoteControlAdbClientTests` covers `adb devices -l` parsing, ADB device listing, serial-specific port forwarding, forward cleanup, package marker discovery, and CLI connect cleanup behavior.
 - `RemoteControlAdbClientTests` covers saving a transport-aware default profile after `adb connect --keep-forward`.
+- `RemoteControlAdbClientTests` covers package-marker connect refusing to create a forward when `pidof` reports the package is stopped.
+- `RemoteControlAdbClientTests` covers the reusable ADB connection workflow launching a stopped package, waiting for `pidof`, discovering the marker, creating the forward, probing capabilities, and saving a transport-aware profile for the desktop client.
+- `RemoteControlAdbClientTests` covers explicit selected-device bridge forwarding without marker discovery, including saved serial, host port, device port, adb mode, and `arc-protobuf-v1` profile metadata.
+- `RemoteControlBridgeTcpListenerTests` covers closed bridge sockets being converted to a clean diagnostic instead of leaking `EndOfStreamException`.
 - `AdbClient` creates `adb -s <serial> forward tcp:<hostPort> tcp:<devicePort>` and removes forwards with `adb -s <serial> forward --remove tcp:<hostPort>`.
-- `AdbCommandLine` wires `adb list`, `adb connect`, and `adb cleanup` into the .NET tool workflow.
+- `AdbCommandLine` wires `adb list`, `adb connect`, and `adb cleanup` into the .NET tool workflow; the desktop UI reuses the same lower-level ADB client, probe, and profile services.
 - `GrpcRemoteControlProbe` authenticates `GetCapabilities` over the forwarded localhost endpoint.
 - Physical-device acceptance for the Android bridge probe is recorded under Technical Spike 0 and `TEST-MANUAL-003`; broader emulator/device matrix coverage remains future compatibility work.
 
@@ -330,6 +372,9 @@ Requirements:
 - `FR-CLIENT-008`
 - `FR-CLIENT-009`
 - `FR-CLIENT-010`
+- `FR-CLIENT-011`
+- `FR-CLIENT-012`
+- `FR-CLIENT-018`
 - `FR-ACTION-005`
 - `FR-SEC-011`
 - `FR-SEC-012`
@@ -339,6 +384,9 @@ Requirements:
 - `TR-UI-RUNTIME-007`
 - `TR-UI-RUNTIME-008`
 - `TR-ACTION-INVOCATION-005`
+- `TR-LIVE-VIEW-011`
+- `TR-LIVE-VIEW-012`
+- `TR-LIVE-VIEW-013`
 - `TR-SEC-SECURITY-018`
 - `TR-SEC-SECURITY-019`
 - `TR-ADB-CONNECTIVITY-017`
@@ -352,6 +400,9 @@ Tests/evidence:
 - `TEST-AVA-005`
 - `TEST-AVA-006`
 - `TEST-AVA-007`
+- `TEST-CLIENT-003`
+- `TEST-CLIENT-004`
+- `TEST-CLIENT-009`
 - additive protocol contract tests
 - frame stream runtime and transport tests
 - remote input policy and audit tests
@@ -365,7 +416,10 @@ Evidence required:
 - Tree snapshots include absolute bounds while preserving existing local bounds.
 - Frame capture, tree snapshots, and input dispatch normalize child roots to the containing `TopLevel` so target-device backgrounds, popups, flyouts, and overlays are visible and interactive.
 - gRPC and Android bridge transports both support live tree/frame streaming and remote input.
-- The desktop client opens a separate live-view window with screenshot and tree replica modes.
+- The desktop client opens a generic floating live-view tool window with screenshot and tree replica modes.
+- `RemoteControlLiveClientTests` covers live-view hit testing against absolute bounds so clicks resolve to the deepest visible node and ignore hidden or out-of-bounds controls.
+- The live-view surface is hosted by both `FloatingDockPaneWindow` and the main window's right-side dock host.
+- The docked live-view float command transfers the view into a generic `FloatingDockPaneWindow` instead of merely stopping the docked stream.
 
 ## Iteration 7 - Android Bridge Transport
 
@@ -377,6 +431,7 @@ Requirements:
 - `TR-ADB-CONNECTIVITY-012`
 - `TR-ADB-CONNECTIVITY-013`
 - `TR-ADB-CONNECTIVITY-014`
+- `TR-LOG-STREAMING-008`
 - `TR-SEC-SECURITY-002`
 - `TR-SEC-SECURITY-005`
 
@@ -388,6 +443,7 @@ Tests/evidence:
 - `TEST-ADB-009`
 - `TEST-ADB-010`
 - `TEST-ADB-011`
+- `TEST-LOG-002`
 - `TEST-MANUAL-003`
 - Android bridge sample package
 - package marker read through `adb shell run-as`
@@ -460,9 +516,61 @@ Tests/evidence:
 Implemented evidence:
 
 - `docs/user/index.md` provides the user documentation entry point.
+- `docs/user/settings.md` explains server/runtime options, client fields, ADB CLI flags, live-view gates, logging verbosity, TLS, redaction, and recommended profiles.
 - `docs/user/getting-started.md` covers tool installation, server package installation, loopback server setup, and first connection.
 - `docs/user/server-integration.md` covers service registration, root providers, options, mutation policy, logging, TLS, and manual start/stop.
 - `docs/user/client-tool.md` covers desktop client launch, connection fields, saved profiles, tree inspection, actions, property edits, and logs.
 - `docs/user/android-adb.md` covers ADB device listing, explicit port/token connection, package marker discovery, cleanup, and Android bridge responsibilities.
 - `docs/user/security.md` documents the safety model, tokens, TLS, mutation policy, redaction, ADB posture, and enablement checklist.
 - `docs/user/troubleshooting.md` covers common install, startup, connection, authentication, tree, mutation, action, logging, ADB, and NuGet package-name issues.
+
+## Iteration 9 - Project Sessions and Replay
+
+Requirements:
+
+- `FR-CLIENT-014`
+- `FR-CLIENT-015`
+- `FR-CLIENT-016`
+- `FR-CLIENT-017`
+- `TR-CLIENT-PROJECT-001`
+- `TR-CLIENT-PROJECT-002`
+- `TR-CLIENT-REPLAY-001`
+- `TR-CLIENT-REPLAY-002`
+
+Tests/evidence:
+
+- `TEST-CLIENT-006`
+- `TEST-CLIENT-007`
+- `TEST-CLIENT-008`
+- project persistence unit tests
+- replay diff unit tests
+- desktop client project-session wiring
+
+Implemented evidence:
+
+- `RemoteControlProjectDocument` defines a versioned project file with app profiles, sessions, log history, interactions, and replay artifacts.
+- `FileRemoteControlProjectStore` persists project files as user-scoped JSON documents.
+- `RemoteControlProjectSessionRecorder` records project sessions, log entries, tree snapshot artifacts, and replayable interactions.
+- `RemoteControlSessionReplayService` replays recorded click, focus, property, and live-input interactions through an `IRemoteControlReplayTarget`.
+- `RemoteControlReplayDiffService` compares original and replayed tree snapshots and reports added, removed, changed, and unchanged node state per replay step.
+- The desktop client starts a default project session on connection, preserves app connection settings, stores log history, and records click/focus/property/live-input interactions.
+
+## Iteration 10 - Client Layout Persistence
+
+Requirements:
+
+- `FR-CLIENT-020`
+- `TR-CLIENT-LAYOUT-001`
+
+Tests/evidence:
+
+- `TEST-CLIENT-010`
+- project layout persistence unit tests
+- desktop client layout save/restore wiring
+
+Implemented evidence:
+
+- `RemoteControlClientLayoutState` stores window size/position, splitter dimensions, selected right-side tab, log floating state, live-view dock preference, and dock-pane auto-hide state.
+- `RemoteControlProjectDocument` persists `ClientLayout` beside project profiles, sessions, logs, interactions, and replay artifacts.
+- `MainWindow` captures layout state before project saves and closing, restores valid saved dimensions and dock-pane auto-hide state after project load, reopens floating logs on startup, and re-docks live view after the next successful connection when that preference was saved.
+- `RemoteControlProjectSystemTests` covers layout state round-trip persistence in the project store.

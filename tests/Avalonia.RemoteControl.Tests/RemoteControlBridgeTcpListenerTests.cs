@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Net;
+using System.Net.Sockets;
 using System.Text.Json;
 using Avalonia.Controls;
 using Avalonia.RemoteControl.Client;
@@ -75,6 +77,41 @@ public sealed class RemoteControlBridgeTcpListenerTests
     }
 
     [Fact]
+    public async Task BridgeClientReportsClosedBridgeSocketAsDiagnostic()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var endpoint = (IPEndPoint)listener.LocalEndpoint;
+        var acceptTask = Task.Run(async () =>
+        {
+            using var client = await listener.AcceptTcpClientAsync();
+            await using var stream = client.GetStream();
+            var request = await BridgeFrameCodec.ReadAsync(stream, BridgeRequest.Parser);
+
+            Assert.Equal(BridgeMethod.GetCapabilities, request.Method);
+        });
+
+        try
+        {
+            using var session = RemoteControlDesktopSession.Create(
+                new Uri($"http://127.0.0.1:{endpoint.Port}"),
+                "dev-token",
+                transportProtocol: RemoteControlProtocol.AndroidBridgeTransportProtocol);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => session.GetCapabilitiesAsync());
+
+            Assert.Contains("closed before a complete response", exception.Message, StringComparison.Ordinal);
+            Assert.IsType<EndOfStreamException>(exception.InnerException);
+            await acceptTask.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            listener.Stop();
+        }
+    }
+
+    [Fact]
     public async Task BridgeTcpListenerStreamsFramesThroughRuntime()
     {
         await using var provider = CreateProvider(new StubRemoteControlRuntime());
@@ -125,6 +162,98 @@ public sealed class RemoteControlBridgeTcpListenerTests
         {
             await listener.StopAsync();
         }
+    }
+
+    [Fact]
+    public async Task BridgeTcpListenerLogsDebugFrameLifecycle()
+    {
+        var loggerProvider = new CapturingLoggerProvider();
+        await using var provider = CreateProvider(new StubRemoteControlRuntime(), loggerProvider);
+        var listener = provider.GetRequiredService<RemoteControlBridgeTcpListener>();
+
+        try
+        {
+            await listener.StartAsync();
+
+            using var session = RemoteControlDesktopSession.Create(
+                CreateBridgeUri(listener),
+                "dev-token",
+                transportProtocol: RemoteControlProtocol.AndroidBridgeTransportProtocol);
+
+            await session.GetCapabilitiesAsync();
+        }
+        finally
+        {
+            await listener.StopAsync();
+        }
+
+        var entries = loggerProvider.Entries.ToArray();
+        Assert.Contains(entries, entry =>
+            entry.Level == LogLevel.Debug &&
+            entry.Message.Contains("Bridge TCP client accepted", StringComparison.Ordinal));
+        Assert.Contains(entries, entry =>
+            entry.Level == LogLevel.Debug &&
+            entry.Message.Contains("Bridge TCP request frame received from client: GetCapabilities", StringComparison.Ordinal));
+        Assert.Contains(entries, entry =>
+            entry.Level == LogLevel.Debug &&
+            entry.Message.Contains("Bridge TCP response frame sent to client: GetCapabilities", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task BridgeTcpListenerDoesNotLogEachWatchLogsResponseFrame()
+    {
+        var loggerProvider = new CapturingLoggerProvider();
+        await using var provider = CreateProvider(
+            new StubRemoteControlRuntime(
+                [
+                    new RemoteControlLogEntry
+                    {
+                        TimestampUtc = DateTimeOffset.UtcNow,
+                        Level = LogLevel.Information,
+                        Category = "FunWasHad",
+                        Message = "first",
+                    },
+                    new RemoteControlLogEntry
+                    {
+                        TimestampUtc = DateTimeOffset.UtcNow,
+                        Level = LogLevel.Warning,
+                        Category = "FunWasHad",
+                        Message = "second",
+                    },
+                ]),
+            loggerProvider);
+        var listener = provider.GetRequiredService<RemoteControlBridgeTcpListener>();
+
+        try
+        {
+            await listener.StartAsync();
+
+            using var session = RemoteControlDesktopSession.Create(
+                CreateBridgeUri(listener),
+                "dev-token",
+                transportProtocol: RemoteControlProtocol.AndroidBridgeTransportProtocol);
+            await using var enumerator = session.WatchLogsAsync("Debug", null).GetAsyncEnumerator();
+
+            Assert.True(await enumerator.MoveNextAsync());
+            Assert.True(await enumerator.MoveNextAsync());
+            Assert.False(await enumerator.MoveNextAsync());
+        }
+        finally
+        {
+            await listener.StopAsync();
+        }
+
+        var entries = loggerProvider.Entries.ToArray();
+        Assert.Contains(entries, entry =>
+            entry.Level == LogLevel.Debug &&
+            entry.Message.Contains("Bridge TCP request frame received from client: WatchLogs", StringComparison.Ordinal));
+        Assert.Contains(entries, entry =>
+            entry.Level == LogLevel.Debug &&
+            entry.Message.Contains("Bridge TCP stream completed for client: WatchLogs", StringComparison.Ordinal));
+        Assert.DoesNotContain(entries, entry =>
+            entry.Level == LogLevel.Debug &&
+            entry.Message.Contains("Bridge TCP response frame sent to client: WatchLogs", StringComparison.Ordinal) &&
+            entry.Message.Contains("end of stream False", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -201,7 +330,9 @@ public sealed class RemoteControlBridgeTcpListenerTests
         return services.BuildServiceProvider();
     }
 
-    private static ServiceProvider CreateProvider(IRemoteControlRuntime runtime)
+    private static ServiceProvider CreateProvider(
+        IRemoteControlRuntime runtime,
+        ILoggerProvider? loggerProvider = null)
     {
         var services = new ServiceCollection();
         services.AddAvaloniaRemoteControlRuntime(options =>
@@ -211,12 +342,27 @@ public sealed class RemoteControlBridgeTcpListenerTests
             options.IsAdbTunnel = true;
         });
         services.AddSingleton(runtime);
+        if (loggerProvider is not null)
+        {
+            services.AddLogging(builder =>
+            {
+                builder.SetMinimumLevel(LogLevel.Debug);
+                builder.AddProvider(loggerProvider);
+            });
+        }
 
         return services.BuildServiceProvider();
     }
 
     private sealed class StubRemoteControlRuntime : IRemoteControlRuntime
     {
+        private readonly IReadOnlyList<RemoteControlLogEntry> logEntries;
+
+        public StubRemoteControlRuntime(IReadOnlyList<RemoteControlLogEntry>? logEntries = null)
+        {
+            this.logEntries = logEntries ?? [];
+        }
+
         public RemoteControlCapabilities GetCapabilities()
         {
             return new RemoteControlCapabilities();
@@ -303,8 +449,56 @@ public sealed class RemoteControlBridgeTcpListenerTests
             string? categoryPrefix,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            await Task.CompletedTask.ConfigureAwait(false);
-            yield break;
+            foreach (var entry in logEntries)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Task.Yield();
+                yield return entry;
+            }
         }
     }
+
+    private sealed class CapturingLoggerProvider : ILoggerProvider
+    {
+        private readonly ConcurrentQueue<CapturedLogEntry> entries = new();
+
+        public IEnumerable<CapturedLogEntry> Entries => entries;
+
+        public ILogger CreateLogger(string categoryName)
+        {
+            return new CapturingLogger(categoryName, entries);
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private sealed class CapturingLogger(
+        string categoryName,
+        ConcurrentQueue<CapturedLogEntry> entries) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull
+        {
+            return null;
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            entries.Enqueue(new CapturedLogEntry(categoryName, logLevel, formatter(state, exception)));
+        }
+    }
+
+    private sealed record CapturedLogEntry(string Category, LogLevel Level, string Message);
 }

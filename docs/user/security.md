@@ -2,6 +2,8 @@
 
 Avalonia.RemoteControl exposes a debugging and mutation surface. Treat every enabled session as sensitive.
 
+For setting-by-setting behavior and recommended profiles, see [Settings Guide](settings.md).
+
 ## Default Posture
 
 - Disabled by default.

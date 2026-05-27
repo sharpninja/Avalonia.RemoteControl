@@ -1,5 +1,7 @@
 # Troubleshooting
 
+For setting-by-setting explanations, see [Settings Guide](settings.md).
+
 ## Tool Command Not Found
 
 Install or update the .NET tool:
@@ -128,6 +130,18 @@ Fallback:
 ```powershell
 avalonia-remote adb connect --serial <serial> --device-port 47100 --token <token>
 ```
+
+## ADB Connect Says Package Is Not Running
+
+Package marker files can remain in app-private storage after the app process exits. The marker proves that a previous app run wrote endpoint metadata; it does not prove that the bridge listener is alive now.
+
+Check the app process:
+
+```powershell
+adb -s <serial> shell pidof <package>
+```
+
+If there is no process ID, launch the app on the device, wait for startup, then rerun `avalonia-remote adb connect`. If the process is running but the bridge closes before a response, remove the forward, restart the app, and connect again.
 
 ## NuGet Restore Cannot Resolve Packages
 

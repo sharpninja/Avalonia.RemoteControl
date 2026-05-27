@@ -1,0 +1,85 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Avalonia.RemoteControl.Tool.DockPaneChrome">
+  <Border x:Name="RootBorder" Classes="vs-tool-window">
+    <Grid RowDefinitions="Auto,*">
+      <Border x:Name="HeaderBorder"
+              Grid.Row="0"
+              Classes="vs-tool-window-header"
+              PointerPressed="HeaderPointerPressed"
+              PointerMoved="HeaderPointerMoved"
+              PointerReleased="HeaderPointerReleased">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto"
+              ColumnSpacing="4">
+          <TextBlock x:Name="GlyphText"
+                     Classes="vs-dock-glyph"
+                     Text="&#xE8B7;" />
+          <TextBlock x:Name="TitleText"
+                     Grid.Column="1"
+                     Classes="vs-tool-window-title"
+                     Text="Tool Window" />
+          <Button x:Name="AutoHideButton"
+                  Grid.Column="2"
+                  Classes="vs-icon-button"
+                  Content="&#xE718;"
+                  ToolTip.Tip="Auto Hide"
+                  Click="AutoHideClicked" />
+          <Button x:Name="FloatButton"
+                  Grid.Column="3"
+                  Classes="vs-icon-button"
+                  Content="&#xE8A7;"
+                  ToolTip.Tip="Float"
+                  Click="FloatClicked" />
+          <Button x:Name="DockButton"
+                  Grid.Column="4"
+                  Classes="vs-icon-button"
+                  Content="&#xE90C;"
+                  ToolTip.Tip="Dock"
+                  Click="DockClicked" />
+          <Button x:Name="MenuButton"
+                  Grid.Column="5"
+                  Classes="vs-icon-button"
+                  Content="&#xE712;"
+                  ToolTip.Tip="Window Options">
+            <Button.Flyout>
+              <MenuFlyout>
+                <MenuItem Header="Dock" Click="DockClicked" />
+                <MenuItem Header="Float" Click="FloatClicked" />
+                <MenuItem Header="Auto Hide" Click="AutoHideClicked" />
+                <MenuItem Header="Hide" Click="CloseClicked" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+          <Button x:Name="CloseButton"
+                  Grid.Column="6"
+                  Classes="vs-icon-button"
+                  Content="&#xE8BB;"
+                  ToolTip.Tip="Hide"
+                  Click="CloseClicked" />
+        </Grid>
+      </Border>
+
+      <Border x:Name="BodyBorder"
+              Grid.Row="1"
+              Classes="vs-tool-window-content">
+        <Grid>
+          <ContentControl x:Name="BodyHost" />
+          <Border x:Name="AutoHidePlaceholder"
+                  Classes="vs-auto-hide-placeholder"
+                  IsVisible="False"
+                  PointerPressed="AutoHidePlaceholderPressed">
+            <StackPanel Orientation="Horizontal"
+                        Spacing="8"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+              <TextBlock Classes="vs-dock-glyph" Text="&#xE77A;" />
+              <TextBlock x:Name="AutoHideTitleText"
+                         Classes="vs-tool-window-title"
+                         Text="Tool Window" />
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+    </Grid>
+  </Border>
+</UserControl>

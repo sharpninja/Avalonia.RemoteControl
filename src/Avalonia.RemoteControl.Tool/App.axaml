@@ -1,8 +1,216 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Avalonia.RemoteControl.Tool.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <SolidColorBrush x:Key="VsShellBackgroundBrush" Color="#1E1E1E" />
+    <SolidColorBrush x:Key="VsToolWindowBackgroundBrush" Color="#252526" />
+    <SolidColorBrush x:Key="VsToolWindowHeaderBrush" Color="#2D2D30" />
+    <SolidColorBrush x:Key="VsToolWindowHeaderActiveBrush" Color="#04395E" />
+    <SolidColorBrush x:Key="VsToolWindowContentBrush" Color="#1B1B1C" />
+    <SolidColorBrush x:Key="VsCommandBarBrush" Color="#2D2D30" />
+    <SolidColorBrush x:Key="VsCommandShelfBrush" Color="#333337" />
+    <SolidColorBrush x:Key="VsDockSeparatorBrush" Color="#3E3E42" />
+    <SolidColorBrush x:Key="VsAccentBrush" Color="#007ACC" />
+    <SolidColorBrush x:Key="VsAccentLightBrush" Color="#4FC1FF" />
+    <SolidColorBrush x:Key="VsTextBrush" Color="#F1F1F1" />
+    <SolidColorBrush x:Key="VsMutedTextBrush" Color="#C8C8C8" />
+    <SolidColorBrush x:Key="VsPanelBorderBrush" Color="#55555A" />
+    <SolidColorBrush x:Key="VsPanelInnerBorderBrush" Color="#2B2B2F" />
+    <SolidColorBrush x:Key="VsInputBackgroundBrush" Color="#1F1F20" />
+    <SolidColorBrush x:Key="VsInputBorderBrush" Color="#6A6A6E" />
+    <SolidColorBrush x:Key="VsButtonBackgroundBrush" Color="#3C3C3C" />
+    <SolidColorBrush x:Key="VsButtonHoverBrush" Color="#505050" />
+    <SolidColorBrush x:Key="VsSelectedTabBrush" Color="#1E1E1E" />
+  </Application.Resources>
+
   <Application.Styles>
     <FluentTheme />
+
+    <Style Selector="Window.vs-shell">
+      <Setter Property="Background" Value="{StaticResource VsShellBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource VsTextBrush}" />
+      <Setter Property="FontFamily" Value="Segoe UI" />
+    </Style>
+
+    <Style Selector="Border.vs-command-bar">
+      <Setter Property="Background" Value="{StaticResource VsCommandBarBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsDockSeparatorBrush}" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="Padding" Value="8,6" />
+    </Style>
+
+    <Style Selector="Border.vs-command-shelf">
+      <Setter Property="Background" Value="{StaticResource VsCommandShelfBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsDockSeparatorBrush}" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="Padding" Value="8,6" />
+    </Style>
+
+    <Style Selector="Border.vs-tool-window">
+      <Setter Property="Background" Value="{StaticResource VsToolWindowBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsPanelBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <Style Selector="Border.vs-tool-window-header">
+      <Setter Property="Background" Value="{StaticResource VsToolWindowHeaderBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsDockSeparatorBrush}" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="MinHeight" Value="28" />
+    </Style>
+
+    <Style Selector="Border.vs-tool-window-header.vs-active-header">
+      <Setter Property="Background" Value="{StaticResource VsToolWindowHeaderActiveBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsAccentLightBrush}" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+    </Style>
+
+    <Style Selector="Border.vs-tool-window-content">
+      <Setter Property="Background" Value="{StaticResource VsToolWindowContentBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsPanelInnerBorderBrush}" />
+      <Setter Property="BorderThickness" Value="0,1,0,0" />
+      <Setter Property="Padding" Value="8" />
+    </Style>
+
+    <Style Selector="TextBlock.vs-tool-window-title">
+      <Setter Property="Foreground" Value="{StaticResource VsTextBrush}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="LetterSpacing" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="TextBlock.vs-dock-glyph">
+      <Setter Property="Foreground" Value="{StaticResource VsMutedTextBrush}" />
+      <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="TextBlock.vs-muted">
+      <Setter Property="Foreground" Value="{StaticResource VsMutedTextBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Border.vs-active-dock">
+      <Setter Property="BorderBrush" Value="{StaticResource VsAccentBrush}" />
+      <Setter Property="BorderThickness" Value="2,2,2,2" />
+    </Style>
+
+    <Style Selector="Border.vs-placeholder">
+      <Setter Property="Background" Value="#161616" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsPanelBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="14" />
+    </Style>
+
+    <Style Selector="Border.vs-auto-hide-placeholder">
+      <Setter Property="Background" Value="#161616" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsAccentBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="14" />
+    </Style>
+
+    <Style Selector="Border.vs-status-bar">
+      <Setter Property="Background" Value="#007ACC" />
+      <Setter Property="Padding" Value="10,5" />
+    </Style>
+
+    <Style Selector="TextBox">
+      <Setter Property="Background" Value="{StaticResource VsInputBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource VsTextBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsInputBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="8,4" />
+    </Style>
+
+    <Style Selector="ComboBox">
+      <Setter Property="Background" Value="{StaticResource VsInputBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource VsTextBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsInputBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="8,4" />
+    </Style>
+
+    <Style Selector="CheckBox">
+      <Setter Property="Foreground" Value="{StaticResource VsTextBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="TabControl">
+      <Setter Property="Background" Value="{StaticResource VsToolWindowBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsPanelInnerBorderBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style Selector="TabItem">
+      <Setter Property="Background" Value="{StaticResource VsToolWindowHeaderBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource VsMutedTextBrush}" />
+      <Setter Property="Padding" Value="12,6" />
+    </Style>
+
+    <Style Selector="TabItem:selected">
+      <Setter Property="Background" Value="{StaticResource VsSelectedTabBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource VsTextBrush}" />
+    </Style>
+
+    <Style Selector="Button.vs-tool-button">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="Background" Value="{StaticResource VsButtonBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="#5A5A5A" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{StaticResource VsTextBrush}" />
+    </Style>
+
+    <Style Selector="Button.vs-tool-button:pointerover">
+      <Setter Property="Background" Value="{StaticResource VsButtonHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsAccentLightBrush}" />
+    </Style>
+
+    <Style Selector="Button.vs-icon-button">
+      <Setter Property="Width" Value="26" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="MinHeight" Value="24" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Foreground" Value="{StaticResource VsMutedTextBrush}" />
+    </Style>
+
+    <Style Selector="Button.vs-icon-button:pointerover">
+      <Setter Property="Background" Value="{StaticResource VsButtonHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsAccentLightBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource VsTextBrush}" />
+    </Style>
+
+    <Style Selector="Button.vs-icon-button:disabled">
+      <Setter Property="Foreground" Value="#707070" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+
+    <Style Selector="ListBox.vs-tool-list">
+      <Setter Property="Background" Value="{StaticResource VsToolWindowContentBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsPanelInnerBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="TreeView.vs-tool-list">
+      <Setter Property="Background" Value="{StaticResource VsToolWindowContentBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VsPanelInnerBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="GridSplitter.vs-splitter">
+      <Setter Property="Background" Value="{StaticResource VsDockSeparatorBrush}" />
+    </Style>
   </Application.Styles>
 </Application>

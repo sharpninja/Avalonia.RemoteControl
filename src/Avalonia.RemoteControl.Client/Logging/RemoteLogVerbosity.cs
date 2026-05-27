@@ -23,7 +23,7 @@ public sealed record RemoteLogVerbosity(string DisplayName, LogLevel MinimumLeve
     /// <summary>
     /// Gets the default remote log verbosity.
     /// </summary>
-    public static RemoteLogVerbosity Default { get; } = Supported[1];
+    public static RemoteLogVerbosity Default { get; } = Supported[2];
 
     /// <summary>
     /// Gets the protocol minimum-level value sent to <c>WatchLogs</c>.

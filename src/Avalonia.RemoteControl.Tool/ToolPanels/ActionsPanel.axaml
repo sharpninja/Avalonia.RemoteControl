@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tool="using:Avalonia.RemoteControl.Tool"
+             x:Class="Avalonia.RemoteControl.Tool.ActionsPanel"
+             x:DataType="tool:ActionsPanelViewModel">
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="8" Margin="8">
+    <TextBlock Text="Actions" FontWeight="SemiBold" />
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+      <Button Classes="vs-tool-button" Content="Invoke Click" Click="InvokeClickClicked" />
+      <Button Classes="vs-tool-button" Content="Focus" Click="FocusClicked" />
+    </StackPanel>
+    <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="8">
+      <TextBox x:Name="PropertyNameBox"
+               Text="{Binding PropertyName, Mode=TwoWay}"
+               PlaceholderText="Property name" />
+      <TextBox x:Name="PropertyValueBox"
+               Grid.Column="1"
+               Text="{Binding PropertyValue, Mode=TwoWay}"
+               PlaceholderText="Value" />
+    </Grid>
+    <Button Grid.Row="3"
+            Classes="vs-tool-button"
+            Content="Set Property"
+            Click="SetPropertyClicked"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top" />
+  </Grid>
+</UserControl>

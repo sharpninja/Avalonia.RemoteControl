@@ -32,6 +32,10 @@
 - `FR-LOG-004`: The client shows when logs were dropped because of buffering/backpressure.
 - `FR-LOG-005`: The client exposes a log verbosity setting with Debug, Information, Warning, and Error options and uses the selected level when streaming `ILogger` events.
 - `FR-LOG-006`: Every remote-control operation sent from the client and every non-logstream response or stream update sent to the client emits a sanitized Debug `ILogger` message.
+- `FR-LOG-007`: The desktop client starts log streaming after connection by default, shows current log stream state and entry count, and displays log-stream failures inline instead of only in a transient global status message.
+- `FR-LOG-008`: The desktop client allows the current log stream to float in a generic tool window while keeping the main client connected and streaming.
+- `FR-LOG-009`: When logs are floating, the desktop client removes the embedded log list from the docked log panel and lets the generic tool window dock the same log view model back into the main window.
+- `FR-LOG-010`: The floating log tool panel exposes the same Debug, Information, Warning, and Error verbosity selector as the docked log panel and changing either selector updates the active log stream setting.
 
 ## Client Experience
 
@@ -42,9 +46,20 @@
 - `FR-CLIENT-005`: The client provides a log viewer.
 - `FR-CLIENT-006`: The client shows connection state, authentication state, and transport mode.
 - `FR-CLIENT-007`: Saved client profiles preserve the endpoint transport protocol so ADB bridge sessions can be reopened by the desktop UI without falling back to gRPC.
-- `FR-CLIENT-008`: The desktop client provides a separate live remote UI window that can render the remote application outside the tree/property inspector.
+- `FR-CLIENT-008`: The desktop client provides a floating live remote UI tool panel that can render the remote application outside the tree/property inspector.
 - `FR-CLIENT-009`: The live remote UI window responds to changes in the remote UI without manual refresh.
 - `FR-CLIENT-010`: The live remote UI window renders the same top-level visual surface a user sees on the target device, including application background, popup, flyout, and overlay layers when Avalonia exposes them.
+- `FR-CLIENT-011`: When a user clicks a rendered control in the live remote UI window, the desktop client selects the corresponding node in the main control tree when that node is present in the current tree model.
+- `FR-CLIENT-012`: The desktop client allows the live remote UI view to be docked on the right side of the main client window while preserving the generic floating tool-window option.
+- `FR-CLIENT-013`: The desktop client provides Visual Studio-style tool-window chrome with visible icon commands for dock, float, auto-hide or pin, and close or hide actions; docked panels, floating generic tool windows, and dock commands clearly separate draggable headers, content regions, active docked surfaces, and docking commands.
+- `FR-CLIENT-014`: The desktop client stores connection settings by project and app so users can reconnect to local, network, or ADB debug targets without re-entering transport-specific settings.
+- `FR-CLIENT-015`: Each project records connection sessions with metadata and log history so previous debugging sessions can be reviewed after disconnecting.
+- `FR-CLIENT-016`: The client records remote-control interactions in a replayable session journal, including commands, timing, target context, and before/after state references needed to reproduce the debugging flow.
+- `FR-CLIENT-017`: The client can replay recorded interactions against a connected app and produce a per-step diff showing how the replayed app state differs from the original captured state.
+- `FR-CLIENT-018`: When the live view is docked in the main client, the float command moves the live view into a generic floating tool window instead of simply closing the live-view surface.
+- `FR-CLIENT-019`: The desktop client uses Visual Studio 2026-like dark shell styling across command bars, status bar, tool windows, tabs, dock headers, buttons, text inputs, lists, and generic floating tool windows.
+- `FR-CLIENT-020`: The desktop client remembers layout state such as window size, split sizes, selected right-side tab, log floating ownership, dock-pane auto-hide state, and docked live-view preference and restores that state on startup.
+- `FR-CLIENT-021`: Dockable client panels expose interactive Visual Studio-like behavior, including draggable headers, icon-based panel management, floating generic tool windows, docking back into the shell, close or hide commands, persisted dock state, and clear user feedback for drag/drop dock targets.
 
 ## Android ADB Connectivity
 
@@ -54,6 +69,7 @@
 - `FR-ADB-004`: The client can connect by package name, explicit endpoint, or discovered debug marker.
 - `FR-ADB-005`: The client tears down ADB forwarding when the session ends unless the user asks to keep it.
 - `FR-ADB-006`: The client exposes equivalent ADB workflows through CLI commands.
+- `FR-ADB-007`: The desktop client provides an integrated ADB connection workflow so users can list devices, launch a selected Android package when needed, create the ADB forward, save the transport-aware profile, and connect without running an external script.
 
 ## Security Behavior
 

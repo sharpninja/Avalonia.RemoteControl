@@ -173,6 +173,9 @@ public sealed class RemoteControlBridgeTcpListener : IAsyncDisposable
             while (!cancellationToken.IsCancellationRequested)
             {
                 var client = await listener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
+                logger.LogDebug(
+                    "Bridge TCP client accepted from {RemoteEndPoint}.",
+                    client.Client.RemoteEndPoint?.ToString() ?? "unknown");
                 var clientTask = HandleClientAsync(client, cancellationToken);
                 TrackClientTask(clientTask);
             }
@@ -205,13 +208,50 @@ public sealed class RemoteControlBridgeTcpListener : IAsyncDisposable
                     stream,
                     BridgeRequest.Parser,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
+                logger.LogDebug(
+                    "Bridge TCP request frame received from client: {Method}; request {RequestId}; payload bytes {PayloadByteCount}.",
+                    request.Method,
+                    request.RequestId,
+                    request.Payload.Length);
+
+                var responseFrameCount = 0;
+                var payloadFrameCount = 0;
+                var isStreamingRequest = IsStreamingMethod(request.Method);
+
                 await foreach (var response in requestHandler.HandleResponsesAsync(request, cancellationToken)
                     .ConfigureAwait(false))
                 {
                     await BridgeFrameCodec.WriteAsync(stream, response, cancellationToken).ConfigureAwait(false);
+                    responseFrameCount++;
+
+                    if (!response.EndOfStream)
+                    {
+                        payloadFrameCount++;
+                    }
+
+                    if (request.Method != BridgeMethod.WatchLogs || response.EndOfStream)
+                    {
+                        logger.LogDebug(
+                            "Bridge TCP response frame sent to client: {Method}; request {RequestId}; status {Status}; end of stream {EndOfStream}; payload bytes {PayloadByteCount}.",
+                            request.Method,
+                            response.RequestId,
+                            response.Status,
+                            response.EndOfStream,
+                            response.Payload.Length);
+                    }
 
                     if (response.EndOfStream)
                     {
+                        if (isStreamingRequest)
+                        {
+                            logger.LogDebug(
+                                "Bridge TCP stream completed for client: {Method}; request {RequestId}; response frames {ResponseFrameCount}; payload frames {PayloadFrameCount}.",
+                                request.Method,
+                                response.RequestId,
+                                responseFrameCount,
+                                payloadFrameCount);
+                        }
+
                         break;
                     }
                 }
@@ -224,6 +264,11 @@ public sealed class RemoteControlBridgeTcpListener : IAsyncDisposable
                 logger.LogWarning(exception, "Bridge TCP client request failed.");
             }
         }
+    }
+
+    private static bool IsStreamingMethod(BridgeMethod method)
+    {
+        return method is BridgeMethod.WatchTree or BridgeMethod.WatchFrames or BridgeMethod.WatchLogs;
     }
 
     private void TrackClientTask(Task clientTask)

@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tool="using:Avalonia.RemoteControl.Tool"
+             x:Class="Avalonia.RemoteControl.Tool.LiveViewPanel"
+             x:DataType="tool:LiveViewPanelViewModel">
+  <Grid>
+    <ContentControl x:Name="LiveViewHost" Content="{Binding Content}" />
+    <Border x:Name="Placeholder"
+            Classes="vs-placeholder"
+            IsVisible="True">
+      <TextBlock Classes="vs-muted"
+                 Text="{Binding PlaceholderText}"
+                 TextWrapping="Wrap"
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center" />
+    </Border>
+  </Grid>
+</UserControl>

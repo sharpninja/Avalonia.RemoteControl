@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:logging="using:Avalonia.RemoteControl.Client.Logging"
+             x:Class="Avalonia.RemoteControl.Tool.LogPanel"
+             x:DataType="logging:RemoteLogViewModel">
+  <Grid RowDefinitions="Auto,*" RowSpacing="8">
+    <Grid ColumnDefinitions="Auto,150,Auto,*" ColumnSpacing="8">
+      <TextBlock Classes="vs-muted" Text="Verbosity" />
+      <ComboBox x:Name="VerbosityBox"
+                Grid.Column="1"
+                MinWidth="140"
+                ItemsSource="{Binding SupportedVerbosity}"
+                SelectedItem="{Binding SelectedVerbosity, Mode=TwoWay}" />
+      <Button x:Name="FloatButton"
+              Grid.Column="2"
+              Classes="vs-tool-button"
+              Content="Float"
+              Click="FloatClicked" />
+      <TextBlock Grid.Column="3"
+                 Classes="vs-muted"
+                 Text="{Binding StatusText}" />
+    </Grid>
+
+    <Grid Grid.Row="1">
+      <ListBox x:Name="RowsList"
+               Classes="vs-tool-list"
+               ItemsSource="{Binding Rows}" />
+      <Border x:Name="FloatingPlaceholder"
+              Classes="vs-placeholder"
+              IsVisible="False">
+        <Grid RowDefinitions="Auto,Auto" RowSpacing="8" VerticalAlignment="Center" HorizontalAlignment="Center">
+          <TextBlock Classes="vs-muted" Text="Logs are floating." HorizontalAlignment="Center" />
+          <Button Grid.Row="1" Classes="vs-tool-button" Content="Dock Logs" Click="DockClicked" HorizontalAlignment="Center" />
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

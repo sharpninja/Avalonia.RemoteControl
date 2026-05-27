@@ -43,6 +43,21 @@
 - `TR-UI-RUNTIME-007`: Frame capture runs on the Avalonia UI dispatcher using `RenderTargetBitmap`, enforces max frame size, and supports cancellation-aware periodic streaming at a default cadence of 10 FPS.
 - `TR-UI-RUNTIME-008`: Runtime frame capture, live tree snapshots, and live input dispatch normalize an app-provided `Control` root to its containing Avalonia `TopLevel` before rendering, traversing, or dispatching input.
 
+## Client UI
+
+- `TR-CLIENT-UI-001`: The desktop tool defines reusable Avalonia styles and resources for dockable tool windows, tool-window headers, command bars, dock placeholders, and live-view/log surfaces so the main window and generic floating tool windows use consistent Visual Studio-like panel chrome.
+- `TR-CLIENT-UI-002`: The desktop tool defines reusable Visual Studio 2026-like Avalonia resources and styles for the entire shell, including command bars, status bars, text inputs, combo boxes, buttons, list/tree surfaces, tab strips, tool-window headers, dock placeholders, and generic floating tool windows.
+- `TR-CLIENT-UI-003`: The desktop tool implements a reusable dock chrome surface for panels and floating windows that renders Visual Studio-like command icons, tooltips, draggable headers, drag state, dock, float, auto-hide, and close commands, and routes those commands through explicit panel identifiers.
+- `TR-CLIENT-UI-004`: Every displayed dock panel is a custom Avalonia control backed by a view model; the main window composes panel hosts and coordinates cross-panel session actions rather than owning each panel's internal UI.
+
+## Client Project System
+
+- `TR-CLIENT-PROJECT-001`: The client project system persists projects as versioned JSON in user-scoped storage, with stable project, app profile, session, log, interaction, and artifact identifiers.
+- `TR-CLIENT-PROJECT-002`: The project store captures per-session metadata, sanitized log rows, connection profile references, and bounded retention metadata without duplicating active streaming state.
+- `TR-CLIENT-LAYOUT-001`: The project document persists a client layout state object with window bounds, splitter dimensions, right-side selected tab, log panel floating state, live-view dock state, and dock-pane auto-hide state; the main window captures state before save/close and applies valid saved state after project load.
+- `TR-CLIENT-REPLAY-001`: The client records replay steps with command type, order, timing, target node, connection context, before/after tree artifact references, and replay results; replay diffs compare original and replayed tree snapshots per step.
+- `TR-CLIENT-REPLAY-002`: Interaction replay artifacts are user-scoped project data; bearer tokens, certificates, and typed text must not be written to `ILogger` diagnostics, and replay records must identify sensitive payload fields.
+
 ## Property Mutation
 
 - `TR-PROP-MUTATION-001`: Property mutation is deny-by-default unless allowed by configured policy.
@@ -59,6 +74,12 @@
 - `TR-ACTION-INVOCATION-004`: Unsupported drag/drop and arbitrary method invocation are out of v1 unless added through future requirements.
 - `TR-ACTION-INVOCATION-005`: Live remote input dispatches pointer, wheel, keyboard, and text events through the Avalonia UI dispatcher, maintains pointer state for drag sequences, and targets keyboard/text input to the focused element.
 
+## Client Live View
+
+- `TR-LIVE-VIEW-011`: The live remote UI window maps pointer-click coordinates to root-relative DIPs, hit-tests the latest visible tree nodes using absolute bounds from deepest/topmost node to root, raises the selected node ID to the main window, and the main window selects and reveals the matching control-tree item when present.
+- `TR-LIVE-VIEW-012`: The desktop client factors the live-view rendering and input surface into a reusable control that can be hosted either in a generic floating tool window or in a right-side dock area of the main window, with only one stream per hosted live-view instance and the same node-selection callback behavior.
+- `TR-LIVE-VIEW-013`: The docked live-view float command moves the hosted live-view experience into a generic `FloatingDockPaneWindow` with the same session, capability, selection, and input recording callbacks.
+
 ## Logging
 
 - `TR-LOG-STREAMING-001`: Implement a bounded `ILoggerProvider`.
@@ -68,6 +89,12 @@
 - `TR-LOG-STREAMING-005`: Log streaming applies sensitive-data redaction.
 - `TR-LOG-STREAMING-006`: The desktop client maps log verbosity selections to `Microsoft.Extensions.Logging.LogLevel` names and sends the selected minimum level in `WatchLogs` requests.
 - `TR-LOG-STREAMING-007`: The shared runtime emits Debug `ILogger` messages for client request receipt, unary response completion, live tree update sends, live frame sends, log-stream lifecycle, and remote input command completion without logging bearer tokens, property values, or typed text.
+- `TR-LOG-STREAMING-008`: The Android bridge TCP transport emits Debug `ILogger` diagnostics for accepted client sockets, decoded request frames, sent response frames, and stream completion without logging bearer tokens or payload contents; `WatchLogs` streams log only lifecycle and completion diagnostics to avoid recursive log generation.
+- `TR-LOG-STREAMING-009`: The remote-control `ILoggerProvider` is registered with a provider-specific filter that captures Debug and higher log entries for streaming without lowering or replacing filters for existing application logging providers.
+- `TR-LOG-STREAMING-010`: The desktop client defaults log verbosity to Warning, starts `WatchLogs` automatically after a successful connection, restarts the stream when verbosity changes, shows active/stopped/error state and entry counts near the log list, and formats rows with sequence, timestamp, level, category, event ID, message, exception summary, structured state, scope, and dropped count when present.
+- `TR-LOG-STREAMING-011`: The desktop client exposes a floating log tool panel backed by the same live observable log collection as the main log panel, preserving active stream state, verbosity behavior, entry counts, and sanitized error display without starting a duplicate `WatchLogs` stream.
+- `TR-LOG-STREAMING-012`: The desktop client tracks whether the shared log view is embedded or floating, hides the embedded log list while floating, and restores it when the generic tool window docks or closes without starting a duplicate `WatchLogs` stream.
+- `TR-LOG-STREAMING-013`: The desktop client stores selected log verbosity in shared log view state so embedded and floating log panels expose synchronized Debug, Information, Warning, and Error selections and stream restarts use the shared minimum level.
 
 ## Android ADB Connectivity
 
@@ -88,6 +115,9 @@
 - `TR-ADB-CONNECTIVITY-015`: The Android app-side bridge listener must bind to loopback, handle authenticated unary bridge requests, expose package-private marker metadata, and stop cleanly with the debuggee app lifecycle.
 - `TR-ADB-CONNECTIVITY-016`: A successful `avalonia-remote adb connect --keep-forward` session must save a user-scoped connection profile containing endpoint, token, and transport protocol so the desktop UI can attach to the kept forward using the marker-advertised transport.
 - `TR-ADB-CONNECTIVITY-017`: The Android bridge transport supports long-lived streaming responses for `WatchTree` and `WatchFrames` and ends streams on client cancellation or socket close.
+- `TR-ADB-CONNECTIVITY-018`: Package-marker ADB connect must detect a stopped Android package before forwarding, and bridge client probes must convert early closed bridge sockets into sanitized user-facing diagnostics instead of raw transport exceptions.
+- `TR-ADB-CONNECTIVITY-019`: The desktop client uses the same ADB discovery, package launch, marker read, `adb forward`, authenticated probe, profile save, and cleanup services as the CLI workflow; it defaults to keeping the forward active for the current desktop session and connects immediately after a successful probe.
+- `TR-ADB-CONNECTIVITY-020`: When the desktop client is configured for `arc-protobuf-v1`, a loopback endpoint, and a selected ADB device, the top Connect action creates or refreshes the ADB forward before probing the endpoint so users do not need an external script or separate Android Connect flow for explicit device-port sessions.
 
 ## Security Constraints
 
