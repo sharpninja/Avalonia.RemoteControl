@@ -102,7 +102,11 @@ public sealed class AdbConnectionWorkflow
             }
 
             devicePort = endpointInfo.DevicePort;
-            token ??= endpointInfo.Token;
+            if (!string.IsNullOrWhiteSpace(endpointInfo.Token))
+            {
+                token = endpointInfo.Token;
+            }
+
             transportProtocol = endpointInfo.Protocol;
         }
 

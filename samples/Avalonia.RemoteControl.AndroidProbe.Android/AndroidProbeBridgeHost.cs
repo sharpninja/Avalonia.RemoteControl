@@ -36,8 +36,37 @@ public sealed class AndroidProbeBridgeHost : IDisposable
     /// <returns>A disposable bridge host.</returns>
     public static AndroidProbeBridgeHost Start(Context context, IRemoteControlRootProvider rootProvider)
     {
+        return StartAsync(context, rootProvider).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Starts the bridge host for the supplied Android context without blocking the caller thread.
+    /// </summary>
+    /// <param name="context">Android package context used to publish the marker file.</param>
+    /// <param name="rootProvider">Avalonia root provider exposed to remote-control runtime services.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A disposable bridge host.</returns>
+    public static Task<AndroidProbeBridgeHost> StartAsync(
+        Context context,
+        IRemoteControlRootProvider rootProvider,
+        CancellationToken cancellationToken = default)
+    {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(rootProvider);
+
+        return Task.Run(
+            () => StartCoreAsync(context, rootProvider, cancellationToken),
+            cancellationToken);
+    }
+
+    private static async Task<AndroidProbeBridgeHost> StartCoreAsync(
+        Context context,
+        IRemoteControlRootProvider rootProvider,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(rootProvider);
+        cancellationToken.ThrowIfCancellationRequested();
 
         var debugToken = GenerateDebugToken();
         var services = new ServiceCollection();
@@ -58,17 +87,24 @@ public sealed class AndroidProbeBridgeHost : IDisposable
         services.AddLogging();
 
         var serviceProvider = services.BuildServiceProvider();
-        var listener = serviceProvider.GetRequiredService<RemoteControlBridgeTcpListener>();
-        listener.StartAsync().GetAwaiter().GetResult();
+        try
+        {
+            var listener = serviceProvider.GetRequiredService<RemoteControlBridgeTcpListener>();
+            await listener.StartAsync(cancellationToken).ConfigureAwait(false);
 
-        var markerDirectory = context.FilesDir?.AbsolutePath
-            ?? throw new InvalidOperationException("Android package files directory is unavailable.");
-        listener.CreateEndpointMarker()
-            .WriteAsync(markerDirectory)
-            .GetAwaiter()
-            .GetResult();
+            var markerDirectory = context.FilesDir?.AbsolutePath
+                ?? throw new InvalidOperationException("Android package files directory is unavailable.");
+            await listener.CreateEndpointMarker()
+                .WriteAsync(markerDirectory, cancellationToken)
+                .ConfigureAwait(false);
 
-        return new AndroidProbeBridgeHost(serviceProvider, listener);
+            return new AndroidProbeBridgeHost(serviceProvider, listener);
+        }
+        catch
+        {
+            serviceProvider.Dispose();
+            throw;
+        }
     }
 
     /// <inheritdoc />

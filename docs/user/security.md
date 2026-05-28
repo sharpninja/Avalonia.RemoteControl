@@ -100,6 +100,12 @@ Add project-specific sensitive fragments before enabling remote control in a rea
 
 ADB forwarding only makes the debuggee reachable on the host machine. It does not replace authentication. Keep the Android bridge listener bound to loopback inside the app process.
 
+## Embedded Codex MCP
+
+The desktop client hosts MCP in-process on loopback for the embedded Codex terminal. Codex receives the tool's MCP URL, not the debuggee endpoint, bearer token, transport, certificate path, or saved profile. MCP tool calls still use the active desktop client session and remain subject to the same authentication, transport, certificate, action, input, and property policy gates.
+
+See [Codex MCP](codex-mcp.md) for user workflow guidance.
+
 ## Checklist
 
 - Remote control is disabled in production.

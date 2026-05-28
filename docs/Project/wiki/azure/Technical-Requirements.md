@@ -96,6 +96,22 @@
 
 **Desktop Connect prepares selected ADB bridge forward** — When the desktop client is configured for arc-protobuf-v1, a loopback endpoint, and a selected ADB device, the top Connect action creates or refreshes the ADB forward before probing the endpoint so users do not need an external script or separate Android Connect flow for explicit device-port sessions.
 
+## TR-ANDROID-ADB-001
+
+**ADB command service abstraction** — Android MCP tools must execute ADB through the existing ProcessAdbCommandRunner/AdbClient style abstractions, support explicit serial selection, avoid shell injection, redact sensitive values from logs, and keep command timeouts bounded.
+
+## TR-ANDROID-AVD-001
+
+**AVD manager and emulator launch support** — The client must discover Android SDK emulator and avdmanager executables, list AVD names, and launch a selected AVD such as Pixel 6 without blocking the client UI or MCP server.
+
+## TR-ANDROID-LOG-001
+
+**Log polling keepalive and recovery** — Android-backed client connections must maintain or recover log polling for remote-control endpoints so idle log-stream timeouts do not invalidate the active debugging session without a reconnect path.
+
+## TR-ANDROID-MCP-001
+
+**Android MCP tool catalog** — Additive MCP tools must be registered in the embedded client MCP server with JSON-schema inputs, sanitized outputs, and deterministic tool names prefixed with avalonia_android_ for device, emulator, app, log, screenshot, UI tree, and input operations.
+
 ## TR-CI-RELEASE-001
 
 **GitHub Actions restores, builds, tests, packs, and uploads artifacts.** — GitHub Actions restores, builds, tests, packs, and uploads artifacts.
@@ -123,6 +139,18 @@
 ## TR-CLIENT-LAYOUT-002
 
 **Main shell dock layout regions** — The main client workspace must be composed with a dock layout that places the control tree in the west region, remote tools in the east region, logs in the south region, and the undeclared fill region as the default workspace surface.
+
+## TR-CLIENT-MCP-001
+
+**In-process loopback MCP transport** — The desktop application starts an in-process Streamable HTTP MCP endpoint by default on loopback, validates the request path and Origin header, serves JSON-RPC requests over HTTP POST, returns 405 for unsupported GET streams, and never requires Codex to launch avalonia-remote mcp as a child server process.
+
+## TR-CLIENT-MCP-002
+
+**Remote-control MCP tools** — The MCP host exposes approved tools for remote capabilities, tree snapshot, click, focus, and property mutation by adapting RemoteControlDesktopSession with the configured endpoint, token, transport protocol, and certificate trust settings.
+
+## TR-CLIENT-MCP-003
+
+**Self-contained Codex terminal registration** — The embedded terminal Codex launch profile registers the running app MCP Streamable HTTP URL through Codex mcp_servers configuration, passes only the in-process loopback URL plus a seed prompt, launches from the tool process startup working directory by default, documents the available remote-control tools, requires snapshot/tree-first node discovery, and avoids screenshots or pixel inspection as the primary control-selection path; it must not pass remote endpoint, transport, bearer token, profile, environment variable, or avalonia-remote child-process arguments.
 
 ## TR-CLIENT-PROJECT-001
 
@@ -184,6 +212,10 @@
 
 **Do not replace or suppress existing application logging providers.** — Do not replace or suppress existing application logging providers.
 
+## TR-DOC-USER-001
+
+**User documentation coverage** — User documentation covers installation, server integration, client operation, local desktop quickstart, Android ADB desktop and CLI connection, embedded Codex MCP usage, security posture, settings, troubleshooting, and current published package version guidance.
+
 ## TR-GRPC-PROTOCOL-001
 
 **Define a versioned protobuf contract for desktop-facing communication.** — Define a versioned protobuf contract for desktop-facing communication.
@@ -230,7 +262,7 @@
 
 ## TR-LIVE-VIEW-012
 
-**Reusable docked live-view surface** — The desktop client factors the live-view rendering and input surface into a reusable control that can be hosted either in the separate live-view window or in a right-side dock area of the main window, with only one stream per hosted live-view instance and the same node-selection callback behavior.
+**Reusable live-view host** — The desktop client factors the live-view rendering and input surface into a reusable control that can be hosted either in a generic floating tool window or directly in the right-side Remote Tools tab area, with no nested live-view dock chrome, constrained or scrollable content, only one stream per hosted live-view instance, and the same node-selection callback behavior.
 
 ## TR-LIVE-VIEW-013
 
@@ -287,6 +319,14 @@
 ## TR-LOG-STREAMING-013
 
 **Shared log verbosity view model** — The desktop client stores selected log verbosity in shared log view state so embedded and pop-out log windows expose synchronized Debug, Information, Warning, and Error selections and stream restarts use the shared minimum level.
+
+## TR-MCP-AIUNIT-001
+
+**Running-tool MCP aiUnit integration scope** — SharpNinja.aiUnit integration tests must validate the avalonia-remote client tool's own in-process MCP server, not the external MCP Server workspace marker contract. Tests must collect evidence from the running tool MCP HTTP host by exercising initialize, tools/list, avalonia_remote_get_capabilities, avalonia_remote_get_snapshot, and avalonia_remote_invoke_click.
+
+## TR-MCP-AIUNIT-002
+
+**aiUnit Codex CLI strategy** — The test project supplies an appsettings.aiunit.json aiUnit strategy named codex-subscription with Kind=cli and Command=codex, causing opt-in live aiUnit MCP Server reviews to run through the operator's installed Codex CLI and existing subscription authentication by default.
 
 ## TR-PACK-PACKAGE-001
 

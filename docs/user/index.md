@@ -2,7 +2,7 @@
 
 Avalonia.RemoteControl helps developers and QA engineers inspect and control a running Avalonia app from a separate desktop client.
 
-Current published packages:
+Package IDs:
 
 - `SharpNinja.Avalonia.RemoteControl.Protocol`
 - `SharpNinja.Avalonia.RemoteControl.Runtime`
@@ -22,6 +22,7 @@ avalonia-remote
 - [Settings Guide](settings.md) - understand every server, client, ADB, live-view, logging, and security setting.
 - [Client Tool](client-tool.md) - launch the desktop client and use the CLI workflows.
 - [Android ADB](android-adb.md) - connect to an Android emulator or connected device through `adb`.
+- [Codex MCP](codex-mcp.md) - launch Codex inside the tool and use the running tool's MCP server.
 - [Security](security.md) - understand the default safety model before enabling remote control.
 - [Troubleshooting](troubleshooting.md) - diagnose common startup, connection, ADB, and package issues.
 
@@ -35,6 +36,8 @@ avalonia-remote
 - Stream bounded, redacted `ILogger` data.
 - Render live screenshots and send remote input when explicitly enabled.
 - Connect over loopback, TLS network endpoints, or ADB forwarding.
+- Launch an embedded Codex terminal backed by the tool's in-process MCP server.
+- Persist user-scoped projects with connection profiles, session logs, interaction journals, replay data, and layout state.
 
 ## Current Limits
 

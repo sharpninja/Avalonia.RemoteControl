@@ -11,6 +11,28 @@ The client can connect to an Avalonia app running on an Android emulator or conn
 
 The desktop server package depends on ASP.NET Core/Kestrel and is not the Android app-side transport.
 
+## Desktop Android Quickstart
+
+Use this path when the Android app writes the package-private marker file.
+
+1. Launch the debuggee app on the emulator or connected device.
+2. Start the desktop client:
+
+   ```powershell
+   avalonia-remote
+   ```
+
+3. In the Android ADB row, verify the adb path or enter the full path to `adb.exe`.
+4. Click Refresh Devices and select the device serial.
+5. Enter the Android package name, for example `app.funwashad`.
+6. Keep Host Port as `47100` unless that port is already in use.
+7. Select `arc-protobuf-v1` in the transport drop-down.
+8. Click Android Connect.
+9. After connection, use Snapshot, Start Logs, the Control Tree, the right-side Live View tab, or the Live View button.
+10. Click Cleanup Forward when you are done with the device session.
+
+If you do not have a marker file, leave Package blank, enter the token manually, keep Host Port and the device listener port aligned, select `arc-protobuf-v1`, and use Connect. In that explicit-port mode the client creates the ADB forward before probing `http://127.0.0.1:<hostPort>/`.
+
 ## List Devices
 
 ```powershell

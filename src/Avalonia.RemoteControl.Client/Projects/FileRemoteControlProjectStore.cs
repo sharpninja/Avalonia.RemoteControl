@@ -43,11 +43,24 @@ public sealed class FileRemoteControlProjectStore : IRemoteControlProjectStore
             return null;
         }
 
-        await using var stream = File.OpenRead(path);
-        return await JsonSerializer.DeserializeAsync<RemoteControlProjectDocument>(
-            stream,
-            JsonOptions,
-            cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await using var stream = File.OpenRead(path);
+            var document = await JsonSerializer.DeserializeAsync<RemoteControlProjectDocument>(
+                stream,
+                JsonOptions,
+                cancellationToken).ConfigureAwait(false);
+
+            return Normalize(document, projectId);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+        catch (NotSupportedException)
+        {
+            return null;
+        }
     }
 
     /// <inheritdoc />
@@ -96,5 +109,43 @@ public sealed class FileRemoteControlProjectStore : IRemoteControlProjectStore
             .ToArray();
 
         return new string(chars);
+    }
+
+    private static RemoteControlProjectDocument? Normalize(
+        RemoteControlProjectDocument? document,
+        string requestedProjectId)
+    {
+        if (document is null)
+        {
+            return null;
+        }
+
+        if (document.SchemaVersion <= 0)
+        {
+            document.SchemaVersion = RemoteControlProjectDocument.CurrentSchemaVersion;
+        }
+
+        if (string.IsNullOrWhiteSpace(document.ProjectId))
+        {
+            document.ProjectId = requestedProjectId;
+        }
+
+        if (string.IsNullOrWhiteSpace(document.Name))
+        {
+            document.Name = document.ProjectId;
+        }
+
+        document.ClientLayout ??= new RemoteControlClientLayoutState();
+        document.AppProfiles ??= [];
+        document.Sessions ??= [];
+
+        foreach (var session in document.Sessions)
+        {
+            session.Logs ??= [];
+            session.Interactions ??= [];
+            session.Artifacts ??= [];
+        }
+
+        return document;
     }
 }

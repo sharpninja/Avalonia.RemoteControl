@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Avalonia.RemoteControl.Client;
+using Avalonia.RemoteControl.Client.Logging;
 using Avalonia.RemoteControl.Client.Security;
 using Avalonia.RemoteControl.Protocol;
 using Avalonia.RemoteControl.Protocol.V1;
@@ -85,6 +86,66 @@ public sealed class RemoteControlDesktopSessionTests
             Assert.True(await enumerator.MoveNextAsync());
             Assert.Equal("streamed", enumerator.Current.Message);
             Assert.Equal("Hosted.Test", enumerator.Current.Category);
+        }
+        finally
+        {
+            await host.StopAsync();
+        }
+    }
+
+    [Fact]
+    public async Task DesktopSessionFeedsDefaultWarningLogsIntoClientLogView()
+    {
+        var services = new ServiceCollection();
+        services.AddAvaloniaRemoteControl(options =>
+        {
+            options.IsEnabled = true;
+            options.Host = IPAddress.Loopback;
+            options.Port = 0;
+            options.AuthenticationToken = "dev-token";
+        });
+
+        await using var provider = services.BuildServiceProvider();
+        var host = provider.GetRequiredService<AvaloniaRemoteControlServerHost>();
+        var logBuffer = provider.GetRequiredService<RemoteControlLogBuffer>();
+        var logView = new RemoteLogViewModel();
+
+        try
+        {
+            await host.StartAsync();
+            logBuffer.Publish(new RemoteControlLogEntry
+            {
+                TimestampUtc = DateTimeOffset.UtcNow,
+                Level = LogLevel.Information,
+                Category = "Hosted.Test",
+                EventId = 1,
+                Message = "not visible at warning",
+            });
+            logBuffer.Publish(new RemoteControlLogEntry
+            {
+                TimestampUtc = DateTimeOffset.UtcNow,
+                Level = LogLevel.Warning,
+                Category = "Hosted.Test",
+                EventId = 2,
+                Message = "warning visible",
+            });
+
+            using var session = RemoteControlDesktopSession.Create(host.BoundAddress!, "dev-token");
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await using var enumerator = session.WatchLogsAsync(
+                    logView.SelectedVerbosity.MinimumLevelName,
+                    "Hosted",
+                    cts.Token)
+                .GetAsyncEnumerator(cts.Token);
+
+            Assert.Equal(LogLevel.Warning, logView.SelectedVerbosity.MinimumLevel);
+            Assert.True(await enumerator.MoveNextAsync());
+            logView.Rows.Add(RemoteLogDisplayFormatter.Format(enumerator.Current));
+
+            var row = Assert.Single(logView.Rows);
+            Assert.Contains("warning visible", row, StringComparison.Ordinal);
+            Assert.DoesNotContain("not visible", row, StringComparison.Ordinal);
+            Assert.Equal(1, logView.RemoteEntryCount);
         }
         finally
         {

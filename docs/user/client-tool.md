@@ -5,7 +5,7 @@
 ## Install
 
 ```powershell
-dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.1.3
+dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.6.0
 ```
 
 ## Launch The Desktop Client
@@ -29,6 +29,7 @@ The client supports:
 - Bounded `ILogger` streaming with Debug, Information, Warning, and Error verbosity selections.
 - Saving and forgetting endpoint/token/certificate profile state.
 - Saving and forgetting the selected transport protocol.
+- Embedded terminal launch for Codex MCP sessions against the connected app.
 
 For detailed behavior of each client field and server option, see [Settings Guide](settings.md).
 
@@ -52,6 +53,19 @@ Endpoint, token, certificate, accepted fingerprint, transport, log verbosity, an
 Use the Android ADB row when the target app is running on an emulator or connected device. Refresh Devices lists attached targets, Android Connect launches the package if it is stopped, waits for the debug marker, creates the ADB forward, saves the discovered endpoint/token/transport profile, and connects the desktop client. Cleanup Forward removes the host-side forward for the selected device and host port.
 
 If the package name is blank but a device is selected, the top Connect button can still prepare an explicit `arc-protobuf-v1` bridge forward. In that mode the client forwards the selected host port to the same device port and uses the token already entered in the Token field.
+
+## Terminal And Codex MCP
+
+The Workspace tab hosts the terminal panel. Click Codex MCP to launch the installed `codex` CLI with the running desktop client's in-process MCP server already configured as `avalonia_remote_control`.
+
+The Codex MCP launch is self-contained:
+
+- no `avalonia-remote mcp` child process is started;
+- no remote endpoint, transport, bearer token, certificate path, or profile name is passed to Codex;
+- Codex receives only the tool's loopback MCP URL and a seed prompt that explains the available tools;
+- the working directory defaults to the CWD from when `avalonia-remote` was started, unless you edit Working Dir.
+
+See [Codex MCP](codex-mcp.md) for the tool list, prompt guidance, and troubleshooting.
 
 ## Saved Profiles
 

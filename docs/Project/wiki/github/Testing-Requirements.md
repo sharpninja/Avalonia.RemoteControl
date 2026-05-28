@@ -20,6 +20,15 @@
 | TEST-ADB-015 | Unit tests verify the reusable ADB desktop and CLI connection workflow can launch a stopped package, wait for it to run, discover marker metadata, create a forward, probe capabilities, and save a transport-aware profile without exposing tokens in status output. |
 | TEST-ADB-016 | Unit tests verify an explicit ADB bridge connection can create a selected-device host-to-device forward, probe the forwarded endpoint, and save a desktop profile with serial, host port, device port, adb mode, and arc-protobuf-v1 transport metadata. |
 
+## TEST-ANDROID
+
+| ID | Requirement |
+| --- | --- |
+| TEST-ANDROID-001 | Automated tests must verify MCP initialize/list/call behavior for the new Android tool names and validate that tool outputs are structured and sanitized. |
+| TEST-ANDROID-002 | Automated tests must verify Android device, app, logcat, screenshot, UI tree, input, AVD listing, and emulator launch command construction using fake command runners without requiring a real device. |
+| TEST-ANDROID-003 | Manual or automated validation must launch the Pixel 6 AVD through the new integrated tooling and use the same tool surface to inspect, launch, and interact with an Android target. |
+| TEST-ANDROID-004 | Automated tests must verify that idle Android log polling timeouts are reported as recoverable liveness issues and that the client can restart log watching without misclassifying the target app as crashed. |
+
 ## TEST-AVA
 
 | ID | Requirement |
@@ -46,16 +55,24 @@
 | TEST-CLIENT-001 | Tests must verify live-view coordinate mapping, frame updates, input batching, and tree-replica model updates. |
 | TEST-CLIENT-002 | Client tests verify the supported log verbosity options and selected minimum level mapping for Debug, Information, Warning, and Error. |
 | TEST-CLIENT-003 | Unit tests verify live-view hit testing chooses the deepest visible node whose absolute bounds contain the clicked root-relative point and ignores invisible or out-of-bounds nodes. |
-| TEST-CLIENT-004 | Unit tests verify the reusable live-view surface keeps the existing hit-test selection behavior while enabling both separate-window and right-side dock hosting paths. |
+| TEST-CLIENT-004 | Unit tests verify the reusable live-view surface keeps the existing hit-test selection behavior while enabling both generic floating tool-window and direct right-side dock-tab hosting paths without nested live-view dock chrome. |
 | TEST-CLIENT-005 | Build validation verifies the Avalonia XAML styles for Visual Studio-like dockable panels compile, and tests continue to verify the dockable log/live-view models preserve existing behavior. |
 | TEST-CLIENT-006 | Unit tests verify project documents preserve app connection profiles, sessions, log history, replay steps, and artifact references across save/load round trips. |
 | TEST-CLIENT-007 | Unit tests verify replay diff generation reports added, removed, changed, and unchanged control-tree state for each replayed interaction step. |
 | TEST-CLIENT-008 | Unit tests verify replay records can mark sensitive payload fields and do not format bearer tokens or typed text into diagnostic log messages. |
-| TEST-CLIENT-009 | Build and unit validation verify the live-view dock command uses Undock semantics, reopens the separate live-view window, and keeps Visual Studio-style shell XAML compiling. |
+| TEST-CLIENT-009 | Build and unit validation verify the live-view float command opens a generic floating tool window and the right-side Live View tab hosts constrained live-view content directly without nested tool-window chrome or toolbar overflow. |
 | TEST-CLIENT-010 | Unit tests verify project documents persist and restore client layout state including window dimensions, splitter sizes, selected panel tab, log pop-out state, and live-view dock state. |
 | TEST-CLIENT-011 | Build and unit validation must verify the dock chrome model persists panel state and that the Avalonia XAML for icon commands, draggable headers, floating windows, dock-back commands, and hidden or auto-hide states compiles without regressing existing log and live-view behavior. |
 | TEST-CLIENT-012 | Build and unit validation must verify Iciclecreek terminal package wiring, terminal panel XAML compilation, view-model defaults, and non-blocking terminal lifecycle state. |
 | TEST-CLIENT-013 | Build and unit validation must verify the main shell dock layout exposes west, east, south, and default workspace regions and that the terminal panel is hosted in the default undeclared workspace surface. |
+| TEST-CLIENT-014 | Unit tests verify both the legacy diagnostic stdio server and the in-process Streamable HTTP MCP endpoint handle initialize, tool listing, and tool call JSON-RPC messages without emitting non-MCP payloads. |
+| TEST-CLIENT-015 | Unit tests verify the embedded terminal Codex MCP preset registers the running app loopback MCP URL, seeds guidance for using capabilities, snapshots, focus, click, and property tools with tree-first node discovery instead of screenshots, uses the captured tool startup working directory instead of a later process current directory, returns equivalent MCP initialize instructions, and does not pass remote endpoint, transport, bearer token, environment variable names, profile arguments, or avalonia-remote mcp child-process commands. |
+
+## TEST-DOC
+
+| ID | Requirement |
+| --- | --- |
+| TEST-DOC-001 | User documentation is linked from the README and includes current-version tool install commands, server package install commands, a local desktop UI quickstart, an Android desktop UI quickstart, Codex MCP usage guidance, security guidance, settings reference, and troubleshooting guidance. |
 
 ## TEST-GATE
 
@@ -109,6 +126,13 @@
 | TEST-MANUAL-006 | Invoke a remote click. |
 | TEST-MANUAL-007 | Edit an allowed property and observe the app/client update. |
 | TEST-MANUAL-008 | Verify mutation audit trail. |
+
+## TEST-MCP
+
+| ID | Requirement |
+| --- | --- |
+| TEST-MCP-001 | Deterministic tests must build aiUnit evidence from the avalonia-remote in-process MCP host, verify the tool catalog and JSON-RPC calls, generate wireframe and screenshot image attachments, and validate a strict aiUnit JSON review schema for MCP interaction plus wireframe-vs-screenshot behavior. |
+| TEST-MCP-002 | aiUnit tests must continue to verify that appsettings.aiunit.json uses the installed Codex CLI strategy so opt-in live aiUnit review can run through the local codex command. |
 
 ## TEST-PACK
 

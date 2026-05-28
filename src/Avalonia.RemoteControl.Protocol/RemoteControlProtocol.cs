@@ -31,6 +31,11 @@ public static class RemoteControlProtocol
     public const string AndroidBridgeTransportProtocol = "arc-protobuf-v1";
 
     /// <summary>
+    /// Logger category used for transport keepalive entries on otherwise idle log streams.
+    /// </summary>
+    public const string LogStreamKeepAliveCategory = "Avalonia.RemoteControl.LogStreamKeepAlive";
+
+    /// <summary>
     /// Current protocol version rendered as a display string.
     /// </summary>
     public static string DisplayVersion => $"{MajorVersion}.{MinorVersion}";

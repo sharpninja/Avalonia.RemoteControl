@@ -8,6 +8,15 @@ namespace Avalonia.RemoteControl.Tests;
 public sealed class RemoteControlProjectSystemTests
 {
     [Fact]
+    public void ClientLayoutDefaultsLiveViewDockedForFirstRun()
+    {
+        var layout = new RemoteControlClientLayoutState();
+
+        Assert.True(layout.LiveViewDocked);
+        Assert.False(layout.LiveViewDockStateInitialized);
+    }
+
+    [Fact]
     public async Task ProjectStoreSavesAppSessionsLogsAndReplayArtifacts()
     {
         var directory = Path.Combine(Path.GetTempPath(), "Avalonia.RemoteControl.Tests", Guid.NewGuid().ToString("N"));
@@ -88,8 +97,10 @@ public sealed class RemoteControlProjectSystemTests
             LogPaneHeight = 260,
             RightToolTabIndex = 1,
             WorkspaceTabIndex = 1,
+            TerminalWorkingDirectory = @"F:\GitHub\Avalonia.RemoteControl",
             LogsPoppedOut = true,
             LiveViewDocked = true,
+            LiveViewDockStateInitialized = true,
             ControlTreeAutoHidden = true,
             PropertiesAutoHidden = false,
             RemoteToolsAutoHidden = true,
@@ -110,12 +121,69 @@ public sealed class RemoteControlProjectSystemTests
         Assert.Equal(260, loaded.ClientLayout.LogPaneHeight);
         Assert.Equal(1, loaded.ClientLayout.RightToolTabIndex);
         Assert.Equal(1, loaded.ClientLayout.WorkspaceTabIndex);
+        Assert.Equal(@"F:\GitHub\Avalonia.RemoteControl", loaded.ClientLayout.TerminalWorkingDirectory);
         Assert.True(loaded.ClientLayout.LogsPoppedOut);
         Assert.True(loaded.ClientLayout.LiveViewDocked);
+        Assert.True(loaded.ClientLayout.LiveViewDockStateInitialized);
         Assert.True(loaded.ClientLayout.ControlTreeAutoHidden);
         Assert.False(loaded.ClientLayout.PropertiesAutoHidden);
         Assert.True(loaded.ClientLayout.RemoteToolsAutoHidden);
         Assert.False(loaded.ClientLayout.LogsAutoHidden);
+    }
+
+    [Fact]
+    public async Task ProjectStoreReturnsNullForInvalidJson()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "Avalonia.RemoteControl.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        await File.WriteAllTextAsync(
+            Path.Combine(directory, "project-broken.arcproj.json"),
+            "{ not valid json");
+        var store = new FileRemoteControlProjectStore(directory);
+
+        var loaded = await store.LoadAsync("project-broken");
+
+        Assert.Null(loaded);
+    }
+
+    [Fact]
+    public async Task ProjectStoreNormalizesPartialProjectDocuments()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "Avalonia.RemoteControl.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        await File.WriteAllTextAsync(
+            Path.Combine(directory, "project-partial.arcproj.json"),
+            """
+            {
+              "SchemaVersion": 0,
+              "ProjectId": "",
+              "Name": "",
+              "ClientLayout": null,
+              "AppProfiles": null,
+              "Sessions": [
+                {
+                  "SessionId": "session-1",
+                  "Logs": null,
+                  "Interactions": null,
+                  "Artifacts": null
+                }
+              ]
+            }
+            """);
+        var store = new FileRemoteControlProjectStore(directory);
+
+        var loaded = await store.LoadAsync("project-partial");
+
+        Assert.NotNull(loaded);
+        Assert.Equal(RemoteControlProjectDocument.CurrentSchemaVersion, loaded.SchemaVersion);
+        Assert.Equal("project-partial", loaded.ProjectId);
+        Assert.Equal("project-partial", loaded.Name);
+        Assert.NotNull(loaded.ClientLayout);
+        Assert.NotNull(loaded.AppProfiles);
+        var session = Assert.Single(loaded.Sessions);
+        Assert.NotNull(session.Logs);
+        Assert.NotNull(session.Interactions);
+        Assert.NotNull(session.Artifacts);
     }
 
     [Fact]

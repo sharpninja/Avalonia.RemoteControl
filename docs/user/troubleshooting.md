@@ -7,8 +7,8 @@ For setting-by-setting explanations, see [Settings Guide](settings.md).
 Install or update the .NET tool:
 
 ```powershell
-dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.1.3
-dotnet tool update --global SharpNinja.Avalonia.RemoteControl.Tool
+dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.6.0
+dotnet tool update --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.6.0
 ```
 
 Make sure the .NET global tools directory is on `PATH`.
@@ -93,6 +93,8 @@ If frame streaming is disabled, the client can still use tree replica mode when 
 
 Confirm that the debuggee uses `Microsoft.Extensions.Logging` and that remote-control services are registered in the same service provider as the app logging pipeline.
 
+The desktop client defaults to Warning verbosity. Switch Verbosity to Information or Debug when you need routine app diagnostics or remote-control protocol diagnostics.
+
 If log volume is high, check dropped-message counts and increase:
 
 ```csharp
@@ -143,11 +145,23 @@ adb -s <serial> shell pidof <package>
 
 If there is no process ID, launch the app on the device, wait for startup, then rerun `avalonia-remote adb connect`. If the process is running but the bridge closes before a response, remove the forward, restart the app, and connect again.
 
+## Codex MCP Cannot See The App
+
+The embedded Codex workflow uses the running desktop client as the MCP host. Reconnect the desktop client first, then stop and restart the terminal with Codex MCP.
+
+Check:
+
+- The desktop client is connected before Codex MCP starts.
+- The terminal Working Dir is the directory you intended.
+- Codex has an `avalonia_remote_control` MCP server for this terminal session.
+- The debuggee allows the action or property mutation you asked Codex to perform.
+- Codex refreshed the snapshot after each mutation instead of reusing stale node IDs.
+
 ## NuGet Restore Cannot Resolve Packages
 
 Use the `SharpNinja.Avalonia.RemoteControl.*` package IDs. The older `Avalonia.RemoteControl.*` IDs are not the public package names.
 
 ```powershell
-dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.1.3
-dotnet add package SharpNinja.Avalonia.RemoteControl.Runtime --version 0.1.3
+dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.6.0
+dotnet add package SharpNinja.Avalonia.RemoteControl.Runtime --version 0.6.0
 ```

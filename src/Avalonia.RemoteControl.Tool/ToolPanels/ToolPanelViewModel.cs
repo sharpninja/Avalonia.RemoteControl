@@ -274,7 +274,7 @@ public sealed class RemoteToolsPanelViewModel : ToolPanelViewModel
 public sealed class TerminalPanelViewModel : ToolPanelViewModel
 {
     private string command = GetDefaultShellProcess();
-    private string arguments = "-NoLogo -NoProfile";
+    private string arguments = "-NoLogo -NoProfile -NonInteractive";
     private readonly string startupWorkingDirectory;
     private string workingDirectory;
     private string statusText = "Terminal stopped.";
@@ -302,7 +302,7 @@ public sealed class TerminalPanelViewModel : ToolPanelViewModel
     /// <param name="startupWorkingDirectory">The working directory captured when the tool process started.</param>
     public TerminalPanelViewModel(string startupWorkingDirectory)
     {
-        this.startupWorkingDirectory = ToolProcessContext.NormalizeWorkingDirectory(startupWorkingDirectory);
+        this.startupWorkingDirectory = ToolProcessContext.ResolveStartupWorkingDirectory(startupWorkingDirectory);
         workingDirectory = this.startupWorkingDirectory;
     }
 
@@ -458,7 +458,7 @@ public sealed class TerminalPanelViewModel : ToolPanelViewModel
             + " "
             + PowerShellSingleQuote(RemoteControlMcpToolCatalog.CreateCodexSeedPrompt());
 
-        Arguments = "-NoLogo -NoProfile -Command " + QuoteForTerminalArgumentParser(codexCommand);
+        Arguments = "-NoLogo -NoProfile -NonInteractive -Command " + QuoteForTerminalArgumentParser(codexCommand);
 
         if (string.IsNullOrWhiteSpace(WorkingDirectory))
         {
@@ -472,7 +472,7 @@ public sealed class TerminalPanelViewModel : ToolPanelViewModel
     public void ApplyShellPreset()
     {
         Command = GetDefaultShellProcess();
-        Arguments = "-NoLogo -NoProfile";
+        Arguments = "-NoLogo -NoProfile -NonInteractive";
         if (string.IsNullOrWhiteSpace(WorkingDirectory))
         {
             WorkingDirectory = StartupWorkingDirectory;

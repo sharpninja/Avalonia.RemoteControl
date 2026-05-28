@@ -375,6 +375,46 @@ public sealed class RemoteControlAdbClientTests
     }
 
     [Fact]
+    public async Task AdbConnectionWorkflowMarkerTokenOverridesStaleSuppliedToken()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(0, "1234\n", string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+            new AdbCommandResult(
+                0,
+                """{"devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
+                string.Empty));
+        runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47102", AdbCommandResult.Success);
+        var probe = new RecordingRemoteControlProbe();
+        var workflow = new AdbConnectionWorkflow(
+            new AdbClient(runner),
+            probe,
+            new FileRemoteControlProfileStore(Path.Combine(
+                Path.GetTempPath(),
+                "Avalonia.RemoteControl.Tests",
+                Guid.NewGuid().ToString("N"),
+                "connection-profile.json")));
+
+        var result = await workflow.ConnectAsync(
+            new AdbConnectOptions
+            {
+                Serial = "emulator-5554",
+                PackageName = "com.example.app",
+                HostPort = 47100,
+                Token = "stale-token",
+                LaunchPackageIfStopped = true,
+                CleanupOnExit = false,
+            });
+
+        Assert.Equal("marker-token", probe.Token);
+        Assert.Equal("marker-token", result.ConnectionProfile.Token);
+        Assert.Equal(AdbEndpointInfo.AndroidBridgeProtocol, probe.TransportProtocol);
+    }
+
+    [Fact]
     public async Task AdbConnectionWorkflowCanSaveExplicitBridgeForwardProfile()
     {
         var runner = new RecordingAdbCommandRunner();

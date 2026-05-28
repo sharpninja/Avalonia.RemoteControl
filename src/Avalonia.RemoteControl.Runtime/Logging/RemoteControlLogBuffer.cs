@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Avalonia.RemoteControl.Protocol;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -13,6 +14,7 @@ public sealed class RemoteControlLogBuffer
     private readonly List<RemoteControlLogEntry> entries = [];
     private readonly SemaphoreSlim signal = new(0);
     private readonly int capacity;
+    private readonly TimeSpan keepAliveInterval;
     private ulong nextSequence;
     private ulong droppedCount;
 
@@ -25,6 +27,7 @@ public sealed class RemoteControlLogBuffer
         ArgumentNullException.ThrowIfNull(options);
 
         capacity = Math.Max(1, options.Value.LogBufferCapacity);
+        keepAliveInterval = options.Value.LogStreamKeepAliveInterval;
     }
 
     /// <summary>
@@ -86,14 +89,36 @@ public sealed class RemoteControlLogBuffer
                 continue;
             }
 
-            try
-            {
-                await signal.WaitAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            var waitResult = await WaitForSignalAsync(cancellationToken).ConfigureAwait(false);
+            if (waitResult == LogBufferWaitResult.Cancelled)
             {
                 yield break;
             }
+
+            if (waitResult == LogBufferWaitResult.TimedOut)
+            {
+                yield return CreateKeepAlive(minimumLevel);
+            }
+        }
+    }
+
+    private async Task<LogBufferWaitResult> WaitForSignalAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (keepAliveInterval <= TimeSpan.Zero)
+            {
+                await signal.WaitAsync(cancellationToken).ConfigureAwait(false);
+                return LogBufferWaitResult.Signaled;
+            }
+
+            return await signal.WaitAsync(keepAliveInterval, cancellationToken).ConfigureAwait(false)
+                ? LogBufferWaitResult.Signaled
+                : LogBufferWaitResult.TimedOut;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return LogBufferWaitResult.Cancelled;
         }
     }
 
@@ -149,5 +174,23 @@ public sealed class RemoteControlLogBuffer
 
         return string.IsNullOrWhiteSpace(categoryPrefix)
             || entry.Category.StartsWith(categoryPrefix, StringComparison.Ordinal);
+    }
+
+    private static RemoteControlLogEntry CreateKeepAlive(LogLevel minimumLevel)
+    {
+        return new RemoteControlLogEntry
+        {
+            TimestampUtc = DateTimeOffset.UtcNow,
+            Level = minimumLevel == LogLevel.None ? LogLevel.Trace : minimumLevel,
+            Category = RemoteControlProtocol.LogStreamKeepAliveCategory,
+            Message = "Log stream keepalive.",
+        };
+    }
+
+    private enum LogBufferWaitResult
+    {
+        Signaled,
+        TimedOut,
+        Cancelled,
     }
 }

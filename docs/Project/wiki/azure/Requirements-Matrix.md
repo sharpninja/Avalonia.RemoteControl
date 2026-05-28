@@ -16,6 +16,8 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | FR-ADB-005 | Tracked | Functional-Requirements.md |
 | FR-ADB-006 | Tracked | Functional-Requirements.md |
 | FR-ADB-007 | Tracked | Functional-Requirements.md |
+| FR-ANDROID-001 | Tracked | Functional-Requirements.md |
+| FR-ANDROID-002 | Tracked | Functional-Requirements.md |
 | FR-CLIENT-001 | Tracked | Functional-Requirements.md |
 | FR-CLIENT-002 | Tracked | Functional-Requirements.md |
 | FR-CLIENT-003 | Tracked | Functional-Requirements.md |
@@ -38,6 +40,7 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | FR-CLIENT-021 | Tracked | Functional-Requirements.md |
 | FR-CLIENT-022 | Tracked | Functional-Requirements.md |
 | FR-CLIENT-023 | Tracked | Functional-Requirements.md |
+| FR-CLIENT-024 | Tracked | Functional-Requirements.md |
 | FR-LOG-001 | Tracked | Functional-Requirements.md |
 | FR-LOG-002 | Tracked | Functional-Requirements.md |
 | FR-LOG-003 | Tracked | Functional-Requirements.md |
@@ -48,6 +51,7 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | FR-LOG-008 | Tracked | Functional-Requirements.md |
 | FR-LOG-009 | Tracked | Functional-Requirements.md |
 | FR-LOG-010 | Tracked | Functional-Requirements.md |
+| FR-MCP-001 | Tracked | Functional-Requirements.md |
 | FR-PROP-001 | Tracked | Functional-Requirements.md |
 | FR-PROP-002 | Tracked | Functional-Requirements.md |
 | FR-PROP-003 | Tracked | Functional-Requirements.md |
@@ -94,6 +98,10 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TR-ADB-CONNECTIVITY-018 | Tracked | Technical-Requirements.md |
 | TR-ADB-CONNECTIVITY-019 | Tracked | Technical-Requirements.md |
 | TR-ADB-CONNECTIVITY-020 | Tracked | Technical-Requirements.md |
+| TR-ANDROID-ADB-001 | Tracked | Technical-Requirements.md |
+| TR-ANDROID-AVD-001 | Tracked | Technical-Requirements.md |
+| TR-ANDROID-LOG-001 | Tracked | Technical-Requirements.md |
+| TR-ANDROID-MCP-001 | Tracked | Technical-Requirements.md |
 | TR-CI-RELEASE-001 | Tracked | Technical-Requirements.md |
 | TR-CI-RELEASE-002 | Tracked | Technical-Requirements.md |
 | TR-CI-RELEASE-003 | Tracked | Technical-Requirements.md |
@@ -101,6 +109,9 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TR-CI-RELEASE-005 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-LAYOUT-001 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-LAYOUT-002 | Tracked | Technical-Requirements.md |
+| TR-CLIENT-MCP-001 | Tracked | Technical-Requirements.md |
+| TR-CLIENT-MCP-002 | Tracked | Technical-Requirements.md |
+| TR-CLIENT-MCP-003 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-PROJECT-001 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-PROJECT-002 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-REPLAY-001 | Tracked | Technical-Requirements.md |
@@ -116,6 +127,7 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TR-DI-HOSTING-003 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-004 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-005 | Tracked | Technical-Requirements.md |
+| TR-DOC-USER-001 | Tracked | Technical-Requirements.md |
 | TR-GRPC-PROTOCOL-001 | Tracked | Technical-Requirements.md |
 | TR-GRPC-PROTOCOL-002 | Tracked | Technical-Requirements.md |
 | TR-GRPC-PROTOCOL-003 | Tracked | Technical-Requirements.md |
@@ -142,6 +154,8 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TR-LOG-STREAMING-011 | Tracked | Technical-Requirements.md |
 | TR-LOG-STREAMING-012 | Tracked | Technical-Requirements.md |
 | TR-LOG-STREAMING-013 | Tracked | Technical-Requirements.md |
+| TR-MCP-AIUNIT-001 | Tracked | Technical-Requirements.md |
+| TR-MCP-AIUNIT-002 | Tracked | Technical-Requirements.md |
 | TR-PACK-PACKAGE-001 | Tracked | Technical-Requirements.md |
 | TR-PACK-PACKAGE-002 | Tracked | Technical-Requirements.md |
 | TR-PACK-PACKAGE-003 | Tracked | Technical-Requirements.md |
@@ -196,6 +210,10 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TEST-ADB-014 | Tracked | Testing-Requirements.md |
 | TEST-ADB-015 | Tracked | Testing-Requirements.md |
 | TEST-ADB-016 | Tracked | Testing-Requirements.md |
+| TEST-ANDROID-001 | Tracked | Testing-Requirements.md |
+| TEST-ANDROID-002 | Tracked | Testing-Requirements.md |
+| TEST-ANDROID-003 | Tracked | Testing-Requirements.md |
+| TEST-ANDROID-004 | Tracked | Testing-Requirements.md |
 | TEST-AVA-001 | Tracked | Testing-Requirements.md |
 | TEST-AVA-002 | Tracked | Testing-Requirements.md |
 | TEST-AVA-003 | Tracked | Testing-Requirements.md |
@@ -218,6 +236,9 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TEST-CLIENT-011 | Tracked | Testing-Requirements.md |
 | TEST-CLIENT-012 | Tracked | Testing-Requirements.md |
 | TEST-CLIENT-013 | Tracked | Testing-Requirements.md |
+| TEST-CLIENT-014 | Tracked | Testing-Requirements.md |
+| TEST-CLIENT-015 | Tracked | Testing-Requirements.md |
+| TEST-DOC-001 | Tracked | Testing-Requirements.md |
 | TEST-GATE-001 | Tracked | Testing-Requirements.md |
 | TEST-GATE-002 | Tracked | Testing-Requirements.md |
 | TEST-GATE-003 | Tracked | Testing-Requirements.md |
@@ -246,6 +267,8 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TEST-MANUAL-006 | Tracked | Testing-Requirements.md |
 | TEST-MANUAL-007 | Tracked | Testing-Requirements.md |
 | TEST-MANUAL-008 | Tracked | Testing-Requirements.md |
+| TEST-MCP-001 | Tracked | Testing-Requirements.md |
+| TEST-MCP-002 | Tracked | Testing-Requirements.md |
 | TEST-PACK-001 | Tracked | Testing-Requirements.md |
 | TEST-PACK-002 | Tracked | Testing-Requirements.md |
 | TEST-PACK-003 | Tracked | Testing-Requirements.md |

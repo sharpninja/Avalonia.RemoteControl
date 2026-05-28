@@ -8,14 +8,19 @@ namespace Avalonia.RemoteControl.Tool;
 public sealed class RemoteControlMcpCommandLine
 {
     private readonly IRemoteControlMcpSessionFactory sessionFactory;
+    private readonly IAndroidMcpToolService? androidToolService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteControlMcpCommandLine"/> class.
     /// </summary>
     /// <param name="sessionFactory">Session factory.</param>
-    public RemoteControlMcpCommandLine(IRemoteControlMcpSessionFactory? sessionFactory = null)
+    /// <param name="androidToolService">Optional Android MCP tool service.</param>
+    public RemoteControlMcpCommandLine(
+        IRemoteControlMcpSessionFactory? sessionFactory = null,
+        IAndroidMcpToolService? androidToolService = null)
     {
         this.sessionFactory = sessionFactory ?? new RemoteControlMcpSessionFactory();
+        this.androidToolService = androidToolService;
     }
 
     /// <summary>
@@ -58,7 +63,7 @@ public sealed class RemoteControlMcpCommandLine
             return 2;
         }
 
-        var server = new RemoteControlMcpStdioServer(options!, sessionFactory);
+        var server = new RemoteControlMcpStdioServer(options!, sessionFactory, androidToolService);
         try
         {
             return await server.RunAsync(input, output, error, cancellationToken).ConfigureAwait(false);

@@ -1,6 +1,9 @@
 using Avalonia.RemoteControl.Tool;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.RemoteControl.Client.Projects;
+using Avalonia.RemoteControl.Protocol.V1;
 
 namespace Avalonia.RemoteControl.Tests;
 
@@ -13,6 +16,7 @@ public sealed class RemoteControlTerminalPanelTests
 
         Assert.False(string.IsNullOrWhiteSpace(viewModel.Command));
         Assert.Contains("-NoProfile", viewModel.Arguments, StringComparison.Ordinal);
+        Assert.Contains("-NonInteractive", viewModel.Arguments, StringComparison.Ordinal);
         Assert.Equal(Environment.CurrentDirectory, viewModel.WorkingDirectory);
         Assert.Equal(Environment.CurrentDirectory, viewModel.StartupWorkingDirectory);
         Assert.Equal(Environment.CurrentDirectory, viewModel.EffectiveWorkingDirectory);
@@ -51,6 +55,32 @@ public sealed class RemoteControlTerminalPanelTests
     }
 
     [Fact]
+    public void TerminalPanelViewModelResolvesStaleWorkspaceFolderToGitCheckout()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "arc-workspace-roots", Guid.NewGuid().ToString("N"));
+        var workspaceRoot = Path.Combine(root, "github");
+        var staleWorkspace = Path.Combine(root, "stale", "Avalonia.RemoteControl");
+        var realWorkspace = Path.Combine(workspaceRoot, "Avalonia.RemoteControl");
+        Directory.CreateDirectory(staleWorkspace);
+        Directory.CreateDirectory(Path.Combine(realWorkspace, ".git"));
+        var previousRoots = Environment.GetEnvironmentVariable(ToolProcessContext.WorkspaceRootsEnvironmentVariable);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(ToolProcessContext.WorkspaceRootsEnvironmentVariable, workspaceRoot);
+
+            var viewModel = new TerminalPanelViewModel(staleWorkspace);
+
+            Assert.Equal(Path.GetFullPath(realWorkspace), viewModel.StartupWorkingDirectory);
+            Assert.Equal(Path.GetFullPath(realWorkspace), viewModel.WorkingDirectory);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ToolProcessContext.WorkspaceRootsEnvironmentVariable, previousRoots);
+        }
+    }
+
+    [Fact]
     public void TerminalPanelViewModelAppliesCodexPreset()
     {
         var viewModel = new TerminalPanelViewModel
@@ -63,6 +93,7 @@ public sealed class RemoteControlTerminalPanelTests
 
         Assert.False(string.IsNullOrWhiteSpace(viewModel.Command));
         Assert.Contains("-NoProfile", viewModel.Arguments, StringComparison.Ordinal);
+        Assert.Contains("-NonInteractive", viewModel.Arguments, StringComparison.Ordinal);
         Assert.Contains("codex", viewModel.Arguments, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("mcp_servers.avalonia_remote_control", viewModel.Arguments, StringComparison.Ordinal);
         Assert.Contains("url", viewModel.Arguments, StringComparison.Ordinal);
@@ -105,6 +136,22 @@ public sealed class RemoteControlTerminalPanelTests
     }
 
     [Fact]
+    public void TerminalPanelViewModelAppliesNonInteractiveShellPreset()
+    {
+        var viewModel = new TerminalPanelViewModel
+        {
+            Arguments = "-Command codex",
+            WorkingDirectory = string.Empty,
+        };
+
+        viewModel.ApplyShellPreset();
+
+        Assert.Contains("-NoProfile", viewModel.Arguments, StringComparison.Ordinal);
+        Assert.Contains("-NonInteractive", viewModel.Arguments, StringComparison.Ordinal);
+        Assert.Equal(Environment.CurrentDirectory, viewModel.WorkingDirectory);
+    }
+
+    [Fact]
     public void WorkspaceViewModelHostsTerminalInDefaultWorkspaceState()
     {
         var startupWorkingDirectory = Path.Combine(Path.GetTempPath(), "arc-workspace-cwd");
@@ -115,6 +162,132 @@ public sealed class RemoteControlTerminalPanelTests
         Assert.Equal(Path.GetFullPath(startupWorkingDirectory), viewModel.Terminal.WorkingDirectory);
         viewModel.SelectedTabIndex = 1;
         Assert.Equal(1, viewModel.SelectedTabIndex);
+    }
+
+    [Fact]
+    public void ToolShellDefaultsLiveViewDockedWithFramesDisabledAndNoContent()
+    {
+        var shell = new RemoteControlToolShellViewModel(Path.GetTempPath());
+
+        Assert.True(shell.RestoreDockedLiveViewOnConnect);
+        Assert.True(shell.StartsWithFrameStreamingDisabled);
+        Assert.True(shell.StartsWithoutLiveViewContent);
+        Assert.False(shell.LiveViewCapabilities.SupportsFrameStreaming);
+        Assert.False(shell.LiveViewCapabilities.SupportsRemoteInput);
+        Assert.Null(shell.RemoteTools.LiveView.Content);
+    }
+
+    [Fact]
+    public void ToolShellAppliesPersistedLiveViewDockState()
+    {
+        var shell = new RemoteControlToolShellViewModel(Path.GetTempPath());
+
+        shell.ApplyLayoutState(new RemoteControlClientLayoutState
+        {
+            LiveViewDocked = false,
+            LiveViewDockStateInitialized = true,
+        });
+
+        Assert.False(shell.RestoreDockedLiveViewOnConnect);
+
+        shell.ApplyLayoutState(new RemoteControlClientLayoutState
+        {
+            LiveViewDocked = false,
+            LiveViewDockStateInitialized = false,
+        });
+
+        Assert.True(shell.RestoreDockedLiveViewOnConnect);
+    }
+
+    [Fact]
+    public void ToolShellResetsConnectionScopedLiveViewState()
+    {
+        var shell = new RemoteControlToolShellViewModel(Path.GetTempPath());
+        shell.ApplyCapabilities(new GetCapabilitiesResponse
+        {
+            SupportsFrameStreaming = true,
+            SupportsRemoteInput = true,
+        });
+        shell.RemoteTools.LiveView.Content = new object();
+
+        shell.ResetConnectionState();
+
+        Assert.True(shell.StartsWithFrameStreamingDisabled);
+        Assert.True(shell.StartsWithoutLiveViewContent);
+        Assert.False(shell.LiveViewCapabilities.SupportsRemoteInput);
+    }
+
+    [Fact]
+    public async Task ControlTreePanelSelectItemRevealsNestedLiveViewSelection()
+    {
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessAvaloniaTestApp));
+
+        await session.Dispatch(() =>
+        {
+            var viewModel = new ControlTreePanelViewModel();
+            var root = new RemoteTreeItem(CreateTreeNode("root", "Root"));
+            var panelItem = new RemoteTreeItem(CreateTreeNode("panel", "Panel", "root"));
+            var button = new RemoteTreeItem(CreateTreeNode("button", "Button", "panel"));
+            root.AddChild(panelItem);
+            panelItem.AddChild(button);
+            viewModel.Items.Add(root);
+
+            var control = new ControlTreePanel
+            {
+                ViewModel = viewModel,
+            };
+
+            control.SelectItem(button);
+
+            Assert.Same(button, viewModel.SelectedItem);
+            Assert.True(root.IsExpanded);
+            Assert.True(panelItem.IsExpanded);
+            Assert.False(button.IsExpanded);
+            Assert.Same(root, panelItem.Parent);
+            Assert.Same(panelItem, button.Parent);
+            return true;
+        }, CancellationToken.None);
+    }
+
+    [Fact]
+    public void McpHostControllerStartsRestartsAndDisposesEndpoint()
+    {
+        var terminal = new TerminalPanelViewModel(Path.GetTempPath());
+        var hosts = new List<RecordingMcpEndpointHost>();
+        var capturedFactories = new List<Func<RemoteControlMcpOptions>>();
+        var endpointIndex = 0;
+        var token = "first-token";
+        var controller = new RemoteControlMcpHostController(
+            terminal,
+            () => RemoteControlMcpOptions.Create(new Uri("http://127.0.0.1:47100/"), token),
+            optionsFactory =>
+            {
+                capturedFactories.Add(optionsFactory);
+                var host = new RecordingMcpEndpointHost(new Uri($"http://127.0.0.1:49{endpointIndex++}/mcp/test"));
+                hosts.Add(host);
+                return host;
+            });
+
+        controller.Start();
+        controller.Start();
+
+        Assert.True(controller.IsRunning);
+        Assert.Single(hosts);
+        Assert.Equal(hosts[0].Endpoint.ToString(), terminal.RemoteControlMcpUrl);
+        token = "second-token";
+        Assert.Equal("second-token", capturedFactories[0]().Token);
+
+        controller.Restart();
+
+        Assert.True(hosts[0].Disposed);
+        Assert.Equal(2, hosts.Count);
+        Assert.Equal(hosts[1].Endpoint.ToString(), terminal.RemoteControlMcpUrl);
+
+        controller.Dispose();
+
+        Assert.True(hosts[1].Disposed);
+        Assert.False(controller.IsRunning);
+        Assert.Equal(string.Empty, terminal.RemoteControlMcpUrl);
     }
 
     [Fact]
@@ -187,6 +360,48 @@ public sealed class RemoteControlTerminalPanelTests
     }
 
     [Fact]
+    public void DockLayoutMeasuresNestedSideDockWithFiniteSize()
+    {
+        var outer = new DockLayout
+        {
+            EastWidth = 120,
+            SouthHeight = 50,
+            DockSpacing = 10,
+        };
+        var inner = new DockLayout
+        {
+            SouthHeight = 60,
+            DockSpacing = 5,
+        };
+        DockLayout.SetRegion(inner, DockRegion.East);
+        DockLayout.SetRegion(new Border(), DockRegion.Fill);
+        inner.Children.Add(new Border());
+        var innerSouth = new Border();
+        DockLayout.SetRegion(innerSouth, DockRegion.South);
+        inner.Children.Add(innerSouth);
+        outer.Children.Add(inner);
+        outer.Children.Add(new Border());
+
+        outer.Measure(new Size(500, 300));
+        outer.Arrange(new Rect(0, 0, 500, 300));
+
+        Assert.Equal(new Size(500, 300), outer.DesiredSize);
+        Assert.Equal(new Rect(380, 0, 120, 300), inner.Bounds);
+    }
+
+    [Fact]
+    public void DockLayoutCoercesInfiniteMeasureToFiniteDesiredSize()
+    {
+        var layout = new DockLayout();
+        layout.Children.Add(new Border());
+
+        layout.Measure(new Size(390, double.PositiveInfinity));
+
+        Assert.True(double.IsFinite(layout.DesiredSize.Width));
+        Assert.True(double.IsFinite(layout.DesiredSize.Height));
+    }
+
+    [Fact]
     public void DockLayoutReservesOnlyStripForAutoHiddenDockRegions()
     {
         var layout = new DockLayout
@@ -222,5 +437,48 @@ public sealed class RemoteControlTerminalPanelTests
     private sealed class AutoHiddenDockHost : Border, IDockAutoHideHost
     {
         public bool IsAutoHidden => true;
+    }
+
+    private static TreeNode CreateTreeNode(string id, string typeName, string parentId = "")
+    {
+        return new TreeNode
+        {
+            Id = id,
+            TypeName = typeName,
+            ParentId = parentId,
+            IsVisible = true,
+            IsEnabled = true,
+            AbsoluteBounds = new Avalonia.RemoteControl.Protocol.V1.Rect
+            {
+                Width = 100,
+                Height = 20,
+            },
+        };
+    }
+
+    private sealed class HeadlessAvaloniaTestApp : Application
+    {
+        public static AppBuilder BuildAvaloniaApp()
+        {
+            return AppBuilder.Configure<HeadlessAvaloniaTestApp>()
+                .UseHeadless(new AvaloniaHeadlessPlatformOptions());
+        }
+    }
+
+    private sealed class RecordingMcpEndpointHost : IRemoteControlMcpEndpointHost
+    {
+        public RecordingMcpEndpointHost(Uri endpoint)
+        {
+            Endpoint = endpoint;
+        }
+
+        public Uri Endpoint { get; }
+
+        public bool Disposed { get; private set; }
+
+        public void Dispose()
+        {
+            Disposed = true;
+        }
     }
 }

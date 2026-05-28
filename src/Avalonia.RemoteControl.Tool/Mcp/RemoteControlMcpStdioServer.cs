@@ -12,10 +12,12 @@ public sealed class RemoteControlMcpStdioServer
     /// </summary>
     /// <param name="options">Remote-control MCP connection options.</param>
     /// <param name="sessionFactory">Session factory.</param>
+    /// <param name="androidToolService">Optional Android MCP tool service.</param>
     public RemoteControlMcpStdioServer(
         RemoteControlMcpOptions options,
-        IRemoteControlMcpSessionFactory sessionFactory)
-        : this(() => options, sessionFactory)
+        IRemoteControlMcpSessionFactory sessionFactory,
+        IAndroidMcpToolService? androidToolService = null)
+        : this(() => options, sessionFactory, androidToolService)
     {
         ArgumentNullException.ThrowIfNull(options);
     }
@@ -25,11 +27,13 @@ public sealed class RemoteControlMcpStdioServer
     /// </summary>
     /// <param name="optionsFactory">Connection options factory.</param>
     /// <param name="sessionFactory">Session factory.</param>
+    /// <param name="androidToolService">Optional Android MCP tool service.</param>
     public RemoteControlMcpStdioServer(
         Func<RemoteControlMcpOptions> optionsFactory,
-        IRemoteControlMcpSessionFactory sessionFactory)
+        IRemoteControlMcpSessionFactory sessionFactory,
+        IAndroidMcpToolService? androidToolService = null)
     {
-        handler = new RemoteControlMcpJsonRpcHandler(optionsFactory, sessionFactory);
+        handler = new RemoteControlMcpJsonRpcHandler(optionsFactory, sessionFactory, androidToolService);
     }
 
     /// <summary>

@@ -7,6 +7,22 @@ namespace Avalonia.RemoteControl.Tests;
 public sealed class RemoteControlMcpServerTests
 {
     [Fact]
+    public void McpHttpErrorResponseUsesJsonRpcApplicationJsonShape()
+    {
+        var response = RemoteControlMcpHttpErrorResponse.InternalServerError("boom");
+
+        Assert.Equal(500, response.StatusCode);
+        Assert.Equal("application/json; charset=utf-8", response.ContentType);
+        Assert.NotEmpty(response.GetUtf8Bytes());
+        using var body = JsonDocument.Parse(response.ResponseJson);
+        Assert.Equal("2.0", body.RootElement.GetProperty("jsonrpc").GetString());
+        Assert.Equal(JsonValueKind.Null, body.RootElement.GetProperty("id").ValueKind);
+        var error = body.RootElement.GetProperty("error");
+        Assert.Equal(-32000, error.GetProperty("code").GetInt32());
+        Assert.Equal("boom", error.GetProperty("message").GetString());
+    }
+
+    [Fact]
     public async Task McpStdioServerInitializesAndListsTools()
     {
         var input = string.Join(
@@ -41,6 +57,8 @@ public sealed class RemoteControlMcpServerTests
         Assert.Contains(RemoteControlMcpToolCatalog.GetCapabilities, instructions, StringComparison.Ordinal);
         Assert.Contains(RemoteControlMcpToolCatalog.GetSnapshot, instructions, StringComparison.Ordinal);
         Assert.Contains(RemoteControlMcpToolCatalog.SetProperty, instructions, StringComparison.Ordinal);
+        Assert.Contains(RemoteControlMcpToolCatalog.AndroidListDevices, instructions, StringComparison.Ordinal);
+        Assert.Contains(RemoteControlMcpToolCatalog.AndroidStartAvd, instructions, StringComparison.Ordinal);
         Assert.Contains("Do not use screenshots", instructions, StringComparison.Ordinal);
 
         var tools = responses[1].RootElement
@@ -54,6 +72,12 @@ public sealed class RemoteControlMcpServerTests
         Assert.Contains(RemoteControlMcpToolCatalog.InvokeClick, tools);
         Assert.Contains(RemoteControlMcpToolCatalog.Focus, tools);
         Assert.Contains(RemoteControlMcpToolCatalog.SetProperty, tools);
+        Assert.Contains(RemoteControlMcpToolCatalog.AndroidListDevices, tools);
+        Assert.Contains(RemoteControlMcpToolCatalog.AndroidListAvds, tools);
+        Assert.Contains(RemoteControlMcpToolCatalog.AndroidStartAvd, tools);
+        Assert.Contains(RemoteControlMcpToolCatalog.AndroidForward, tools);
+        Assert.Contains(RemoteControlMcpToolCatalog.AndroidLogcat, tools);
+        Assert.Contains(RemoteControlMcpToolCatalog.AndroidUiTree, tools);
     }
 
     [Fact]
@@ -85,6 +109,80 @@ public sealed class RemoteControlMcpServerTests
     }
 
     [Fact]
+    public async Task McpStdioServerReturnsJsonRpcErrorWhenToolFails()
+    {
+        var factory = new FakeSessionFactory();
+        factory.Session.CapabilitiesException = new ObjectDisposedException("JsonDocument");
+        var input = """
+            {"jsonrpc":"2.0","id":"call-1","method":"tools/call","params":{"name":"avalonia_remote_get_capabilities","arguments":{}}}
+
+            """;
+        var output = new StringWriter();
+
+        var exitCode = await new RemoteControlMcpCommandLine(factory)
+            .RunAsync(
+                ["stdio", "--endpoint", "http://127.0.0.1:47100/", "--token", "dev-token"],
+                new StringReader(input),
+                output,
+                TextWriter.Null);
+
+        Assert.Equal(0, exitCode);
+        using var response = ParseOutput(output).Single();
+        Assert.Equal("call-1", response.RootElement.GetProperty("id").GetString());
+        var error = response.RootElement.GetProperty("error");
+        Assert.Equal(-32000, error.GetProperty("code").GetInt32());
+        Assert.Contains("JsonDocument", error.GetProperty("message").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task McpStdioServerReturnsInvalidParamsForToolArgumentFailures()
+    {
+        var input = """
+            {"jsonrpc":"2.0","id":"call-1","method":"tools/call","params":{"name":"avalonia_remote_invoke_click","arguments":{}}}
+
+            """;
+        var output = new StringWriter();
+
+        var exitCode = await new RemoteControlMcpCommandLine(new FakeSessionFactory())
+            .RunAsync(
+                ["stdio", "--endpoint", "http://127.0.0.1:47100/", "--token", "dev-token"],
+                new StringReader(input),
+                output,
+                TextWriter.Null);
+
+        Assert.Equal(0, exitCode);
+        using var response = ParseOutput(output).Single();
+        Assert.Equal("call-1", response.RootElement.GetProperty("id").GetString());
+        var error = response.RootElement.GetProperty("error");
+        Assert.Equal(-32602, error.GetProperty("code").GetInt32());
+        Assert.Contains("nodeId", error.GetProperty("message").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task McpStdioServerSuppressesNotificationToolFailures()
+    {
+        var factory = new FakeSessionFactory();
+        factory.Session.CapabilitiesException = new InvalidOperationException("remote unavailable");
+        var input = """
+            {"jsonrpc":"2.0","method":"tools/call","params":{"name":"avalonia_remote_get_capabilities","arguments":{}}}
+
+            """;
+        var output = new StringWriter();
+        var errors = new StringWriter();
+
+        var exitCode = await new RemoteControlMcpCommandLine(factory)
+            .RunAsync(
+                ["stdio", "--endpoint", "http://127.0.0.1:47100/", "--token", "dev-token"],
+                new StringReader(input),
+                output,
+                errors);
+
+        Assert.Equal(0, exitCode);
+        Assert.Empty(ParseOutput(output));
+        Assert.Contains("MCP notification failure", errors.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task McpCommandLineRejectsMissingToken()
     {
         var errors = new StringWriter();
@@ -93,6 +191,35 @@ public sealed class RemoteControlMcpServerTests
 
         Assert.Equal(2, exitCode);
         Assert.Contains("Specify --token or --token-env", errors.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task McpStdioServerInvokesAndroidToolWithoutRemoteSession()
+    {
+        var factory = new FakeSessionFactory();
+        var androidTools = new FakeAndroidToolService();
+        var input = """
+            {"jsonrpc":"2.0","id":"android-1","method":"tools/call","params":{"name":"avalonia_android_tap","arguments":{"serial":"emulator-5554","x":20,"y":40}}}
+
+            """;
+        var output = new StringWriter();
+
+        var exitCode = await new RemoteControlMcpCommandLine(factory, androidTools)
+            .RunAsync(
+                ["stdio", "--endpoint", "http://127.0.0.1:47100/", "--token", "dev-token"],
+                new StringReader(input),
+                output,
+                TextWriter.Null);
+
+        Assert.Equal(0, exitCode);
+        Assert.Null(factory.Options);
+        Assert.Equal(RemoteControlMcpToolCatalog.AndroidTap, androidTools.ToolName);
+        Assert.Equal("emulator-5554", androidTools.Serial);
+
+        using var response = ParseOutput(output).Single();
+        var result = response.RootElement.GetProperty("result");
+        Assert.False(result.GetProperty("isError").GetBoolean());
+        Assert.True(result.GetProperty("structuredContent").GetProperty("androidTool").GetBoolean());
     }
 
     [Fact]
@@ -233,6 +360,77 @@ public sealed class RemoteControlMcpServerTests
         Assert.Equal("node-42", factory.Session.ClickedNodeId);
     }
 
+    [Fact]
+    public async Task McpStreamableHttpServerReturnsJsonRpcErrorWhenToolFails()
+    {
+        var factory = new FakeSessionFactory();
+        factory.Session.CapabilitiesException = new ObjectDisposedException("JsonDocument");
+        using var server = RemoteControlMcpHttpServer.Start(
+            () => RemoteControlMcpOptions.Create(new Uri("http://127.0.0.1:47100/"), "dev-token"),
+            factory);
+        using var client = new HttpClient();
+
+        var response = await PostJsonAsync(
+            client,
+            server.Endpoint,
+            """
+            {"jsonrpc":"2.0","id":"call-1","method":"tools/call","params":{"name":"avalonia_remote_get_capabilities","arguments":{}}}
+            """);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.StartsWith("application/json", response.Content.Headers.ContentType?.ToString(), StringComparison.Ordinal);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("call-1", body.RootElement.GetProperty("id").GetString());
+        var error = body.RootElement.GetProperty("error");
+        Assert.Equal(-32000, error.GetProperty("code").GetInt32());
+        Assert.Contains("JsonDocument", error.GetProperty("message").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task McpStreamableHttpServerReturnsInvalidParamsForToolArgumentFailures()
+    {
+        using var server = RemoteControlMcpHttpServer.Start(
+            () => RemoteControlMcpOptions.Create(new Uri("http://127.0.0.1:47100/"), "dev-token"),
+            new FakeSessionFactory());
+        using var client = new HttpClient();
+
+        var response = await PostJsonAsync(
+            client,
+            server.Endpoint,
+            """
+            {"jsonrpc":"2.0","id":"call-1","method":"tools/call","params":{"name":"avalonia_remote_invoke_click","arguments":{}}}
+            """);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.StartsWith("application/json", response.Content.Headers.ContentType?.ToString(), StringComparison.Ordinal);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("call-1", body.RootElement.GetProperty("id").GetString());
+        var error = body.RootElement.GetProperty("error");
+        Assert.Equal(-32602, error.GetProperty("code").GetInt32());
+        Assert.Contains("nodeId", error.GetProperty("message").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task McpStreamableHttpServerSuppressesNotificationToolFailures()
+    {
+        var factory = new FakeSessionFactory();
+        factory.Session.CapabilitiesException = new InvalidOperationException("remote unavailable");
+        using var server = RemoteControlMcpHttpServer.Start(
+            () => RemoteControlMcpOptions.Create(new Uri("http://127.0.0.1:47100/"), "dev-token"),
+            factory);
+        using var client = new HttpClient();
+
+        var response = await PostJsonAsync(
+            client,
+            server.Endpoint,
+            """
+            {"jsonrpc":"2.0","method":"tools/call","params":{"name":"avalonia_remote_get_capabilities","arguments":{}}}
+            """);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        Assert.Equal(0, response.Content.Headers.ContentLength.GetValueOrDefault());
+    }
+
     private static async Task<HttpResponseMessage> PostJsonAsync(HttpClient client, Uri endpoint, string json)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
@@ -269,10 +467,16 @@ public sealed class RemoteControlMcpServerTests
 
     private sealed class FakeSession : IRemoteControlMcpSession
     {
+        public Exception? CapabilitiesException { get; set; }
+
         public string? ClickedNodeId { get; private set; }
 
-        public Task<string> GetCapabilitiesJsonAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult("""{"protocolVersion":"1.0","supportsSnapshots":true}""");
+        public Task<string> GetCapabilitiesJsonAsync(CancellationToken cancellationToken = default)
+        {
+            return CapabilitiesException is null
+                ? Task.FromResult("""{"protocolVersion":"1.0","supportsSnapshots":true}""")
+                : Task.FromException<string>(CapabilitiesException);
+        }
 
         public Task<string> GetSnapshotJsonAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult("""{"nodes":[{"id":"root","type":"Window"}]}""");
@@ -295,6 +499,23 @@ public sealed class RemoteControlMcpServerTests
 
         public void Dispose()
         {
+        }
+    }
+
+    private sealed class FakeAndroidToolService : IAndroidMcpToolService
+    {
+        public string? ToolName { get; private set; }
+
+        public string? Serial { get; private set; }
+
+        public Task<string> CallAsync(
+            string toolName,
+            JsonElement arguments,
+            CancellationToken cancellationToken = default)
+        {
+            ToolName = toolName;
+            Serial = arguments.GetProperty("serial").GetString();
+            return Task.FromResult("""{"androidTool":true,"sent":true}""");
         }
     }
 }

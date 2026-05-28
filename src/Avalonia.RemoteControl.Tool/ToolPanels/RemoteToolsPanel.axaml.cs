@@ -30,7 +30,6 @@ public sealed partial class RemoteToolsPanel : UserControl
         {
             DataContext = value;
             ActionsPanel.ViewModel = value?.Actions;
-            LiveViewPanel.ViewModel = value?.LiveView;
             ProjectPanel.ViewModel = value?.Project;
         }
     }
@@ -39,11 +38,6 @@ public sealed partial class RemoteToolsPanel : UserControl
     /// Gets the actions panel.
     /// </summary>
     public ActionsPanel Actions => ActionsPanel;
-
-    /// <summary>
-    /// Gets the live-view panel.
-    /// </summary>
-    public LiveViewPanel LiveView => LiveViewPanel;
 
     /// <summary>
     /// Gets the project panel.

@@ -118,6 +118,11 @@ public sealed class AvaloniaRemoteControlOptions
     public int LogBufferCapacity { get; set; } = 1024;
 
     /// <summary>
+    /// Gets or sets the interval for transport keepalive entries on idle log streams.
+    /// </summary>
+    public TimeSpan LogStreamKeepAliveInterval { get; set; } = TimeSpan.FromSeconds(15);
+
+    /// <summary>
     /// Gets sensitive name fragments that are redacted by default.
     /// </summary>
     public IList<string> SensitiveNameFragments => sensitiveNameFragments;

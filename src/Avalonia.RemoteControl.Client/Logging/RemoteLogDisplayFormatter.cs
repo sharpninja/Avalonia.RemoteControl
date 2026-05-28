@@ -1,3 +1,4 @@
+using Avalonia.RemoteControl.Protocol;
 using Avalonia.RemoteControl.Protocol.V1;
 
 namespace Avalonia.RemoteControl.Client.Logging;
@@ -7,6 +8,20 @@ namespace Avalonia.RemoteControl.Client.Logging;
 /// </summary>
 public static class RemoteLogDisplayFormatter
 {
+    /// <summary>
+    /// Determines whether a log entry is a transport keepalive.
+    /// </summary>
+    /// <param name="entry">The protocol log entry.</param>
+    /// <returns><see langword="true"/> when the entry is a keepalive.</returns>
+    public static bool IsKeepAlive(LogEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        return string.Equals(
+            entry.Category,
+            RemoteControlProtocol.LogStreamKeepAliveCategory,
+            StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// Formats a remote log entry for the desktop log list.
     /// </summary>

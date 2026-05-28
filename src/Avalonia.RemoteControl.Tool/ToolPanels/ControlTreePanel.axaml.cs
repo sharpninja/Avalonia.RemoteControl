@@ -35,6 +35,13 @@ public sealed partial class ControlTreePanel : UserControl
     /// <param name="item">Tree item to select.</param>
     public void SelectItem(RemoteTreeItem item)
     {
+        ArgumentNullException.ThrowIfNull(item);
+        item.ExpandAncestors();
+        if (ViewModel is { } viewModel)
+        {
+            viewModel.SelectedItem = item;
+        }
+
         Tree.SelectedItem = item;
     }
 

@@ -18,7 +18,7 @@
       <TextBox Grid.Row="1"
                Grid.Column="1"
                Text="{Binding Arguments, Mode=TwoWay}"
-               PlaceholderText="-NoLogo -NoProfile -Command codex" />
+               PlaceholderText="-NoLogo -NoProfile -NonInteractive -Command codex" />
 
       <TextBlock Grid.Row="2" Classes="vs-muted" Text="Working Dir" />
       <TextBox Grid.Row="2"

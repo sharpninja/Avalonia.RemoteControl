@@ -56,6 +56,11 @@ public sealed class RemoteControlClientLayoutState
     public int WorkspaceTabIndex { get; set; }
 
     /// <summary>
+    /// Gets or sets the embedded terminal working directory.
+    /// </summary>
+    public string TerminalWorkingDirectory { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets a value indicating whether logs were popped out.
     /// </summary>
     public bool LogsPoppedOut { get; set; }
@@ -63,7 +68,12 @@ public sealed class RemoteControlClientLayoutState
     /// <summary>
     /// Gets or sets a value indicating whether live view was docked in the main window.
     /// </summary>
-    public bool LiveViewDocked { get; set; }
+    public bool LiveViewDocked { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether live-view dock state has been captured by a current client.
+    /// </summary>
+    public bool LiveViewDockStateInitialized { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the control tree pane is auto-hidden.

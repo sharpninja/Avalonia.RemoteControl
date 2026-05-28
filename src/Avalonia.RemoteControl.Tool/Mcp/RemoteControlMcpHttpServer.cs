@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace Avalonia.RemoteControl.Tool;
 
@@ -152,9 +153,11 @@ public sealed class RemoteControlMcpHttpServer : IDisposable
         }
         catch (Exception ex)
         {
-            var bytes = Encoding.UTF8.GetBytes(ex.Message);
-            context.Response.StatusCode = 500;
-            context.Response.ContentType = "text/plain; charset=utf-8";
+            var error = RemoteControlMcpHttpErrorResponse.InternalServerError(ex.Message);
+            var bytes = error.GetUtf8Bytes();
+            context.Response.StatusCode = error.StatusCode;
+            context.Response.ContentType = error.ContentType;
+            context.Response.ContentEncoding = Encoding.UTF8;
             context.Response.ContentLength64 = bytes.Length;
             await context.Response.OutputStream.WriteAsync(bytes, CancellationToken.None).ConfigureAwait(false);
         }
@@ -204,4 +207,49 @@ public sealed class RemoteControlMcpHttpServer : IDisposable
         socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
         return ((IPEndPoint)socket.LocalEndPoint!).Port;
     }
+
+}
+
+/// <summary>
+/// Represents an MCP Streamable HTTP error payload that can be written by the listener.
+/// </summary>
+/// <param name="StatusCode">HTTP status code.</param>
+/// <param name="ContentType">HTTP content type.</param>
+/// <param name="ResponseJson">JSON-RPC error response body.</param>
+public sealed record RemoteControlMcpHttpErrorResponse(
+    int StatusCode,
+    string ContentType,
+    string ResponseJson)
+{
+    /// <summary>
+    /// Creates a JSON-RPC server-error response for unexpected listener failures.
+    /// </summary>
+    /// <param name="message">Error message.</param>
+    /// <returns>HTTP error payload.</returns>
+    public static RemoteControlMcpHttpErrorResponse InternalServerError(string message)
+    {
+        var responseJson = JsonSerializer.Serialize(
+            new
+            {
+                jsonrpc = "2.0",
+                id = (object?)null,
+                error = new
+                {
+                    code = -32000,
+                    message,
+                },
+            },
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        return new RemoteControlMcpHttpErrorResponse(
+            500,
+            "application/json; charset=utf-8",
+            responseJson);
+    }
+
+    /// <summary>
+    /// Encodes <see cref="ResponseJson"/> as UTF-8 bytes.
+    /// </summary>
+    /// <returns>UTF-8 bytes.</returns>
+    public byte[] GetUtf8Bytes() => Encoding.UTF8.GetBytes(ResponseJson);
 }

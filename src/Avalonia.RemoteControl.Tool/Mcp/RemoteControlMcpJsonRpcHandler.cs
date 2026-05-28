@@ -9,14 +9,17 @@ internal sealed class RemoteControlMcpJsonRpcHandler : IDisposable
 
     private readonly Func<RemoteControlMcpOptions> optionsFactory;
     private readonly IRemoteControlMcpSessionFactory sessionFactory;
+    private readonly IAndroidMcpToolService androidToolService;
     private IRemoteControlMcpSession? session;
 
     public RemoteControlMcpJsonRpcHandler(
         Func<RemoteControlMcpOptions> optionsFactory,
-        IRemoteControlMcpSessionFactory sessionFactory)
+        IRemoteControlMcpSessionFactory sessionFactory,
+        IAndroidMcpToolService? androidToolService = null)
     {
         this.optionsFactory = optionsFactory ?? throw new ArgumentNullException(nameof(optionsFactory));
         this.sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
+        this.androidToolService = androidToolService ?? new RemoteControlAndroidMcpToolService();
     }
 
     public async Task<RemoteControlMcpJsonRpcResult> HandleAsync(
@@ -27,7 +30,7 @@ internal sealed class RemoteControlMcpJsonRpcHandler : IDisposable
         ArgumentNullException.ThrowIfNull(message);
         ArgumentNullException.ThrowIfNull(diagnostics);
 
-        JsonElement id = default;
+        object? id = null;
         var hasId = false;
         try
         {
@@ -43,9 +46,14 @@ internal sealed class RemoteControlMcpJsonRpcHandler : IDisposable
                     httpStatusCode: 400);
             }
 
-            hasId = root.TryGetProperty("id", out id);
+            if (root.TryGetProperty("id", out var idElement))
+            {
+                id = Clone(idElement);
+                hasId = true;
+            }
+
             var method = methodElement.GetString()!;
-            var response = await DispatchAsync(method, root, hasId, cancellationToken).ConfigureAwait(false);
+            var response = await DispatchAsync(method, root, id, hasId, cancellationToken).ConfigureAwait(false);
             return response is null
                 ? RemoteControlMcpJsonRpcResult.Accepted()
                 : RemoteControlMcpJsonRpcResult.Response(Serialize(response));
@@ -57,14 +65,19 @@ internal sealed class RemoteControlMcpJsonRpcHandler : IDisposable
                 Serialize(CreateError(null, -32700, "Parse error.")),
                 httpStatusCode: 400);
         }
-        catch (Exception ex) when (hasId && ex is ArgumentException or InvalidOperationException)
+        catch (ArgumentException ex) when (hasId)
         {
-            return RemoteControlMcpJsonRpcResult.Response(Serialize(CreateError(Clone(id), -32602, ex.Message)));
+            return RemoteControlMcpJsonRpcResult.Response(Serialize(CreateError(id, -32602, ex.Message)));
         }
         catch (Exception ex) when (hasId && ex is not OperationCanceledException)
         {
             await diagnostics.WriteLineAsync($"MCP tool failure: {ex.Message}").ConfigureAwait(false);
-            return RemoteControlMcpJsonRpcResult.Response(Serialize(CreateError(Clone(id), -32000, ex.Message)));
+            return RemoteControlMcpJsonRpcResult.Response(Serialize(CreateError(id, -32000, ex.Message)));
+        }
+        catch (Exception ex) when (!hasId && ex is not OperationCanceledException)
+        {
+            await diagnostics.WriteLineAsync($"MCP notification failure: {ex.Message}").ConfigureAwait(false);
+            return RemoteControlMcpJsonRpcResult.Accepted();
         }
     }
 
@@ -77,11 +90,10 @@ internal sealed class RemoteControlMcpJsonRpcHandler : IDisposable
     private async Task<object?> DispatchAsync(
         string method,
         JsonElement root,
+        object? id,
         bool hasId,
         CancellationToken cancellationToken)
     {
-        var id = hasId && root.TryGetProperty("id", out var idElement) ? Clone(idElement) : null;
-
         return method switch
         {
             "initialize" => CreateResponse(
@@ -133,8 +145,17 @@ internal sealed class RemoteControlMcpJsonRpcHandler : IDisposable
                 : JsonDocument.Parse("{}");
         var arguments = emptyArgumentsDocument?.RootElement ?? argumentElement;
 
+        var toolName = nameElement.GetString();
+        if (RemoteControlMcpToolCatalog.IsAndroidTool(toolName))
+        {
+            return CreateToolResult(await androidToolService.CallAsync(
+                toolName!,
+                arguments,
+                cancellationToken).ConfigureAwait(false));
+        }
+
         var activeSession = await GetSessionAsync(cancellationToken).ConfigureAwait(false);
-        var payload = nameElement.GetString() switch
+        var payload = toolName switch
         {
             RemoteControlMcpToolCatalog.GetCapabilities =>
                 await activeSession.GetCapabilitiesJsonAsync(cancellationToken).ConfigureAwait(false),

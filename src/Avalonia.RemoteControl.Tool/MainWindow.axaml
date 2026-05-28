@@ -96,17 +96,34 @@
         </tool:DockPaneChrome.Body>
       </tool:DockPaneChrome>
 
-      <tool:DockPaneChrome x:Name="RemoteToolsPane"
-                           tool:DockLayout.Region="East"
-                           PanelId="remoteTools"
-                           Title="Remote Tools"
-                           Glyph="&#xE713;"
-                           CommandRequested="DockPaneCommandRequested"
-                           HeaderDragCompleted="DockPaneHeaderDragCompleted">
-        <tool:DockPaneChrome.Body>
-          <tool:RemoteToolsPanel x:Name="RemoteToolsPanel" />
-        </tool:DockPaneChrome.Body>
-      </tool:DockPaneChrome>
+      <tool:DockLayout x:Name="RightDockLayout"
+                       tool:DockLayout.Region="East"
+                       Background="{StaticResource VsDockSeparatorBrush}"
+                       DockSpacing="5"
+                       SouthHeight="360">
+        <tool:DockPaneChrome x:Name="RemoteToolsPane"
+                             PanelId="remoteTools"
+                             Title="Remote Tools"
+                             Glyph="&#xE713;"
+                             CommandRequested="DockPaneCommandRequested"
+                             HeaderDragCompleted="DockPaneHeaderDragCompleted">
+          <tool:DockPaneChrome.Body>
+            <tool:RemoteToolsPanel x:Name="RemoteToolsPanel" />
+          </tool:DockPaneChrome.Body>
+        </tool:DockPaneChrome>
+
+        <tool:DockPaneChrome x:Name="LiveViewPane"
+                             tool:DockLayout.Region="South"
+                             PanelId="liveView"
+                             Title="Live View"
+                             Glyph="&#xE8A7;"
+                             CommandRequested="DockPaneCommandRequested"
+                             HeaderDragCompleted="DockPaneHeaderDragCompleted">
+          <tool:DockPaneChrome.Body>
+            <tool:LiveViewPanel x:Name="DockedLiveViewPanel" />
+          </tool:DockPaneChrome.Body>
+        </tool:DockPaneChrome>
+      </tool:DockLayout>
 
       <tool:DockPaneChrome x:Name="LogsPane"
                            tool:DockLayout.Region="South"

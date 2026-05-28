@@ -133,6 +133,11 @@ public sealed class DockLayout : Panel
     protected override Size MeasureOverride(Size availableSize)
     {
         var sizes = CalculateRegionSizes(availableSize);
+        var westDesired = default(Size);
+        var eastDesired = default(Size);
+        var southDesired = default(Size);
+        var fillDesired = default(Size);
+
         foreach (var child in Children)
         {
             if (!child.IsVisible)
@@ -140,10 +145,40 @@ public sealed class DockLayout : Panel
                 continue;
             }
 
-            child.Measure(GetConstraintForRegion(GetRegion(child), sizes));
+            var region = GetRegion(child);
+            child.Measure(GetConstraintForRegion(region, sizes));
+
+            switch (region)
+            {
+                case DockRegion.West:
+                    westDesired = Max(westDesired, child.DesiredSize);
+                    break;
+                case DockRegion.East:
+                    eastDesired = Max(eastDesired, child.DesiredSize);
+                    break;
+                case DockRegion.South:
+                    southDesired = Max(southDesired, child.DesiredSize);
+                    break;
+                default:
+                    fillDesired = Max(fillDesired, child.DesiredSize);
+                    break;
+            }
         }
 
-        return availableSize;
+        var finiteWidth = IsFinite(availableSize.Width)
+            ? availableSize.Width
+            : sizes.WestWidth +
+              sizes.EastWidth +
+              Math.Max(fillDesired.Width, southDesired.Width) +
+              (HasSideRegion(sizes.WestWidth) ? sizes.Spacing : 0) +
+              (HasSideRegion(sizes.EastWidth) ? sizes.Spacing : 0);
+        var finiteHeight = IsFinite(availableSize.Height)
+            ? availableSize.Height
+            : Math.Max(
+                Math.Max(westDesired.Height, eastDesired.Height),
+                fillDesired.Height + sizes.SouthHeight + (sizes.SouthHeight > 0 ? sizes.Spacing : 0));
+
+        return new Size(CoerceFinite(finiteWidth), CoerceFinite(finiteHeight));
     }
 
     /// <inheritdoc />
@@ -186,7 +221,7 @@ public sealed class DockLayout : Panel
             : 0;
         var contentHeight = Math.Max(0, height - south - (south > 0 ? spacing : 0));
 
-        return new RegionSizes(west, east, south, contentWidth, contentHeight, spacing);
+        return new RegionSizes(west, east, south, contentWidth, contentHeight, width, height, spacing);
     }
 
     private VisibleRegionState GetVisibleRegionState(DockRegion region)
@@ -215,8 +250,8 @@ public sealed class DockLayout : Panel
     {
         return region switch
         {
-            DockRegion.West => new Size(sizes.WestWidth, double.PositiveInfinity),
-            DockRegion.East => new Size(sizes.EastWidth, double.PositiveInfinity),
+            DockRegion.West => new Size(sizes.WestWidth, sizes.TotalHeight),
+            DockRegion.East => new Size(sizes.EastWidth, sizes.TotalHeight),
             DockRegion.South => new Size(sizes.ContentWidth, sizes.SouthHeight),
             _ => new Size(sizes.ContentWidth, sizes.ContentHeight),
         };
@@ -248,12 +283,31 @@ public sealed class DockLayout : Panel
         return Math.Min(Math.Max(value, minimum), maximum);
     }
 
+    private static Size Max(Size left, Size right)
+    {
+        return new Size(
+            Math.Max(CoerceFinite(left.Width), CoerceFinite(right.Width)),
+            Math.Max(CoerceFinite(left.Height), CoerceFinite(right.Height)));
+    }
+
+    private static bool IsFinite(double value)
+    {
+        return !double.IsNaN(value) && !double.IsInfinity(value);
+    }
+
+    private static double CoerceFinite(double value)
+    {
+        return IsFinite(value) && value > 0 ? value : 0;
+    }
+
     private readonly record struct RegionSizes(
         double WestWidth,
         double EastWidth,
         double SouthHeight,
         double ContentWidth,
         double ContentHeight,
+        double TotalWidth,
+        double TotalHeight,
         double Spacing);
 
     private readonly record struct VisibleRegionState(bool IsVisible, bool IsAutoHidden);

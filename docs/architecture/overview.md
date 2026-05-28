@@ -23,10 +23,7 @@ Implemented responsibilities:
 - capture `ILogger` output through a bounded provider
 - enforce disabled-by-default startup state, bearer authentication, listener/TLS policy validation, redaction, and deny-by-default mutation/action gates
 - integrate server start/stop with Avalonia controlled application lifetime events
-
-Planned responsibilities:
-
-- emit authenticated audit records for security and command decisions
+- emit sanitized diagnostic/audit log records for remote-control events, command results, and security decisions
 
 ## Protocol
 
@@ -58,20 +55,23 @@ avalonia-remote
 Implemented client areas:
 
 - endpoint/token connection controls
+- Android ADB device discovery, package marker discovery, forwarding, connection, and cleanup controls
 - visual/control tree view
 - selected-node property list
 - property mutation command
 - click command
 - log stream viewer
+- docked and floating live view with screenshot and tree replica render modes
+- pointer, wheel, keyboard, and text input from the live view when enabled
+- user-scoped projects, session log history, interaction journals, replay artifacts, and layout persistence
+- embedded terminal with in-process Codex MCP host integration
 - connection/status line
 - user-scoped default connection profile save/forget for endpoint, token, and certificate path
 - TLS connection trust through a configured server certificate file
 - manual TLS certificate inspection and acceptance by SHA-256 fingerprint
 
-Planned client areas:
+Known client gap:
 
-- separate live remote UI window with screenshot and tree replica render modes
-- pointer, wheel, keyboard, and text input from the live remote view
 - authenticated audit identity display
 
 ## Android
@@ -80,7 +80,7 @@ Android connectivity is a first-class product requirement. The client should aut
 
 Technical Spike 0 found that the current Kestrel/AspNetCore gRPC server transport cannot be used directly inside a `net10.0-android` app because `Microsoft.AspNetCore.App` has no Android runtime pack. Android support therefore needs an Android-compatible app-side bridge or transport behind the same desktop-facing protocol.
 
-The package-private Android marker is the negotiation point for this split. Missing protocol metadata means the existing gRPC ADB path. Bridge markers must declare `arc-protobuf-v1`; current clients support that marker for authenticated unary bridge operations and reject unknown protocols before forwarding.
+The package-private Android marker is the negotiation point for this split. Missing protocol metadata means the existing gRPC ADB path. Bridge markers must declare `arc-protobuf-v1`; current clients support that marker for authenticated bridge operations and reject unknown protocols before forwarding.
 
 ## Current Implementation Status
 
@@ -89,7 +89,7 @@ The package-private Android marker is the negotiation point for this split. Miss
 - `SharpNinja.Avalonia.RemoteControl.Server` starts a Kestrel HTTP/2 gRPC endpoint, enforces bearer authentication, validates listener/TLS startup policy, and hosts the runtime services for desktop/server-capable targets.
 - `SharpNinja.Avalonia.RemoteControl.Tool` opens the desktop client UI by default and also provides ADB device listing, forwarding, package marker discovery, authenticated endpoint probing, manual TLS certificate acceptance, and cleanup commands.
 - CI files exist for GitHub Actions and Azure Pipelines.
-- Broader Android emulator/device matrix coverage and richer client profile management remain future slices.
+- Broader Android emulator/device matrix coverage remains a future validation slice.
 
 ## Security
 
@@ -111,6 +111,8 @@ See `docs/architecture/security-model.md`.
 
 Packages:
 
+- `SharpNinja.Avalonia.RemoteControl.Protocol`
+- `SharpNinja.Avalonia.RemoteControl.Runtime`
 - `SharpNinja.Avalonia.RemoteControl.Server`
 - `SharpNinja.Avalonia.RemoteControl.Tool`
 

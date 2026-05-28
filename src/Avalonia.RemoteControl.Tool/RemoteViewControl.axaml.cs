@@ -22,11 +22,13 @@ public sealed partial class RemoteViewControl : UserControl
     private readonly RemoteLiveViewCapabilities capabilities;
     private readonly RemoteLiveTreeModel treeModel = new();
     private CancellationTokenSource? streamCancellation;
+    private CancellationTokenSource? frameCancellation;
     private RemoteViewCoordinateMapper mapper = RemoteViewCoordinateMapper.Create(1, 1, 1, 1);
     private double remoteWidth = 1;
     private double remoteHeight = 1;
-    private bool showScreenshot = true;
+    private bool showScreenshot;
     private bool started;
+    private bool frameStreamStarted;
     private bool moveSendScheduled;
     private bool inputUnsupportedStatusShown;
     private RemoteInputEvent? pendingMove;
@@ -83,10 +85,9 @@ public sealed partial class RemoteViewControl : UserControl
         streamCancellation = new CancellationTokenSource();
         ViewportBorder.Focus();
         _ = WatchTreeOrPollAsync(streamCancellation.Token);
-
-        if (capabilities.SupportsFrameStreaming)
+        if (showScreenshot)
         {
-            _ = WatchFramesAsync(streamCancellation.Token);
+            StartFrameStream();
         }
     }
 
@@ -96,6 +97,7 @@ public sealed partial class RemoteViewControl : UserControl
     public void Stop()
     {
         started = false;
+        StopFrameStream();
         streamCancellation?.Cancel();
         streamCancellation?.Dispose();
         streamCancellation = null;
@@ -114,6 +116,8 @@ public sealed partial class RemoteViewControl : UserControl
 
         showScreenshot = true;
         FrameImage.IsVisible = true;
+        StatusText.Text = "Starting frame stream...";
+        StartFrameStream();
         RenderOverlay();
     }
 
@@ -121,6 +125,8 @@ public sealed partial class RemoteViewControl : UserControl
     {
         showScreenshot = false;
         FrameImage.IsVisible = false;
+        StopFrameStream();
+        StatusText.Text = "Frame streaming disabled; using tree replica mode.";
         RenderOverlay();
     }
 
@@ -132,20 +138,45 @@ public sealed partial class RemoteViewControl : UserControl
     private void ApplyCapabilityState()
     {
         ScreenshotModeButton.IsEnabled = capabilities.SupportsFrameStreaming;
+        showScreenshot = false;
+        FrameImage.IsVisible = false;
 
         if (!capabilities.SupportsFrameStreaming)
         {
-            showScreenshot = false;
-            FrameImage.IsVisible = false;
             StatusText.Text = capabilities.SupportsTreeStreaming || capabilities.SupportsTreeSnapshots
                 ? "Frame streaming is not supported; using tree replica mode."
                 : "Live view is not supported by this endpoint.";
+        }
+        else
+        {
+            StatusText.Text = "Frame streaming disabled; using tree replica mode.";
         }
 
         if (!capabilities.SupportsRemoteInput)
         {
             ToolTip.SetTip(ViewportBorder, "Remote input is not supported or not enabled for this endpoint.");
         }
+    }
+
+    private void StartFrameStream()
+    {
+        if (!started || session is null || frameStreamStarted || !capabilities.SupportsFrameStreaming)
+        {
+            return;
+        }
+
+        frameStreamStarted = true;
+        frameCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            streamCancellation?.Token ?? CancellationToken.None);
+        _ = WatchFramesAsync(frameCancellation.Token);
+    }
+
+    private void StopFrameStream()
+    {
+        frameStreamStarted = false;
+        frameCancellation?.Cancel();
+        frameCancellation?.Dispose();
+        frameCancellation = null;
     }
 
     private Task WatchTreeOrPollAsync(CancellationToken cancellationToken)

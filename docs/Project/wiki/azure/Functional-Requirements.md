@@ -48,6 +48,14 @@ The client exposes equivalent ADB workflows through CLI commands.
 
 The desktop client provides an integrated ADB connection workflow so users can list devices, launch a selected Android package when needed, create the ADB forward, save the transport-aware profile, and connect without running an external script.
 
+## FR-ANDROID-001 Embedded Android device control MCP tools
+
+The desktop client MCP server must expose self-contained Android device and emulator control tools so an AI agent can list devices, manage AVDs, launch emulators, install and launch apps, manage forwards, collect logcat, inspect UI hierarchy, capture screenshots, and send basic input without requiring a separate Android MCP dependency.
+
+## FR-ANDROID-002 Android log stream liveness
+
+The client must keep Android-backed remote-control log streaming alive or recover it when idle service polling would otherwise time out, and must surface a clear recoverable status instead of treating the failure as an app crash.
+
 ## FR-CLIENT-001 The client provides Local, Network, and ADB connection modes.
 
 The client provides Local, Network, and ADB connection modes.
@@ -88,9 +96,9 @@ The live remote view must render the same top-level visual surface a user sees o
 
 When a user clicks a rendered control in the live remote UI window, the desktop client selects the corresponding node in the main control tree when that node is present in the current tree model.
 
-## FR-CLIENT-012 Docked live view
+## FR-CLIENT-012 Docked live remote UI
 
-The desktop client allows the live remote UI view to be docked on the right side of the main client window while preserving the existing separate live-view window option.
+The desktop client allows the live remote UI view to be docked on the right side of the main client window while preserving the generic floating tool-window option; the docked Live View tab hosts the live-view panel directly without nested tool-window chrome and constrains or scrolls the surface inside the available tab space.
 
 ## FR-CLIENT-013 Visual Studio-style dockable panel chrome
 
@@ -130,11 +138,15 @@ Dockable client panels must expose interactive Visual Studio-like behavior, incl
 
 ## FR-CLIENT-022 Embedded terminal panel
 
-The desktop client must host an embedded terminal panel that can launch Codex or another configured command inside the remote-control shell.
+The desktop client hosts an embedded terminal panel that can launch Codex or another configured command inside the remote-control shell, and the Codex AI agent starts in the same working directory that was current when the tool process was launched unless the user explicitly edits the terminal working directory field.
 
 ## FR-CLIENT-023 Terminal process lifecycle controls
 
 The terminal panel must let users launch, interact with, and stop the configured CLI process without blocking the client UI or losing dock-panel behavior.
+
+## FR-CLIENT-024 Tool-side MCP host for Codex control
+
+The desktop tool exposes an in-process Model Context Protocol host enabled by default so Codex or another MCP client can inspect and invoke approved remote-control operations against the currently configured debug target without launching a second avalonia-remote child process; the embedded Codex preset seeds guidance that explains the exposed tools, directs Codex to inspect the control tree first, and forbids screenshots as the primary control-selection mechanism.
 
 ## FR-LOG-001 A connected client can stream `ILogger` events from the debuggee.
 
@@ -175,6 +187,10 @@ When the desktop client opens logs in a pop-out window, the main window must rem
 ## FR-LOG-010 Pop-out log verbosity control
 
 The pop-out log window exposes the same Debug, Information, Warning, and Error verbosity selector as the main log panel and changing either selector updates the active log stream setting.
+
+## FR-MCP-001 aiUnit MCP Server validation
+
+The repository provides SharpNinja.aiUnit-backed integration tests that can validate the active MCP Server marker, health nonce behavior, plugin contract, and requirements tooling evidence when the live aiUnit review gate is explicitly enabled.
 
 ## FR-PROP-001 A connected client can inspect safe readable public CLR properties and Avalonia properties for a selected node.
 

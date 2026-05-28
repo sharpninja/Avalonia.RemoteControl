@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Avalonia.RemoteControl.Client.Logging;
+using Avalonia.RemoteControl.Protocol;
 using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server;
 using Avalonia.RemoteControl.Server.Logging;
@@ -53,6 +54,19 @@ public sealed class RemoteControlLoggingTests
         Assert.Contains("exception=InvalidOperationException: failed", row, StringComparison.Ordinal);
         Assert.Contains("state=Token=[redacted]", row, StringComparison.Ordinal);
         Assert.Contains("scope=RequestId=req-1", row, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LogDisplayFormatterIdentifiesKeepAliveEntries()
+    {
+        var entry = new LogEntry
+        {
+            Level = "Warning",
+            Category = RemoteControlProtocol.LogStreamKeepAliveCategory,
+            Message = "keepalive",
+        };
+
+        Assert.True(RemoteLogDisplayFormatter.IsKeepAlive(entry));
     }
 
     [Fact]
@@ -202,6 +216,23 @@ public sealed class RemoteControlLoggingTests
 
         Assert.Equal("second", entry.Message);
         Assert.Equal(1UL, entry.DroppedCount);
+    }
+
+    [Fact]
+    public async Task LogBufferEmitsKeepAliveWhenIdle()
+    {
+        var options = Options.Create(new AvaloniaRemoteControlOptions
+        {
+            LogStreamKeepAliveInterval = TimeSpan.FromMilliseconds(5),
+        });
+        var buffer = new RemoteControlLogBuffer(options);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var entry = await ReadFirstAsync(buffer.ReadAllAsync(LogLevel.Warning, "Sample", cts.Token));
+
+        Assert.Equal(LogLevel.Warning, entry.Level);
+        Assert.Equal(RemoteControlProtocol.LogStreamKeepAliveCategory, entry.Category);
+        Assert.Contains("keepalive", entry.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

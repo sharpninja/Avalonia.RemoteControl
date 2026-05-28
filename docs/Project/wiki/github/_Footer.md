@@ -1,1 +1,1 @@
-Generated from MCP requirements wiki export.
+Generated from MCP requirements export and repository documentation sync.

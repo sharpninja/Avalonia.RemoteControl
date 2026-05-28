@@ -9,9 +9,6 @@
     <TabItem Header="Actions">
       <tool:ActionsPanel x:Name="ActionsPanel" />
     </TabItem>
-    <TabItem Header="Live View">
-      <tool:LiveViewPanel x:Name="LiveViewPanel" />
-    </TabItem>
     <TabItem Header="Project">
       <tool:ProjectPanel x:Name="ProjectPanel" />
     </TabItem>

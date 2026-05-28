@@ -1,6 +1,7 @@
 using Avalonia;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.RemoteControl.Client;
@@ -23,10 +24,7 @@ namespace Avalonia.RemoteControl.Tool;
 public sealed partial class MainWindow : Window
 {
     private const int MaxDisplayedLogRows = 2000;
-    private readonly ControlTreePanelViewModel controlTreeView = new();
-    private readonly WorkspacePanelViewModel workspaceView = new();
-    private readonly RemoteToolsPanelViewModel remoteToolsView = new();
-    private readonly RemoteLogViewModel logView = new();
+    private readonly RemoteControlToolShellViewModel shellView = new();
     private readonly ObservableCollection<AdbDeviceItem> adbDevices = [];
     private readonly IRemoteControlProfileStore profileStore = new FileRemoteControlProfileStore();
     private readonly FileRemoteControlProjectStore projectStore = new();
@@ -36,8 +34,7 @@ public sealed partial class MainWindow : Window
         RemoteControlProjectDocument.Create(RemoteControlProjectIds.DefaultProjectId, RemoteControlProjectIds.DefaultProjectName);
     private RemoteControlProjectSessionRecorder? projectRecorder;
     private RemoteControlDesktopSession? session;
-    private RemoteControlMcpHttpServer? mcpHttpServer;
-    private RemoteLiveViewCapabilities liveViewCapabilities = RemoteLiveViewCapabilities.None;
+    private RemoteControlMcpHostController? mcpHostController;
     private TreeNode? selectedNode;
     private TreeSnapshot? lastSnapshot;
     private CancellationTokenSource? logStreamCancellation;
@@ -50,7 +47,26 @@ public sealed partial class MainWindow : Window
     private bool isApplyingLayoutState;
     private bool isProjectLoaded;
     private bool restoreFloatingLogOnOpen;
-    private bool restoreDockedLiveViewOnConnect;
+
+    private ControlTreePanelViewModel controlTreeView => shellView.ControlTree;
+
+    private WorkspacePanelViewModel workspaceView => shellView.Workspace;
+
+    private RemoteToolsPanelViewModel remoteToolsView => shellView.RemoteTools;
+
+    private RemoteLogViewModel logView => shellView.Logs;
+
+    private RemoteLiveViewCapabilities liveViewCapabilities
+    {
+        get => shellView.LiveViewCapabilities;
+        set => shellView.LiveViewCapabilities = value;
+    }
+
+    private bool restoreDockedLiveViewOnConnect
+    {
+        get => shellView.RestoreDockedLiveViewOnConnect;
+        set => shellView.RestoreDockedLiveViewOnConnect = value;
+    }
 
     private ObservableCollection<RemoteTreeItem> treeItems => controlTreeView.Items;
 
@@ -70,6 +86,7 @@ public sealed partial class MainWindow : Window
         WorkspacePanel.ViewModel = workspaceView;
         WorkspacePanel.SelectedTabChanged += (_, _) => ScheduleLayoutSave();
         WorkspacePanel.Properties.PropertySelected += (_, row) => PropertySelectionChanged(row);
+        workspaceView.Terminal.PropertyChanged += WorkspaceTerminalPropertyChanged;
         RemoteToolsPanel.ViewModel = remoteToolsView;
         RemoteToolsPanel.SelectedTabChanged += (_, _) => ScheduleLayoutSave();
         RemoteToolsPanel.Actions.InvokeClickRequested += (_, _) => InvokeClickClicked(null, new RoutedEventArgs());
@@ -77,6 +94,7 @@ public sealed partial class MainWindow : Window
         RemoteToolsPanel.Actions.SetPropertyRequested += (_, _) => SetPropertyClicked(null, new RoutedEventArgs());
         RemoteToolsPanel.Project.SaveProjectRequested += (_, _) => SaveProjectClicked(null, new RoutedEventArgs());
         RemoteToolsPanel.Project.RefreshRequested += (_, _) => RefreshProjectClicked(null, new RoutedEventArgs());
+        DockedLiveViewPanel.ViewModel = remoteToolsView.LiveView;
         DockedLogPanel.ViewModel = logView;
         DockedLogPanel.FloatRequested += (_, _) => ShowLogToolWindow("Log panel floated.");
         DockedLogPanel.DockRequested += (_, _) => DockLogsToMain("Log panel docked.");
@@ -88,8 +106,10 @@ public sealed partial class MainWindow : Window
             RemoteControlProtocol.AndroidBridgeTransportProtocol,
         };
         TransportProtocolBox.SelectedItem = RemoteControlProtocol.GrpcTransportProtocol;
-        mcpHttpServer = RemoteControlMcpHttpServer.Start(CreateMcpOptionsFromTerminalState);
-        workspaceView.Terminal.RemoteControlMcpUrl = mcpHttpServer.Endpoint.ToString();
+        mcpHostController = new RemoteControlMcpHostController(
+            workspaceView.Terminal,
+            CreateMcpOptionsFromTerminalState);
+        mcpHostController.Start();
         EndpointBox.TextChanged += (_, _) => UpdateTerminalMcpProfileFromFields();
         TokenBox.TextChanged += (_, _) => UpdateTerminalMcpProfileFromFields();
         CertificatePathBox.TextChanged += (_, _) => UpdateTerminalMcpProfileFromFields();
@@ -117,7 +137,7 @@ public sealed partial class MainWindow : Window
             StopDockedLiveView();
             projectRecorder?.Complete();
             CloseFloatingToolWindows();
-            mcpHttpServer?.Dispose();
+            mcpHostController?.Dispose();
             session?.Dispose();
             _ = SaveProjectAsync(captureLayout: false);
         };
@@ -152,7 +172,7 @@ public sealed partial class MainWindow : Window
                 acceptedServerCertificateSha256Fingerprint: AcceptedFingerprintBox.Text);
 
             var capabilities = await session.GetCapabilitiesAsync();
-            liveViewCapabilities = RemoteLiveViewCapabilities.FromProtocol(capabilities);
+            shellView.ApplyCapabilities(capabilities);
             StartProjectSession(CreateCurrentProfile());
             StatusText.Text = $"Connected: protocol {capabilities.ProtocolVersion}; transport {GetSelectedTransportProtocol()}";
             if (capabilities.SupportsLogStreaming)
@@ -173,7 +193,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            liveViewCapabilities = RemoteLiveViewCapabilities.None;
+            shellView.ResetConnectionState();
             StatusText.Text = $"Connection failed: {GetConnectionFailureMessage(ex)}";
         }
     }
@@ -345,7 +365,7 @@ public sealed partial class MainWindow : Window
             StopDockedLiveView();
             session?.Dispose();
             session = null;
-            liveViewCapabilities = RemoteLiveViewCapabilities.None;
+            shellView.ResetConnectionState();
             StatusText.Text = $"ADB forward tcp:{hostPort} removed for {selectedDevice.Device.Serial}.";
         }
         catch (Exception ex)
@@ -380,6 +400,7 @@ public sealed partial class MainWindow : Window
         }
 
         StopDockedLiveView();
+        HideDockPane("liveView");
         floatingLiveViewControl = CreateRemoteViewControl();
         var viewModel = new LiveViewPanelViewModel
         {
@@ -422,7 +443,7 @@ public sealed partial class MainWindow : Window
 
         dockedLiveViewControl = CreateRemoteViewControl();
         remoteToolsView.LiveView.Content = dockedLiveViewControl;
-        RemoteToolsPanel.SelectedTabIndex = 1;
+        ShowDockPane("liveView");
         restoreDockedLiveViewOnConnect = true;
         StatusText.Text = "Live view docked on the right.";
         ScheduleLayoutSave();
@@ -640,6 +661,8 @@ public sealed partial class MainWindow : Window
         pane.IsVisible = isVisible;
         WorkspaceDockLayout.InvalidateMeasure();
         WorkspaceDockLayout.InvalidateArrange();
+        RightDockLayout.InvalidateMeasure();
+        RightDockLayout.InvalidateArrange();
     }
 
     private Control? CreatePanelContent(string panelId, bool floating)
@@ -715,6 +738,7 @@ public sealed partial class MainWindow : Window
         {
             "controlTree" => ControlTreePane,
             "remoteTools" => RemoteToolsPane,
+            "liveView" => LiveViewPane,
             "logs" => LogsPane,
             _ => null,
         };
@@ -796,6 +820,7 @@ public sealed partial class MainWindow : Window
             if (FindTreeItem(root, nodeId) is { } item)
             {
                 ControlTreePanel.SelectItem(item);
+                ControlTreeSelectionChanged(item);
                 StatusText.Text = $"Selected {item.Header} from live view.";
                 return true;
             }
@@ -1049,6 +1074,14 @@ public sealed partial class MainWindow : Window
         });
     }
 
+    private void WorkspaceTerminalPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.Equals(e.PropertyName, nameof(TerminalPanelViewModel.WorkingDirectory), StringComparison.Ordinal))
+        {
+            ScheduleLayoutSave();
+        }
+    }
+
     private void StartLogStream()
     {
         if (session is null)
@@ -1089,6 +1122,13 @@ public sealed partial class MainWindow : Window
         {
             await foreach (var entry in session!.WatchLogsAsync(minimumLevel, null, cancellationToken))
             {
+                if (RemoteLogDisplayFormatter.IsKeepAlive(entry))
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                        UpdateLogStreamStatus($"Streaming logs ({minimumLevel}); {RemoteLogEntryCount} entries."));
+                    continue;
+                }
+
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     var row = RemoteLogDisplayFormatter.Format(entry);
@@ -1256,8 +1296,10 @@ public sealed partial class MainWindow : Window
         layout.LogPaneHeight = WorkspaceDockLayout.SouthHeight;
         layout.RightToolTabIndex = Math.Max(0, RemoteToolsPanel.SelectedTabIndex);
         layout.WorkspaceTabIndex = Math.Max(0, WorkspacePanel.SelectedTabIndex);
+        layout.TerminalWorkingDirectory = workspaceView.Terminal.WorkingDirectory;
         layout.LogsPoppedOut = logView.IsPoppedOut;
-        layout.LiveViewDocked = dockedLiveViewControl is not null || restoreDockedLiveViewOnConnect;
+        layout.LiveViewDocked = LiveViewPane.IsVisible || dockedLiveViewControl is not null || restoreDockedLiveViewOnConnect;
+        layout.LiveViewDockStateInitialized = true;
         layout.ControlTreeAutoHidden = ControlTreePane.IsAutoHidden;
         layout.PropertiesAutoHidden = false;
         layout.RemoteToolsAutoHidden = RemoteToolsPane.IsAutoHidden;
@@ -1268,6 +1310,7 @@ public sealed partial class MainWindow : Window
     {
         if (layout is null)
         {
+            shellView.ApplyLayoutState(null);
             return;
         }
 
@@ -1291,9 +1334,13 @@ public sealed partial class MainWindow : Window
             WorkspaceDockLayout.WestWidth = Clamp(layout.TreePaneWidth, 220, 800);
             WorkspaceDockLayout.EastWidth = Clamp(layout.RightPaneWidth, 300, 900);
             WorkspaceDockLayout.SouthHeight = Clamp(layout.LogPaneHeight, 120, 500);
-            RemoteToolsPanel.SelectedTabIndex = Math.Clamp(layout.RightToolTabIndex, 0, 2);
+            RemoteToolsPanel.SelectedTabIndex = Math.Clamp(layout.RightToolTabIndex, 0, 1);
             WorkspacePanel.SelectedTabIndex = Math.Clamp(layout.WorkspaceTabIndex, 0, 1);
-            restoreDockedLiveViewOnConnect = layout.LiveViewDocked;
+            workspaceView.Terminal.WorkingDirectory = string.IsNullOrWhiteSpace(layout.TerminalWorkingDirectory)
+                ? ToolProcessContext.StartupWorkingDirectory
+                : ToolProcessContext.ResolveStartupWorkingDirectory(layout.TerminalWorkingDirectory);
+            shellView.ApplyLayoutState(layout);
+            SetDockPaneVisibility("liveView", restoreDockedLiveViewOnConnect);
             ControlTreePane.IsAutoHidden = layout.ControlTreeAutoHidden;
             RemoteToolsPane.IsAutoHidden = layout.RemoteToolsAutoHidden;
             LogsPane.IsAutoHidden = layout.LogsAutoHidden;
@@ -1663,9 +1710,9 @@ public sealed partial class MainWindow : Window
         workspaceView.Terminal.RemoteControlTransportProtocol = GetSelectedTransportProtocol();
         workspaceView.Terminal.RemoteControlCertificatePath = CertificatePathBox.Text ?? string.Empty;
         workspaceView.Terminal.RemoteControlAcceptedFingerprint = AcceptedFingerprintBox.Text ?? string.Empty;
-        if (mcpHttpServer is not null)
+        if (mcpHostController?.Endpoint is { } endpoint)
         {
-            workspaceView.Terminal.RemoteControlMcpUrl = mcpHttpServer.Endpoint.ToString();
+            workspaceView.Terminal.RemoteControlMcpUrl = endpoint.ToString();
         }
     }
 
@@ -1731,7 +1778,7 @@ public sealed partial class MainWindow : Window
             }
             else
             {
-                parent.Children.Add(item);
+                parent.AddChild(item);
             }
         }
 
@@ -1742,8 +1789,10 @@ public sealed partial class MainWindow : Window
 /// <summary>
 /// View model for a remote control tree node.
 /// </summary>
-public sealed class RemoteTreeItem
+public sealed class RemoteTreeItem : INotifyPropertyChanged
 {
+    private bool isExpanded;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteTreeItem"/> class.
     /// </summary>
@@ -1756,10 +1805,18 @@ public sealed class RemoteTreeItem
             : $"{node.TypeName} {node.Name}";
     }
 
+    /// <inheritdoc />
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     /// <summary>
     /// Gets the protocol tree node.
     /// </summary>
     public TreeNode Node { get; }
+
+    /// <summary>
+    /// Gets the parent tree item, when the node is not a root.
+    /// </summary>
+    public RemoteTreeItem? Parent { get; private set; }
 
     /// <summary>
     /// Gets the display header.
@@ -1767,9 +1824,56 @@ public sealed class RemoteTreeItem
     public string Header { get; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether this item is expanded in the tree panel.
+    /// </summary>
+    public bool IsExpanded
+    {
+        get => isExpanded;
+        set
+        {
+            if (isExpanded == value)
+            {
+                return;
+            }
+
+            isExpanded = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
     /// Gets child tree items.
     /// </summary>
     public ObservableCollection<RemoteTreeItem> Children { get; } = [];
+
+    /// <summary>
+    /// Adds a child item and records the parent relationship used to reveal live-view selections.
+    /// </summary>
+    /// <param name="child">Child item.</param>
+    public void AddChild(RemoteTreeItem child)
+    {
+        ArgumentNullException.ThrowIfNull(child);
+        child.Parent = this;
+        Children.Add(child);
+    }
+
+    /// <summary>
+    /// Expands every ancestor so this item is visible when selected programmatically.
+    /// </summary>
+    public void ExpandAncestors()
+    {
+        var current = Parent;
+        while (current is not null)
+        {
+            current.IsExpanded = true;
+            current = current.Parent;
+        }
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 }
 
 /// <summary>
