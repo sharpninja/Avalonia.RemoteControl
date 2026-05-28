@@ -273,6 +273,7 @@ public static class RemoteControlMcpToolCatalog
                     ["serial"] = StringProperty("ADB device serial."),
                     ["apkPath"] = StringProperty("Local APK path."),
                     ["replace"] = BooleanProperty("Whether adb install should replace an existing package. Defaults to true."),
+                    ["noIncremental"] = BooleanProperty("Whether adb install should disable incremental install. Defaults to true to avoid startup ANR false positives on emulators."),
                 },
                 required = new[] { "serial", "apkPath" },
                 additionalProperties = false,

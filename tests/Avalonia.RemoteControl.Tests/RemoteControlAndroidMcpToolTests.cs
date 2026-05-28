@@ -34,7 +34,7 @@ public sealed class RemoteControlAndroidMcpToolTests
     public async Task AndroidDeviceManagerConstructsAdbDiagnosticsAndInputCommands()
     {
         var runner = new RecordingAdbCommandRunner();
-        runner.Respond("-s emulator-5554 install -r app.apk", AdbCommandResult.Success);
+        runner.Respond("-s emulator-5554 install --no-incremental -r app.apk", AdbCommandResult.Success);
         runner.Respond("-s emulator-5554 shell monkey -p com.example.app 1", AdbCommandResult.Success);
         runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47101", AdbCommandResult.Success);
         runner.Respond("-s emulator-5554 shell pidof com.example.app", new AdbCommandResult(0, "1234\n", string.Empty));
@@ -56,7 +56,7 @@ public sealed class RemoteControlAndroidMcpToolTests
         Assert.Equal("log line\n", logcat);
         Assert.Equal(
             [
-                "-s emulator-5554 install -r app.apk",
+                "-s emulator-5554 install --no-incremental -r app.apk",
                 "-s emulator-5554 shell monkey -p com.example.app 1",
                 "-s emulator-5554 forward tcp:47100 tcp:47101",
                 "-s emulator-5554 shell pidof com.example.app",
@@ -94,7 +94,7 @@ public sealed class RemoteControlAndroidMcpToolTests
     {
         var runner = new RecordingAdbCommandRunner();
         runner.Respond(
-            "-s emulator-5554 install -r broken.apk",
+            "-s emulator-5554 install --no-incremental -r broken.apk",
             new AdbCommandResult(1, string.Empty, "INSTALL_FAILED_INVALID_APK"));
         runner.Respond(
             "-s emulator-5554 shell monkey -p com.example.missing 1",
@@ -110,6 +110,21 @@ public sealed class RemoteControlAndroidMcpToolTests
         Assert.Equal("INSTALL_FAILED_INVALID_APK", install.Result.StandardError);
         Assert.Contains("Unable to launch Android package", launch.Message, StringComparison.Ordinal);
         Assert.Equal("No activities found", launch.Result.StandardError);
+    }
+
+    [Fact]
+    public async Task AndroidDeviceManagerCanDisableNoIncrementalInstallFlag()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond("-s emulator-5554 install -r app.apk", AdbCommandResult.Success);
+        var client = new AndroidDeviceManagerClient(runner, new RecordingAndroidCommandRunner());
+
+        await client.InstallApkAsync(
+            "emulator-5554",
+            "app.apk",
+            new AndroidApkInstallOptions { Replace = true, NoIncremental = false });
+
+        Assert.Equal(["-s emulator-5554 install -r app.apk"], runner.Commands);
     }
 
     [Fact]
@@ -150,6 +165,34 @@ public sealed class RemoteControlAndroidMcpToolTests
         var device = result.RootElement.GetProperty("devices").EnumerateArray().Single();
         Assert.Equal("emulator-5554", device.GetProperty("serial").GetString());
         Assert.Equal("Pixel_6", device.GetProperty("model").GetString());
+    }
+
+    [Fact]
+    public async Task AndroidMcpInstallApkDefaultsToNoIncrementalAndReportsOption()
+    {
+        var adbRunner = new RecordingAdbCommandRunner();
+        var sdkRunner = new RecordingAndroidCommandRunner();
+        adbRunner.Respond(
+            "-s emulator-5554 install --no-incremental -r app.apk",
+            AdbCommandResult.Success);
+        var service = new RemoteControlAndroidMcpToolService(new AndroidDeviceManagerClient(adbRunner, sdkRunner));
+
+        using var document = JsonDocument.Parse(
+            """
+            {
+              "serial": "emulator-5554",
+              "apkPath": "app.apk"
+            }
+            """);
+        var json = await service.CallAsync(
+            RemoteControlMcpToolCatalog.AndroidInstallApk,
+            document.RootElement);
+
+        using var result = JsonDocument.Parse(json);
+        Assert.True(result.RootElement.GetProperty("installed").GetBoolean());
+        Assert.True(result.RootElement.GetProperty("replace").GetBoolean());
+        Assert.True(result.RootElement.GetProperty("noIncremental").GetBoolean());
+        Assert.Equal(["-s emulator-5554 install --no-incremental -r app.apk"], adbRunner.Commands);
     }
 
     [Fact]

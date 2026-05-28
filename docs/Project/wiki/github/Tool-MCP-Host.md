@@ -25,6 +25,14 @@ Exposed tools are intentionally narrow and map to existing remote-control client
 - `avalonia_remote_invoke_click`: click a current node ID found from the latest snapshot.
 - `avalonia_remote_focus`: focus a current node ID when focus affects the next interaction.
 - `avalonia_remote_set_property`: set an approved public property, then refresh the snapshot to verify the result.
+- `avalonia_android_list_devices`: list connected Android devices and emulators.
+- `avalonia_android_list_avds`: list configured Android virtual devices.
+- `avalonia_android_start_avd`: start an emulator by AVD name.
+- `avalonia_android_install_apk`: install an APK on a device or emulator. The default install uses `--no-incremental` and `-r` to avoid emulator startup ANR false positives; pass `noIncremental: false` only when intentionally testing incremental install behavior.
+- `avalonia_android_launch_package`: launch an installed Android package.
+- `avalonia_android_forward` and `avalonia_android_remove_forward`: create and remove ADB TCP forwards.
+- `avalonia_android_logcat`, `avalonia_android_screenshot`, and `avalonia_android_ui_tree`: collect Android diagnostics.
+- `avalonia_android_tap`, `avalonia_android_swipe`, and `avalonia_android_text`: send Android shell-level input when the Avalonia tree cannot address the target.
 
 Remote mutation remains governed by the debuggee server's existing policy gates. The MCP host does not bypass authentication, transport selection, certificate trust, or server-side action/property policy.
 

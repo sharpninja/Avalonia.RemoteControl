@@ -77,7 +77,7 @@ public sealed class MainActivity : AvaloniaMainActivity
 
             Log.Info(LogTag, "Avalonia.RemoteControl Android bridge host started.");
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (System.OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             Log.Info(LogTag, "Avalonia.RemoteControl Android bridge host startup canceled.");
         }

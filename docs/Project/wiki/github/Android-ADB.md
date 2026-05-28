@@ -61,6 +61,16 @@ The desktop client can also create this explicit forward from the top Connect bu
 
 To open an interactive remote window over ADB, connect first, then click Live View in the desktop client. The saved Android bridge profile uses `arc-protobuf-v1`, and the live window uses that bridge for `WatchTree`, `WatchFrames`, and `SendInput`.
 
+## Install APK From MCP Tools
+
+Codex sessions hosted by the desktop tool can install an APK with `avalonia_android_install_apk`. The install tool defaults to:
+
+```text
+adb -s <serial> install --no-incremental -r <apkPath>
+```
+
+`--no-incremental` is the default because Pixel emulator validation showed incremental installs can surface Android startup ANR dialogs even after the probe finishes loading. Use `noIncremental: false` only when intentionally testing Android incremental install behavior.
+
 ## Connect By Package Marker
 
 Use this when the Android app writes `files/avalonia-remote-control.json` in package-private storage:

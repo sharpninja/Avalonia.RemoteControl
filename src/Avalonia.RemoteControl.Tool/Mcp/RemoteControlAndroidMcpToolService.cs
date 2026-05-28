@@ -121,8 +121,17 @@ public sealed class RemoteControlAndroidMcpToolService : IAndroidMcpToolService
         var serial = RemoteControlMcpToolCatalog.GetRequiredString(arguments, "serial");
         var apkPath = RemoteControlMcpToolCatalog.GetRequiredString(arguments, "apkPath");
         var replace = GetOptionalBoolean(arguments, "replace") ?? true;
+        var noIncremental = GetOptionalBoolean(arguments, "noIncremental") ?? true;
 
-        await androidClient.InstallApkAsync(serial, apkPath, replace, cancellationToken).ConfigureAwait(false);
+        await androidClient.InstallApkAsync(
+            serial,
+            apkPath,
+            new AndroidApkInstallOptions
+            {
+                Replace = replace,
+                NoIncremental = noIncremental,
+            },
+            cancellationToken).ConfigureAwait(false);
 
         return new
         {
@@ -130,6 +139,7 @@ public sealed class RemoteControlAndroidMcpToolService : IAndroidMcpToolService
             serial,
             apkPath,
             replace,
+            noIncremental,
         };
     }
 

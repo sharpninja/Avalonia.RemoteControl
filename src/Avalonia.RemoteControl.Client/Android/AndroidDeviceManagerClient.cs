@@ -91,17 +91,42 @@ public sealed class AndroidDeviceManagerClient
     /// <param name="replace">Whether to replace an existing package.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the install operation.</returns>
-    public async Task InstallApkAsync(
+    public Task InstallApkAsync(
         string serial,
         string apkPath,
         bool replace = true,
+        CancellationToken cancellationToken = default) =>
+        InstallApkAsync(
+            serial,
+            apkPath,
+            new AndroidApkInstallOptions { Replace = replace },
+            cancellationToken);
+
+    /// <summary>
+    /// Installs an APK onto a selected device.
+    /// </summary>
+    /// <param name="serial">ADB serial.</param>
+    /// <param name="apkPath">Local APK path.</param>
+    /// <param name="options">Install options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the install operation.</returns>
+    public async Task InstallApkAsync(
+        string serial,
+        string apkPath,
+        AndroidApkInstallOptions? options,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(serial);
         ArgumentException.ThrowIfNullOrWhiteSpace(apkPath);
 
+        options ??= new AndroidApkInstallOptions();
         var arguments = new List<string> { "-s", serial, "install" };
-        if (replace)
+        if (options.NoIncremental)
+        {
+            arguments.Add("--no-incremental");
+        }
+
+        if (options.Replace)
         {
             arguments.Add("-r");
         }
@@ -445,6 +470,22 @@ public sealed class AndroidDeviceManagerClient
             .Replace(" ", "%s", StringComparison.Ordinal);
 
     private static string Format(int value) => value.ToString(CultureInfo.InvariantCulture);
+}
+
+/// <summary>
+/// Defines options for installing an Android APK through adb.
+/// </summary>
+public sealed record AndroidApkInstallOptions
+{
+    /// <summary>
+    /// Gets or sets a value indicating whether adb install should replace an existing package.
+    /// </summary>
+    public bool Replace { get; init; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether adb install should disable incremental install.
+    /// </summary>
+    public bool NoIncremental { get; init; } = true;
 }
 
 /// <summary>
