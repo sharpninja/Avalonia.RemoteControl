@@ -72,8 +72,6 @@ public sealed partial class MainWindow : Window
 
     private PropertiesPanelViewModel propertiesView => workspaceView.Properties;
 
-    private ObservableCollection<PropertyRow> propertyRows => propertiesView.Rows;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="MainWindow"/> class.
     /// </summary>
@@ -86,6 +84,7 @@ public sealed partial class MainWindow : Window
         WorkspacePanel.ViewModel = workspaceView;
         WorkspacePanel.SelectedTabChanged += (_, _) => ScheduleLayoutSave();
         WorkspacePanel.Properties.PropertySelected += (_, row) => PropertySelectionChanged(row);
+        propertiesView.PropertyEditRequested += (_, args) => PropertyGridEditRequested(args);
         workspaceView.Terminal.PropertyChanged += WorkspaceTerminalPropertyChanged;
         RemoteToolsPanel.ViewModel = remoteToolsView;
         RemoteToolsPanel.SelectedTabChanged += (_, _) => ScheduleLayoutSave();
@@ -785,7 +784,7 @@ public sealed partial class MainWindow : Window
             var snapshot = await session.GetSnapshotAsync();
             lastSnapshot = snapshot;
             selectedNode = null;
-            propertyRows.Clear();
+            propertiesView.ShowNode(null);
             treeItems.Clear();
 
             foreach (var item in BuildTree(snapshot))
@@ -850,19 +849,11 @@ public sealed partial class MainWindow : Window
     private void ControlTreeSelectionChanged(RemoteTreeItem? item)
     {
         selectedNode = item?.Node;
-        propertyRows.Clear();
+        propertiesView.ShowNode(selectedNode);
 
         if (selectedNode is null)
         {
             return;
-        }
-
-        foreach (var property in selectedNode.Properties)
-        {
-            propertyRows.Add(new PropertyRow(
-                property.Name,
-                property.Value,
-                $"{property.Name} = {property.Value} ({property.ValueType})"));
         }
 
         StatusText.Text = $"Selected {selectedNode.TypeName} {selectedNode.Name}".TrimEnd();
@@ -943,11 +934,36 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        await SetSelectedNodePropertyAsync(
+            remoteToolsView.Actions.PropertyName,
+            remoteToolsView.Actions.PropertyValue,
+            "Property update failed");
+    }
+
+    private async void PropertyGridEditRequested(RemotePropertyEditRequestedEventArgs args)
+    {
+        if (session is null || selectedNode is null)
+        {
+            StatusText.Text = "Select a node before setting a property.";
+            return;
+        }
+
+        remoteToolsView.Actions.PropertyName = args.Row.Name;
+        remoteToolsView.Actions.PropertyValue = args.Row.Value;
+        await SetSelectedNodePropertyAsync(args.Row.Name, args.Row.Value, "Property grid update failed");
+    }
+
+    private async Task SetSelectedNodePropertyAsync(string propertyName, string propertyValue, string failurePrefix)
+    {
+        if (session is null || selectedNode is null)
+        {
+            StatusText.Text = "Select a node before setting a property.";
+            return;
+        }
+
         try
         {
             var nodeId = selectedNode.Id;
-            var propertyName = remoteToolsView.Actions.PropertyName;
-            var propertyValue = remoteToolsView.Actions.PropertyValue;
             var beforeArtifactId = AddSnapshotArtifact("before-set-property");
             var result = await session.SetPropertyAsync(
                 nodeId,
@@ -966,7 +982,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"Property update failed: {ex.Message}";
+            StatusText.Text = $"{failurePrefix}: {ex.Message}";
         }
     }
 
@@ -1882,7 +1898,18 @@ public sealed class RemoteTreeItem : INotifyPropertyChanged
 /// <param name="Name">Property name.</param>
 /// <param name="Value">Current value.</param>
 /// <param name="Display">Display text.</param>
-public sealed record PropertyRow(string Name, string Value, string Display)
+/// <param name="DeclaringType">Remote declaring type.</param>
+/// <param name="ValueType">Remote value type.</param>
+/// <param name="CanWrite">Whether the remote runtime reports the property as writable.</param>
+/// <param name="IsRedacted">Whether the remote runtime redacted the property value.</param>
+public sealed record PropertyRow(
+    string Name,
+    string Value,
+    string Display,
+    string DeclaringType = "",
+    string ValueType = "",
+    bool CanWrite = false,
+    bool IsRedacted = false)
 {
     /// <inheritdoc />
     public override string ToString()

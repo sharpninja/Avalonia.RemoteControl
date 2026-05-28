@@ -218,6 +218,16 @@ public sealed record RemoteControlProjectPropertyValue
     public bool IsRedacted { get; init; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the property value type is an enum.
+    /// </summary>
+    public bool IsEnum { get; init; }
+
+    /// <summary>
+    /// Gets or sets the enum values reported by the remote runtime.
+    /// </summary>
+    public List<string> EnumValues { get; init; } = [];
+
+    /// <summary>
     /// Converts a protocol property value to a project property value.
     /// </summary>
     /// <param name="property">Protocol property value.</param>
@@ -234,6 +244,8 @@ public sealed record RemoteControlProjectPropertyValue
             ValueType = property.ValueType,
             CanWrite = property.CanWrite,
             IsRedacted = property.IsRedacted,
+            IsEnum = property.IsEnum,
+            EnumValues = [.. property.EnumValues],
         };
     }
 }

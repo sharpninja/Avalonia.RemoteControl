@@ -121,6 +121,7 @@ public sealed class AvaloniaControlTreeSnapshotProvider : IControlTreeSnapshotPr
         {
             var isRedacted = IsSensitive(property.Name);
             var valueType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+            var isEnum = valueType.IsEnum;
             var value = isRedacted ? "[redacted]" : RenderValue(property.GetValue(control), valueType);
 
             properties.Add(new RemoteControlPropertySnapshot(
@@ -129,7 +130,9 @@ public sealed class AvaloniaControlTreeSnapshotProvider : IControlTreeSnapshotPr
                 value,
                 GetFriendlyTypeName(valueType),
                 property.SetMethod is { IsPublic: true },
-                isRedacted));
+                isRedacted,
+                isEnum,
+                isEnum ? Enum.GetNames(valueType) : []));
         }
 
         return properties

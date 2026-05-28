@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using Avalonia.RemoteControl.Client.Logging;
 using Avalonia.RemoteControl.Protocol;
+using Avalonia.RemoteControl.Protocol.V1;
 
 namespace Avalonia.RemoteControl.Tool;
 
@@ -74,11 +75,37 @@ public sealed class ControlTreePanelViewModel : ToolPanelViewModel
 public sealed class PropertiesPanelViewModel : ToolPanelViewModel
 {
     private PropertyRow? selectedItem;
+    private RemoteNodePropertyGridObject? gridObject;
+
+    /// <summary>
+    /// Raised when a writable property is edited through the property grid.
+    /// </summary>
+    public event EventHandler<RemotePropertyEditRequestedEventArgs>? PropertyEditRequested;
 
     /// <summary>
     /// Gets property rows for the selected node.
     /// </summary>
     public ObservableCollection<PropertyRow> Rows { get; } = [];
+
+    /// <summary>
+    /// Gets the property-grid source object for the selected node.
+    /// </summary>
+    public RemoteNodePropertyGridObject? GridObject
+    {
+        get => gridObject;
+        private set
+        {
+            if (SetField(ref gridObject, value))
+            {
+                OnPropertyChanged(nameof(HasGridObject));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a selected node can be shown in the property grid.
+    /// </summary>
+    public bool HasGridObject => GridObject is not null;
 
     /// <summary>
     /// Gets or sets the selected property row.
@@ -87,6 +114,104 @@ public sealed class PropertiesPanelViewModel : ToolPanelViewModel
     {
         get => selectedItem;
         set => SetField(ref selectedItem, value);
+    }
+
+    /// <summary>
+    /// Displays the properties for a selected remote tree node.
+    /// </summary>
+    /// <param name="node">Selected remote node.</param>
+    public void ShowNode(TreeNode? node)
+    {
+        Rows.Clear();
+        SelectedItem = null;
+        GridObject = null;
+
+        if (node is null)
+        {
+            return;
+        }
+
+        var entries = new List<RemoteNodePropertyGridEntry>(node.Properties.Count);
+        foreach (var property in node.Properties)
+        {
+            var row = new PropertyRow(
+                property.Name,
+                property.Value,
+                $"{property.Name} = {property.Value} ({property.ValueType})",
+                property.DeclaringType,
+                property.ValueType,
+                property.CanWrite,
+                property.IsRedacted);
+            Rows.Add(row);
+            entries.Add(RemoteNodePropertyGridEntry.FromPropertyValue(property));
+        }
+
+        GridObject = new RemoteNodePropertyGridObject(node.Id, entries, OnPropertyGridValueSet);
+    }
+
+    /// <summary>
+    /// Selects a property row from its property-grid descriptor name.
+    /// </summary>
+    /// <param name="descriptorName">Property-grid descriptor name.</param>
+    /// <returns>The selected row, or <see langword="null"/> when not found.</returns>
+    public PropertyRow? SelectProperty(string descriptorName)
+    {
+        if (GridObject?.FindEntry(descriptorName) is not { } entry)
+        {
+            return null;
+        }
+
+        var row = Rows.FirstOrDefault(candidate =>
+            string.Equals(candidate.Name, entry.Name, StringComparison.Ordinal)
+            && string.Equals(candidate.DeclaringType, entry.DeclaringType, StringComparison.Ordinal));
+
+        if (row is null)
+        {
+            row = new PropertyRow(
+                entry.Name,
+                entry.Value,
+                $"{entry.Name} = {entry.Value} ({entry.ValueType})",
+                entry.DeclaringType,
+                entry.ValueType,
+                entry.CanWrite,
+                entry.IsRedacted);
+        }
+
+        SelectedItem = row;
+        return row;
+    }
+
+    private void OnPropertyGridValueSet(RemoteNodePropertyGridEntry entry, string value)
+    {
+        var row = UpdateRow(entry, value);
+        SelectedItem = row;
+        PropertyEditRequested?.Invoke(this, new RemotePropertyEditRequestedEventArgs(row));
+    }
+
+    private PropertyRow UpdateRow(RemoteNodePropertyGridEntry entry, string value)
+    {
+        var row = new PropertyRow(
+            entry.Name,
+            value,
+            $"{entry.Name} = {value} ({entry.ValueType})",
+            entry.DeclaringType,
+            entry.ValueType,
+            entry.CanWrite,
+            entry.IsRedacted);
+
+        for (var index = 0; index < Rows.Count; index++)
+        {
+            var candidate = Rows[index];
+            if (string.Equals(candidate.Name, entry.Name, StringComparison.Ordinal)
+                && string.Equals(candidate.DeclaringType, entry.DeclaringType, StringComparison.Ordinal))
+            {
+                Rows[index] = row;
+                return row;
+            }
+        }
+
+        Rows.Add(row);
+        return row;
     }
 }
 

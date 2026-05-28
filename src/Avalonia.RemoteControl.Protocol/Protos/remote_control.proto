@@ -77,6 +77,8 @@ message PropertyValue {
   string value_type = 4;
   bool can_write = 5;
   bool is_redacted = 6;
+  bool is_enum = 7;
+  repeated string enum_values = 8;
 }
 
 message InvokeClickRequest {

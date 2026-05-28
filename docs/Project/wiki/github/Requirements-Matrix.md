@@ -122,6 +122,8 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TR-CLIENT-UI-003 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-UI-004 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-UI-005 | Tracked | Technical-Requirements.md |
+| TR-CLIENT-UI-006 | Tracked | Technical-Requirements.md |
+| TR-CLIENT-UI-007 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-001 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-002 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-003 | Tracked | Technical-Requirements.md |
@@ -238,6 +240,8 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TEST-CLIENT-013 | Tracked | Testing-Requirements.md |
 | TEST-CLIENT-014 | Tracked | Testing-Requirements.md |
 | TEST-CLIENT-015 | Tracked | Testing-Requirements.md |
+| TEST-CLIENT-016 | Tracked | Testing-Requirements.md |
+| TEST-CLIENT-017 | Tracked | Testing-Requirements.md |
 | TEST-DOC-001 | Tracked | Testing-Requirements.md |
 | TEST-GATE-001 | Tracked | Testing-Requirements.md |
 | TEST-GATE-002 | Tracked | Testing-Requirements.md |

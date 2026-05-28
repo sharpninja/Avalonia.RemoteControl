@@ -67,6 +67,8 @@
 | TEST-CLIENT-013 | Build and unit validation must verify the main shell dock layout exposes west, east, south, and default workspace regions and that the terminal panel is hosted in the default undeclared workspace surface. |
 | TEST-CLIENT-014 | Unit tests verify both the legacy diagnostic stdio server and the in-process Streamable HTTP MCP endpoint handle initialize, tool listing, and tool call JSON-RPC messages without emitting non-MCP payloads. |
 | TEST-CLIENT-015 | Unit tests verify the embedded terminal Codex MCP preset registers the running app loopback MCP URL, seeds guidance for using capabilities, snapshots, focus, click, and property tools with tree-first node discovery instead of screenshots, uses the captured tool startup working directory instead of a later process current directory, returns equivalent MCP initialize instructions, and does not pass remote endpoint, transport, bearer token, environment variable names, profile arguments, or avalonia-remote mcp child-process commands. |
+| TEST-CLIENT-016 | Unit tests verify selected-node properties are exposed as property-grid descriptors, readonly and redacted properties cannot be edited, duplicate property names get stable descriptor names, edit events update rows and request remote mutation, and clearing the selected node clears property-grid state. |
+| TEST-CLIENT-017 | Unit tests verify enum-valued remote properties expose an enum descriptor type with the reported value names and that selecting an enum value produces the remote string value used by SetPropertyAsync. |
 
 ## TEST-DOC
 

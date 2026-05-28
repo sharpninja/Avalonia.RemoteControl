@@ -123,7 +123,7 @@ public static class RemoteControlProtocolMappers
 
     private static PropertyValue ToProtocol(RemoteControlPropertySnapshot property)
     {
-        return new PropertyValue
+        var response = new PropertyValue
         {
             Name = property.Name,
             DeclaringType = property.DeclaringType,
@@ -131,6 +131,10 @@ public static class RemoteControlProtocolMappers
             ValueType = property.ValueType,
             CanWrite = property.CanWrite,
             IsRedacted = property.IsRedacted,
+            IsEnum = property.IsEnum,
         };
+
+        response.EnumValues.AddRange(property.EnumValues ?? []);
+        return response;
     }
 }

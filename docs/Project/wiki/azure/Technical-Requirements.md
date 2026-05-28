@@ -192,6 +192,14 @@
 
 **Terminal dock panel control** — The terminal surface must be a custom Avalonia control backed by a terminal view model and hosted through the same dock-panel composition model as the other client panels.
 
+## TR-CLIENT-UI-006
+
+**Dynamic property-grid adapter for selected nodes** — The Properties tab must host an Avalonia PropertyGrid backed by a dynamic ICustomTypeDescriptor adapter over the selected remote tree node so arbitrary remote property names, declaring types, readonly state, and redaction state are rendered without generating static client DTOs.
+
+## TR-CLIENT-UI-007
+
+**Enum-aware property-grid editors** — The protocol must carry enum metadata for inspected properties and the desktop PropertyGrid adapter must expose enum-valued properties with an enum property type so the grid renders a value dropdown instead of a free-form text editor when enum values are known.
+
 ## TR-DI-HOSTING-001
 
 **Expose `IServiceCollection` integration for server registration.** — Expose `IServiceCollection` integration for server registration.

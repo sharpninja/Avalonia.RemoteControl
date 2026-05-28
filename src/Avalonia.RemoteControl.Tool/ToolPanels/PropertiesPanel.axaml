@@ -1,10 +1,22 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:pg="clr-namespace:Avalonia.PropertyGrid.Controls;assembly=Avalonia.PropertyGrid"
              xmlns:tool="using:Avalonia.RemoteControl.Tool"
              x:Class="Avalonia.RemoteControl.Tool.PropertiesPanel"
              x:DataType="tool:PropertiesPanelViewModel">
-  <ListBox x:Name="Rows"
-           Classes="vs-tool-list"
-           ItemsSource="{Binding Rows}"
-           SelectionChanged="RowsSelectionChanged" />
+  <Grid>
+    <pg:PropertyGrid DataContext="{Binding GridObject}"
+                     IsTitleVisible="False"
+                     IsHeaderVisible="True"
+                     IsQuickFilterVisible="True"
+                     IsCategoryVisible="True"
+                     AllCategoriesExpanded="True"
+                     NameWidth="220"
+                     PropertyGotFocus="PropertyGridPropertyGotFocus" />
+    <TextBlock Classes="muted"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               Text="Select a control tree node to inspect properties."
+               IsVisible="{Binding !HasGridObject}" />
+  </Grid>
 </UserControl>

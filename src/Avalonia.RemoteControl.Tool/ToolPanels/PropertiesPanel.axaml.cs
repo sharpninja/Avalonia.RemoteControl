@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.PropertyGrid.Controls;
 
 namespace Avalonia.RemoteControl.Tool;
 
@@ -29,14 +31,11 @@ public sealed partial class PropertiesPanel : UserControl
         set => DataContext = value;
     }
 
-    private void RowsSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void PropertyGridPropertyGotFocus(object? sender, RoutedEventArgs e)
     {
-        var row = e.AddedItems.OfType<PropertyRow>().FirstOrDefault();
-        if (ViewModel is { } viewModel)
-        {
-            viewModel.SelectedItem = row;
-        }
-
+        var row = e is PropertyGotFocusEventArgs { Context.Property.Name: { } propertyName }
+            ? ViewModel?.SelectProperty(propertyName)
+            : null;
         PropertySelected?.Invoke(this, row);
     }
 }
