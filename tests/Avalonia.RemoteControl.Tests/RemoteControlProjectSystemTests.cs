@@ -41,6 +41,7 @@ public sealed class RemoteControlProjectSystemTests
             profile.AppId,
             profile,
             DateTimeOffset.Parse("2026-05-26T12:01:00Z"));
+        session.AuthenticatedClientIdentity = "desktop-client";
         session.Logs.Add(RemoteControlProjectLogRecord.FromDisplayRow(
             "client 2026-05-26T12:01:00.0000000Z: connected",
             DateTimeOffset.Parse("2026-05-26T12:01:00Z")));
@@ -73,6 +74,7 @@ public sealed class RemoteControlProjectSystemTests
         Assert.Equal(RemoteControlProtocol.AndroidBridgeTransportProtocol, loaded.AppProfiles[0].TransportProtocol);
         Assert.Equal("app.funwashad", loaded.AppProfiles[0].AndroidPackageName);
         Assert.Single(loaded.Sessions);
+        Assert.Equal("desktop-client", loaded.Sessions[0].AuthenticatedClientIdentity);
         Assert.Single(loaded.Sessions[0].Logs);
         Assert.Single(loaded.Sessions[0].Interactions);
         Assert.Single(loaded.Sessions[0].Artifacts);

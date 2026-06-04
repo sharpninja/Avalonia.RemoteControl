@@ -141,7 +141,13 @@
     </tool:DockLayout>
 
     <Border Grid.Row="1" Classes="vs-status-bar" VerticalAlignment="Bottom" HorizontalAlignment="Stretch">
-      <TextBlock x:Name="StatusText" Text="Disconnected" />
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <TextBlock x:Name="StatusText" Text="Disconnected" />
+        <TextBlock x:Name="ConnectionStateText"
+                   Grid.Column="1"
+                   Text="Transport: -; audit: -"
+                   HorizontalAlignment="Right" />
+      </Grid>
     </Border>
   </Grid>
 </Window>

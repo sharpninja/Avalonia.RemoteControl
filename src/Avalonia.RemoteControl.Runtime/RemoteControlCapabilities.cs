@@ -13,6 +13,11 @@ public sealed record RemoteControlCapabilities
     public string ProtocolVersion { get; init; } = RemoteControlProtocol.DisplayVersion;
 
     /// <summary>
+    /// Gets the sanitized authenticated client identity used in remote audit logs.
+    /// </summary>
+    public string AuthenticatedClientIdentity { get; init; } = "unknown";
+
+    /// <summary>
     /// Gets a value indicating whether read-only tree snapshots are supported.
     /// </summary>
     public bool SupportsTreeSnapshots { get; init; } = true;

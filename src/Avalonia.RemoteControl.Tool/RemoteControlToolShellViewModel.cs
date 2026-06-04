@@ -53,6 +53,11 @@ public sealed class RemoteControlToolShellViewModel
     public RemoteLiveViewCapabilities LiveViewCapabilities { get; set; } = RemoteLiveViewCapabilities.None;
 
     /// <summary>
+    /// Gets or sets the audit identity reported by the connected endpoint.
+    /// </summary>
+    public string AuthenticatedClientIdentity { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets a value indicating whether the live view should be docked after connecting.
     /// </summary>
     public bool RestoreDockedLiveViewOnConnect { get; set; } = true;
@@ -73,6 +78,7 @@ public sealed class RemoteControlToolShellViewModel
     public void ResetConnectionState()
     {
         LiveViewCapabilities = RemoteLiveViewCapabilities.None;
+        AuthenticatedClientIdentity = string.Empty;
         RemoteTools.LiveView.Content = null;
     }
 
@@ -83,6 +89,7 @@ public sealed class RemoteControlToolShellViewModel
     public void ApplyCapabilities(GetCapabilitiesResponse capabilities)
     {
         LiveViewCapabilities = RemoteLiveViewCapabilities.FromProtocol(capabilities);
+        AuthenticatedClientIdentity = capabilities.AuthenticatedClientIdentity;
     }
 
     /// <summary>

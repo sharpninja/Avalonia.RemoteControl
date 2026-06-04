@@ -38,6 +38,11 @@ public sealed class RemoteControlProjectSessionRecord
     public string ConnectionMode { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the authenticated audit identity reported by endpoint capabilities.
+    /// </summary>
+    public string AuthenticatedClientIdentity { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the session start timestamp.
     /// </summary>
     public DateTimeOffset StartedUtc { get; set; } = DateTimeOffset.UtcNow;

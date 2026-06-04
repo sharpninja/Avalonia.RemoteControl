@@ -24,6 +24,7 @@ public sealed class GrpcRemoteControlProbe : IRemoteControlProbe
 
         return new RemoteControlProbeResult(
             capabilities.ProtocolVersion,
+            capabilities.AuthenticatedClientIdentity,
             capabilities.SupportsTreeSnapshots,
             capabilities.SupportsTreeStreaming,
             capabilities.SupportsClickInvocation,

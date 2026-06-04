@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Avalonia.RemoteControl.Server.Security;
 
 namespace Avalonia.RemoteControl.Server;
 
@@ -41,6 +42,9 @@ public sealed class AvaloniaRemoteControlService
 
         return new RemoteControlCapabilities
         {
+            AuthenticatedClientIdentity = string.IsNullOrWhiteSpace(configuredOptions.AuthenticatedClientIdentity)
+                ? RemoteControlClientIdentity.Unknown
+                : configuredOptions.AuthenticatedClientIdentity,
             SupportsFrameStreaming = configuredOptions.AllowRemoteFrames,
             SupportsRemoteInput = configuredOptions.AllowRemoteActions && configuredOptions.AllowRemoteInput,
         };

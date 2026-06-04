@@ -25,6 +25,7 @@ public sealed class RemoteControlReadOnlyInspectionTests
         var capabilities = service.GetCapabilities();
 
         Assert.Equal(RemoteControlProtocol.DisplayVersion, capabilities.ProtocolVersion);
+        Assert.Equal("remote-client", capabilities.AuthenticatedClientIdentity);
         Assert.True(capabilities.SupportsTreeSnapshots);
         Assert.True(capabilities.SupportsTreeStreaming);
         Assert.True(capabilities.SupportsClickInvocation);
@@ -113,12 +114,19 @@ public sealed class RemoteControlReadOnlyInspectionTests
         var root = new StackPanel { Name = "GrpcRoot" };
         root.Children.Add(new TextBlock { Name = "GrpcChild", Text = "Child" });
 
-        var grpcService = CreateGrpcService(root, CreateProvider(), new AvaloniaRemoteControlOptions());
+        var grpcService = CreateGrpcService(
+            root,
+            CreateProvider(),
+            new AvaloniaRemoteControlOptions
+            {
+                AuthenticatedClientIdentity = "desktop-client",
+            });
 
         var capabilities = await grpcService.GetCapabilities(new GetCapabilitiesRequest(), context: null!);
         var snapshot = await grpcService.GetSnapshot(new GetSnapshotRequest(), context: null!);
 
         Assert.Equal(RemoteControlProtocol.DisplayVersion, capabilities.ProtocolVersion);
+        Assert.Equal("desktop-client", capabilities.AuthenticatedClientIdentity);
         Assert.True(capabilities.SupportsTreeSnapshots);
         Assert.Equal(2, snapshot.Nodes.Count);
         Assert.Equal("GrpcRoot", snapshot.Nodes[0].Name);

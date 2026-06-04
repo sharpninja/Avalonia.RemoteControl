@@ -171,9 +171,12 @@ public sealed partial class MainWindow : Window
                 acceptedServerCertificateSha256Fingerprint: AcceptedFingerprintBox.Text);
 
             var capabilities = await session.GetCapabilitiesAsync();
+            var transportProtocol = GetSelectedTransportProtocol();
             shellView.ApplyCapabilities(capabilities);
-            StartProjectSession(CreateCurrentProfile());
-            StatusText.Text = $"Connected: protocol {capabilities.ProtocolVersion}; transport {GetSelectedTransportProtocol()}";
+            StartProjectSession(CreateCurrentProfile(), capabilities.AuthenticatedClientIdentity);
+            UpdateConnectionStateText(capabilities.ProtocolVersion, capabilities.AuthenticatedClientIdentity, transportProtocol);
+            StatusText.Text =
+                $"Connected: protocol {capabilities.ProtocolVersion}; transport {transportProtocol}; audit {FormatAuditIdentity(capabilities.AuthenticatedClientIdentity)}";
             if (capabilities.SupportsLogStreaming)
             {
                 StartLogStream();
@@ -193,6 +196,7 @@ public sealed partial class MainWindow : Window
         catch (Exception ex)
         {
             shellView.ResetConnectionState();
+            ClearConnectionStateText();
             StatusText.Text = $"Connection failed: {GetConnectionFailureMessage(ex)}";
         }
     }
@@ -277,7 +281,7 @@ public sealed partial class MainWindow : Window
         {
             var result = await PrepareAdbForwardFromFieldsAsync(requirePackageName: true);
             StatusText.Text =
-                $"ADB forward ready on {result.Forward.Endpoint}; protocol {result.Capabilities.ProtocolVersion}.";
+                $"ADB forward ready on {result.Forward.Endpoint}; protocol {result.Capabilities.ProtocolVersion}; audit {FormatAuditIdentity(result.Capabilities.AuthenticatedClientIdentity)}.";
             await ConnectFromFieldsAsync(prepareAdbForward: false);
         }
         catch (Exception ex)
@@ -365,6 +369,7 @@ public sealed partial class MainWindow : Window
             session?.Dispose();
             session = null;
             shellView.ResetConnectionState();
+            ClearConnectionStateText();
             StatusText.Text = $"ADB forward tcp:{hostPort} removed for {selectedDevice.Device.Serial}.";
         }
         catch (Exception ex)
@@ -1273,6 +1278,7 @@ public sealed partial class MainWindow : Window
             $"Active session: {active.SessionId}\n" +
             $"App: {active.AppDisplayName} ({active.AppId})\n" +
             $"Transport: {active.TransportProtocol}; mode: {active.ConnectionMode}\n" +
+            $"Audit identity: {FormatAuditIdentity(active.AuthenticatedClientIdentity)}\n" +
             $"Logs: {active.Logs.Count}; interactions: {active.Interactions.Count}; artifacts: {active.Artifacts.Count}";
         remoteToolsView.Project.ReplayText = active.Interactions.Count == 0
             ? "Replay ready after the first recorded interaction."
@@ -1432,10 +1438,11 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void StartProjectSession(RemoteControlConnectionProfile profile)
+    private void StartProjectSession(RemoteControlConnectionProfile profile, string authenticatedClientIdentity)
     {
         projectRecorder?.Complete();
         projectRecorder = RemoteControlProjectSessionRecorder.Start(projectDocument, profile);
+        projectRecorder.Session.AuthenticatedClientIdentity = FormatAuditIdentity(authenticatedClientIdentity);
         _ = SaveProjectAsync();
         QueueProjectStatusUpdate();
     }
@@ -1609,6 +1616,25 @@ public sealed partial class MainWindow : Window
         }
 
         return exception.Message;
+    }
+
+    private void UpdateConnectionStateText(
+        string protocolVersion,
+        string authenticatedClientIdentity,
+        string transportProtocol)
+    {
+        ConnectionStateText.Text =
+            $"Transport: {transportProtocol}; protocol: {protocolVersion}; audit: {FormatAuditIdentity(authenticatedClientIdentity)}";
+    }
+
+    private void ClearConnectionStateText()
+    {
+        ConnectionStateText.Text = "Transport: -; audit: -";
+    }
+
+    private static string FormatAuditIdentity(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "unknown" : value;
     }
 
     private static int? TryParseNullablePort(string? value)

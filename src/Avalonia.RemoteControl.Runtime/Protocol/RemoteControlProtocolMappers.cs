@@ -23,6 +23,7 @@ public static class RemoteControlProtocolMappers
         return new GetCapabilitiesResponse
         {
             ProtocolVersion = capabilities.ProtocolVersion,
+            AuthenticatedClientIdentity = capabilities.AuthenticatedClientIdentity,
             SupportsTreeSnapshots = capabilities.SupportsTreeSnapshots,
             SupportsTreeStreaming = capabilities.SupportsTreeStreaming,
             SupportsClickInvocation = capabilities.SupportsClickInvocation,

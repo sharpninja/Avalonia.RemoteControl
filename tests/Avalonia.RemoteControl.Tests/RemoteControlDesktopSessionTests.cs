@@ -28,6 +28,7 @@ public sealed class RemoteControlDesktopSessionTests
             options.Host = IPAddress.Loopback;
             options.Port = 0;
             options.AuthenticationToken = "dev-token";
+            options.AuthenticatedClientIdentity = "desktop-client";
         });
 
         await using var provider = services.BuildServiceProvider();
@@ -41,6 +42,7 @@ public sealed class RemoteControlDesktopSessionTests
             var capabilities = await session.GetCapabilitiesAsync();
 
             Assert.Equal(RemoteControlProtocol.DisplayVersion, capabilities.ProtocolVersion);
+            Assert.Equal("desktop-client", capabilities.AuthenticatedClientIdentity);
             Assert.True(capabilities.SupportsTreeSnapshots);
             Assert.True(capabilities.SupportsLogStreaming);
         }
@@ -355,6 +357,7 @@ public sealed class RemoteControlDesktopSessionTests
         services.AddAvaloniaRemoteControlRuntime(options =>
         {
             options.AuthenticationToken = "dev-token";
+            options.AuthenticatedClientIdentity = "bridge-client";
         });
 
         await using var provider = services.BuildServiceProvider();
@@ -376,6 +379,7 @@ public sealed class RemoteControlDesktopSessionTests
         await serverTask;
 
         Assert.Equal(RemoteControlProtocol.DisplayVersion, capabilities.ProtocolVersion);
+        Assert.Equal("bridge-client", capabilities.AuthenticatedClientIdentity);
         Assert.True(capabilities.SupportsTreeSnapshots);
     }
 

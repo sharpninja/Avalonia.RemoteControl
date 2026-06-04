@@ -5,6 +5,7 @@ namespace Avalonia.RemoteControl.Client.Diagnostics;
 /// </summary>
 public sealed record RemoteControlProbeResult(
     string ProtocolVersion,
+    string AuthenticatedClientIdentity,
     bool SupportsTreeSnapshots,
     bool SupportsTreeStreaming,
     bool SupportsClickInvocation,

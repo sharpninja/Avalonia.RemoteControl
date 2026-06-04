@@ -11,6 +11,7 @@ public sealed class RemoteControlLiveProtocolTests
     {
         var capabilities = new GetCapabilitiesResponse
         {
+            AuthenticatedClientIdentity = "desktop-client",
             SupportsFrameStreaming = true,
             SupportsRemoteInput = true,
         };
@@ -49,6 +50,7 @@ public sealed class RemoteControlLiveProtocolTests
             AbsoluteBounds = new ProtocolRect { X = 10, Y = 20, Width = 30, Height = 40 },
         };
 
+        Assert.Equal("desktop-client", capabilities.AuthenticatedClientIdentity);
         Assert.True(capabilities.SupportsFrameStreaming);
         Assert.True(capabilities.SupportsRemoteInput);
         Assert.Equal(42UL, frame.Sequence);
@@ -56,5 +58,13 @@ public sealed class RemoteControlLiveProtocolTests
         Assert.Equal(2, input.Events.Count);
         Assert.Equal(RemoteInputKind.PointerPress, input.Events[0].Kind);
         Assert.Equal(10, node.AbsoluteBounds.X);
+    }
+
+    [Fact]
+    public void CapabilitiesDefaultAuditIdentityIsEmptyForOlderEndpoints()
+    {
+        var capabilities = new GetCapabilitiesResponse();
+
+        Assert.Equal(string.Empty, capabilities.AuthenticatedClientIdentity);
     }
 }

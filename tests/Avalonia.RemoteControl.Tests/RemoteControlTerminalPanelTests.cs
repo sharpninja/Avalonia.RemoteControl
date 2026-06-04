@@ -174,6 +174,7 @@ public sealed class RemoteControlTerminalPanelTests
         Assert.True(shell.StartsWithoutLiveViewContent);
         Assert.False(shell.LiveViewCapabilities.SupportsFrameStreaming);
         Assert.False(shell.LiveViewCapabilities.SupportsRemoteInput);
+        Assert.Equal(string.Empty, shell.AuthenticatedClientIdentity);
         Assert.Null(shell.RemoteTools.LiveView.Content);
     }
 
@@ -205,16 +206,20 @@ public sealed class RemoteControlTerminalPanelTests
         var shell = new RemoteControlToolShellViewModel(Path.GetTempPath());
         shell.ApplyCapabilities(new GetCapabilitiesResponse
         {
+            AuthenticatedClientIdentity = "desktop-client",
             SupportsFrameStreaming = true,
             SupportsRemoteInput = true,
         });
         shell.RemoteTools.LiveView.Content = new object();
+
+        Assert.Equal("desktop-client", shell.AuthenticatedClientIdentity);
 
         shell.ResetConnectionState();
 
         Assert.True(shell.StartsWithFrameStreamingDisabled);
         Assert.True(shell.StartsWithoutLiveViewContent);
         Assert.False(shell.LiveViewCapabilities.SupportsRemoteInput);
+        Assert.Equal(string.Empty, shell.AuthenticatedClientIdentity);
     }
 
     [Fact]

@@ -141,6 +141,8 @@ public sealed class AdbCommandLine
         await output.WriteLineAsync($"Serial: {result.Forward.Serial}").ConfigureAwait(false);
         await output.WriteLineAsync($"Endpoint: {result.Forward.Endpoint}").ConfigureAwait(false);
         await output.WriteLineAsync($"Protocol: {result.Capabilities.ProtocolVersion}").ConfigureAwait(false);
+        await output.WriteLineAsync($"Audit identity: {FormatIdentity(result.Capabilities.AuthenticatedClientIdentity)}")
+            .ConfigureAwait(false);
         await output.WriteLineAsync($"Frame streaming: {FormatSupported(result.Capabilities.SupportsFrameStreaming)}").ConfigureAwait(false);
         await output.WriteLineAsync($"Remote input: {FormatSupported(result.Capabilities.SupportsRemoteInput)}").ConfigureAwait(false);
 
@@ -283,6 +285,11 @@ public sealed class AdbCommandLine
     private static string FormatSupported(bool value)
     {
         return value ? "supported" : "not supported";
+    }
+
+    private static string FormatIdentity(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "unknown" : value;
     }
 
     private static string SanitizeAdbError(string standardError)

@@ -28,6 +28,7 @@ message GetCapabilitiesResponse {
   bool supports_log_streaming = 6;
   bool supports_frame_streaming = 7;
   bool supports_remote_input = 8;
+  string authenticated_client_identity = 9;
 }
 
 message GetSnapshotRequest {

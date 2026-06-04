@@ -65,14 +65,10 @@ Implemented client areas:
 - pointer, wheel, keyboard, and text input from the live view when enabled
 - user-scoped projects, session log history, interaction journals, replay artifacts, and layout persistence
 - embedded terminal with in-process Codex MCP host integration
-- connection/status line
+- connection/status line with protocol, transport, and authenticated audit identity
 - user-scoped default connection profile save/forget for endpoint, token, and certificate path
 - TLS connection trust through a configured server certificate file
 - manual TLS certificate inspection and acceptance by SHA-256 fingerprint
-
-Known client gap:
-
-- authenticated audit identity display
 
 ## Android
 

@@ -524,6 +524,7 @@ public sealed class RemoteControlAdbClientTests
 
             return Task.FromResult(new RemoteControlProbeResult(
                 RemoteControlProtocol.DisplayVersion,
+                "remote-client",
                 true,
                 true,
                 true,
