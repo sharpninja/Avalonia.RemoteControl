@@ -21,6 +21,10 @@ pool:
 variables:
   BuildConfiguration: Release
   CI: true
+  DOTNET_CLI_HOME: $(Pipeline.Workspace)/.dotnet
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
 
 steps:
   - task: UseDotNet@2
@@ -32,7 +36,7 @@ steps:
   - script: dotnet workload restore Avalonia.RemoteControl.slnx
     displayName: Restore .NET workloads
 
-  - script: dotnet restore Avalonia.RemoteControl.slnx
+  - script: dotnet restore Avalonia.RemoteControl.slnx --disable-parallel --verbosity normal
     displayName: Restore
 
   - script: dotnet build Avalonia.RemoteControl.slnx --configuration $(BuildConfiguration) --no-restore

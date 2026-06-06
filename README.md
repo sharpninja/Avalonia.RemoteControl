@@ -2,21 +2,21 @@
 
 Avalonia.RemoteControl is a debugging and remote-control system for Avalonia 12 applications.
 
-Current release: `0.7.1`.
+Current release: `0.7.2`.
 
 The tool gives developers and QA engineers a desktop control surface for a running Avalonia app: inspect the live control tree, view public state, stream logs, invoke guarded actions, edit approved properties, open a live remote UI panel, connect through ADB, and launch an embedded Codex terminal that can drive the connected app through the tool's in-process MCP server.
 
 ## Install The Client
 
 ```powershell
-dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.7.1
+dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.7.2
 avalonia-remote
 ```
 
 Update an existing install with:
 
 ```powershell
-dotnet tool update --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.7.1
+dotnet tool update --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.7.2
 ```
 
 Packages:
