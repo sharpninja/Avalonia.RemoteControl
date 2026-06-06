@@ -14,7 +14,9 @@ pr:
       - main
 
 pool:
-  vmImage: windows-latest
+  name: Default
+  demands:
+    - Agent.OS -equals Windows_NT
 
 variables:
   BuildConfiguration: Release
