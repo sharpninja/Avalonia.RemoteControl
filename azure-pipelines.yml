@@ -21,10 +21,11 @@ pool:
 variables:
   BuildConfiguration: Release
   CI: true
-  DOTNET_CLI_HOME: $(Pipeline.Workspace)/.dotnet
+  DOTNET_CLI_HOME: $(Agent.TempDirectory)/dotnet-home/$(Build.BuildId)
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
+  MSBUILDDISABLENODEREUSE: 1
+  NUGET_PACKAGES: $(Agent.TempDirectory)/nuget-packages/$(Build.BuildId)
 
 steps:
   - task: UseDotNet@2
@@ -35,21 +36,27 @@ steps:
 
   - script: dotnet workload restore Avalonia.RemoteControl.slnx
     displayName: Restore .NET workloads
+    timeoutInMinutes: 15
 
-  - script: dotnet restore Avalonia.RemoteControl.slnx --disable-parallel --verbosity normal
+  - script: dotnet restore Avalonia.RemoteControl.slnx --disable-parallel --verbosity normal /nr:false
     displayName: Restore
+    timeoutInMinutes: 15
 
-  - script: dotnet build Avalonia.RemoteControl.slnx --configuration $(BuildConfiguration) --no-restore
+  - script: dotnet build Avalonia.RemoteControl.slnx --configuration $(BuildConfiguration) --no-restore /nr:false
     displayName: Build
+    timeoutInMinutes: 15
 
   - script: dotnet test Avalonia.RemoteControl.slnx --configuration $(BuildConfiguration) --no-build --logger trx
     displayName: Test
+    timeoutInMinutes: 20
 
-  - script: dotnet pack Avalonia.RemoteControl.slnx --configuration $(BuildConfiguration) --no-build --output $(Build.ArtifactStagingDirectory)/packages
+  - script: dotnet pack Avalonia.RemoteControl.slnx --configuration $(BuildConfiguration) --no-build --output $(Build.ArtifactStagingDirectory)/packages /nr:false
     displayName: Pack
+    timeoutInMinutes: 15
 
   - task: PublishBuildArtifacts@1
     displayName: Publish package artifacts
+    timeoutInMinutes: 10
     inputs:
       PathtoPublish: $(Build.ArtifactStagingDirectory)/packages
       ArtifactName: nuget-packages
