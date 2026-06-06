@@ -5,7 +5,7 @@
 ## Install
 
 ```powershell
-dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.6.0
+dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.7.1
 ```
 
 ## Launch The Desktop Client
