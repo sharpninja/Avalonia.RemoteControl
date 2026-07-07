@@ -17,6 +17,10 @@
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="bodong.Avalonia.PropertyGrid" />
+    <PackageReference Include="Dock.Avalonia" />
+    <PackageReference Include="Dock.Avalonia.Themes.Fluent" />
+    <PackageReference Include="Dock.Model.Mvvm" />
+    <PackageReference Include="Dock.Serializer.SystemTextJson" />
     <PackageReference Include="Iciclecreek.Avalonia.Terminal" />
     <ProjectReference Include="..\Avalonia.RemoteControl.Client\Avalonia.RemoteControl.Client.csproj" />
     <ProjectReference Include="..\Avalonia.RemoteControl.Protocol\Avalonia.RemoteControl.Protocol.csproj" />

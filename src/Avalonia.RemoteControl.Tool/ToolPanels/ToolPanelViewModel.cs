@@ -224,6 +224,21 @@ public sealed class ActionsPanelViewModel : ToolPanelViewModel
     private string propertyValue = string.Empty;
 
     /// <summary>
+    /// Raised when the user requests invoking a click on the selected node.
+    /// </summary>
+    public event EventHandler? InvokeClickRequested;
+
+    /// <summary>
+    /// Raised when the user requests focusing the selected node.
+    /// </summary>
+    public event EventHandler? FocusRequested;
+
+    /// <summary>
+    /// Raised when the user requests setting a property on the selected node.
+    /// </summary>
+    public event EventHandler? SetPropertyRequested;
+
+    /// <summary>
     /// Gets or sets the property name to edit.
     /// </summary>
     public string PropertyName
@@ -240,6 +255,21 @@ public sealed class ActionsPanelViewModel : ToolPanelViewModel
         get => propertyValue;
         set => SetField(ref propertyValue, value);
     }
+
+    /// <summary>
+    /// Requests invoking a click on the selected node.
+    /// </summary>
+    public void RequestInvokeClick() => InvokeClickRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// Requests focusing the selected node.
+    /// </summary>
+    public void RequestFocus() => FocusRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// Requests setting the configured property on the selected node.
+    /// </summary>
+    public void RequestSetProperty() => SetPropertyRequested?.Invoke(this, EventArgs.Empty);
 }
 
 /// <summary>
@@ -250,6 +280,26 @@ public sealed class ProjectPanelViewModel : ToolPanelViewModel
     private string summaryText = "Project not loaded.";
     private string sessionText = "No active session.";
     private string replayText = "Replay data will appear after interactions are recorded.";
+
+    /// <summary>
+    /// Raised when the user requests saving the project.
+    /// </summary>
+    public event EventHandler? SaveProjectRequested;
+
+    /// <summary>
+    /// Raised when the user requests refreshing the project status.
+    /// </summary>
+    public event EventHandler? RefreshRequested;
+
+    /// <summary>
+    /// Requests saving the project.
+    /// </summary>
+    public void RequestSaveProject() => SaveProjectRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// Requests refreshing the project status.
+    /// </summary>
+    public void RequestRefresh() => RefreshRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
     /// Gets or sets the project summary text.

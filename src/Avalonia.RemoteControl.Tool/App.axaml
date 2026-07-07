@@ -1,7 +1,12 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:docking="using:Avalonia.RemoteControl.Tool.Docking"
              x:Class="Avalonia.RemoteControl.Tool.App"
              RequestedThemeVariant="Dark">
+  <Application.DataTemplates>
+    <docking:RemoteControlDockViewLocator />
+  </Application.DataTemplates>
+
   <Application.Resources>
     <SolidColorBrush x:Key="VsShellBackgroundBrush" Color="#1E1E1E" />
     <SolidColorBrush x:Key="VsToolWindowBackgroundBrush" Color="#252526" />

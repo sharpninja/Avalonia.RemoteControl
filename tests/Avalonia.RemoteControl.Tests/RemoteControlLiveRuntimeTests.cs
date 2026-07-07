@@ -1,6 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.RemoteControl.Protocol.V1;
 using Avalonia.RemoteControl.Server;
@@ -118,35 +118,28 @@ public sealed class RemoteControlLiveRuntimeTests
         Assert.DoesNotContain(logger.Messages, message => message.Contains("super-secret", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task SnapshotCaptureUsesContainingTopLevelWhenProviderReturnsChildRoot()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessAvaloniaTestApp));
-
-        await session.Dispatch(async () =>
+        var childRoot = new Border { Name = "ChildRoot" };
+        var window = new Window
         {
-            var childRoot = new Border { Name = "ChildRoot" };
-            var window = new Window
-            {
-                Content = childRoot,
-                Width = 300,
-                Height = 200,
-            };
-            window.Show();
-            var provider = new AvaloniaControlTreeSnapshotProvider(
-                Options.Create(new AvaloniaRemoteControlOptions()),
-                new InlineRemoteControlDispatcher());
+            Content = childRoot,
+            Width = 300,
+            Height = 200,
+        };
+        window.Show();
+        var provider = new AvaloniaControlTreeSnapshotProvider(
+            Options.Create(new AvaloniaRemoteControlOptions()),
+            new InlineRemoteControlDispatcher());
 
-            var snapshot = await provider.CaptureSnapshotAsync(childRoot);
+        var snapshot = await provider.CaptureSnapshotAsync(childRoot);
 
-            Assert.Equal(nameof(Window), snapshot.Nodes[0].TypeName);
-            Assert.Contains(
-                snapshot.Nodes,
-                node => node.Name == "ChildRoot" && node.ParentId is not null);
-            window.Close();
-
-            return true;
-        }, CancellationToken.None);
+        Assert.Equal(nameof(Window), snapshot.Nodes[0].TypeName);
+        Assert.Contains(
+            snapshot.Nodes,
+            node => node.Name == "ChildRoot" && node.ParentId is not null);
+        window.Close();
     }
 
     private static RemoteControlInputDispatcher CreateInputDispatcher(Control root, AvaloniaRemoteControlOptions options)
@@ -203,13 +196,5 @@ public sealed class RemoteControlLiveRuntimeTests
         }
     }
 
-    private sealed class HeadlessAvaloniaTestApp : Application
-    {
-        public static AppBuilder BuildAvaloniaApp()
-        {
-            return AppBuilder.Configure<HeadlessAvaloniaTestApp>()
-                .UseHeadless(new AvaloniaHeadlessPlatformOptions());
-        }
-    }
 
 }

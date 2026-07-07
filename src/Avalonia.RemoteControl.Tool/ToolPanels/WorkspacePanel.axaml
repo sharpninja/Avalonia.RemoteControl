@@ -7,10 +7,10 @@
               SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
               SelectionChanged="TabsSelectionChanged">
     <TabItem Header="Terminal">
-      <tool:TerminalPanel x:Name="TerminalPanel" />
+      <tool:TerminalPanel x:Name="TerminalPanel" DataContext="{Binding Terminal}" />
     </TabItem>
     <TabItem Header="Properties">
-      <tool:PropertiesPanel x:Name="PropertiesPanel" />
+      <tool:PropertiesPanel x:Name="PropertiesPanel" DataContext="{Binding Properties}" />
     </TabItem>
   </TabControl>
 </UserControl>

@@ -1,7 +1,7 @@
 using Avalonia.RemoteControl.Tool;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
 using Avalonia.RemoteControl.Client.Projects;
 using Avalonia.RemoteControl.Protocol.V1;
 
@@ -222,36 +222,30 @@ public sealed class RemoteControlTerminalPanelTests
         Assert.Equal(string.Empty, shell.AuthenticatedClientIdentity);
     }
 
-    [Fact]
-    public async Task ControlTreePanelSelectItemRevealsNestedLiveViewSelection()
+    [AvaloniaFact]
+    public void ControlTreePanelSelectItemRevealsNestedLiveViewSelection()
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessAvaloniaTestApp));
+        var viewModel = new ControlTreePanelViewModel();
+        var root = new RemoteTreeItem(CreateTreeNode("root", "Root"));
+        var panelItem = new RemoteTreeItem(CreateTreeNode("panel", "Panel", "root"));
+        var button = new RemoteTreeItem(CreateTreeNode("button", "Button", "panel"));
+        root.AddChild(panelItem);
+        panelItem.AddChild(button);
+        viewModel.Items.Add(root);
 
-        await session.Dispatch(() =>
+        var control = new ControlTreePanel
         {
-            var viewModel = new ControlTreePanelViewModel();
-            var root = new RemoteTreeItem(CreateTreeNode("root", "Root"));
-            var panelItem = new RemoteTreeItem(CreateTreeNode("panel", "Panel", "root"));
-            var button = new RemoteTreeItem(CreateTreeNode("button", "Button", "panel"));
-            root.AddChild(panelItem);
-            panelItem.AddChild(button);
-            viewModel.Items.Add(root);
+            ViewModel = viewModel,
+        };
 
-            var control = new ControlTreePanel
-            {
-                ViewModel = viewModel,
-            };
+        control.SelectItem(button);
 
-            control.SelectItem(button);
-
-            Assert.Same(button, viewModel.SelectedItem);
-            Assert.True(root.IsExpanded);
-            Assert.True(panelItem.IsExpanded);
-            Assert.False(button.IsExpanded);
-            Assert.Same(root, panelItem.Parent);
-            Assert.Same(panelItem, button.Parent);
-            return true;
-        }, CancellationToken.None);
+        Assert.Same(button, viewModel.SelectedItem);
+        Assert.True(root.IsExpanded);
+        Assert.True(panelItem.IsExpanded);
+        Assert.False(button.IsExpanded);
+        Assert.Same(root, panelItem.Parent);
+        Assert.Same(panelItem, button.Parent);
     }
 
     [Fact]
@@ -459,15 +453,6 @@ public sealed class RemoteControlTerminalPanelTests
                 Height = 20,
             },
         };
-    }
-
-    private sealed class HeadlessAvaloniaTestApp : Application
-    {
-        public static AppBuilder BuildAvaloniaApp()
-        {
-            return AppBuilder.Configure<HeadlessAvaloniaTestApp>()
-                .UseHeadless(new AvaloniaHeadlessPlatformOptions());
-        }
     }
 
     private sealed class RecordingMcpEndpointHost : IRemoteControlMcpEndpointHost

@@ -26,12 +26,7 @@ public sealed partial class WorkspacePanel : UserControl
     public WorkspacePanelViewModel? ViewModel
     {
         get => DataContext as WorkspacePanelViewModel;
-        set
-        {
-            DataContext = value;
-            TerminalPanel.ViewModel = value?.Terminal;
-            PropertiesPanel.ViewModel = value?.Properties;
-        }
+        set => DataContext = value;
     }
 
     /// <summary>

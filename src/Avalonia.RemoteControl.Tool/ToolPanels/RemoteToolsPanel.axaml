@@ -7,10 +7,10 @@
               SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
               SelectionChanged="TabsSelectionChanged">
     <TabItem Header="Actions">
-      <tool:ActionsPanel x:Name="ActionsPanel" />
+      <tool:ActionsPanel x:Name="ActionsPanel" DataContext="{Binding Actions}" />
     </TabItem>
     <TabItem Header="Project">
-      <tool:ProjectPanel x:Name="ProjectPanel" />
+      <tool:ProjectPanel x:Name="ProjectPanel" DataContext="{Binding Project}" />
     </TabItem>
   </TabControl>
 </UserControl>

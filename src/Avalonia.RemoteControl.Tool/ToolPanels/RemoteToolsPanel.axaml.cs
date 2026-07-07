@@ -26,12 +26,7 @@ public sealed partial class RemoteToolsPanel : UserControl
     public RemoteToolsPanelViewModel? ViewModel
     {
         get => DataContext as RemoteToolsPanelViewModel;
-        set
-        {
-            DataContext = value;
-            ActionsPanel.ViewModel = value?.Actions;
-            ProjectPanel.ViewModel = value?.Project;
-        }
+        set => DataContext = value;
     }
 
     /// <summary>
