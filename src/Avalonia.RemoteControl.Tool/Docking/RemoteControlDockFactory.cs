@@ -14,9 +14,9 @@ public sealed class RemoteControlDockFactory : Factory
     private readonly RemoteControlToolShellViewModel _shell;
 
     private LiveViewDockable? _liveView;
-    private ToolDock? _liveViewDock;
+    private IToolDock? _liveViewDock;
     private LogsDockable? _logs;
-    private ToolDock? _logsDock;
+    private IToolDock? _logsDock;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteControlDockFactory"/> class.
@@ -37,82 +37,70 @@ public sealed class RemoteControlDockFactory : Factory
         var workspace = new WorkspaceDockable(_shell.Workspace);
 
         // West: control tree (legacy WestWidth 340 ≈ 0.29 of 1180).
-        var controlTreeDock = new ToolDock
-        {
-            Id = "controlTreeDock",
-            Alignment = Alignment.Left,
-            Proportion = 0.29,
-            ActiveDockable = controlTree,
-            VisibleDockables = CreateList<IDockable>(controlTree),
-        };
+        var controlTreeDock = CreateToolDock();
+        controlTreeDock.Id = "controlTreeDock";
+        controlTreeDock.Alignment = Alignment.Left;
+        controlTreeDock.Proportion = 0.29;
+        controlTreeDock.ActiveDockable = controlTree;
+        controlTreeDock.VisibleDockables = CreateList<IDockable>(controlTree);
 
         // Center-fill: workspace document well over the logs tool (legacy SouthHeight 220 ≈ 0.35 of the center column).
-        var workspaceDock = new DocumentDock
-        {
-            Id = "workspaceDock",
-            IsCollapsable = false,
-            Proportion = 0.65,
-            ActiveDockable = workspace,
-            VisibleDockables = CreateList<IDockable>(workspace),
-        };
-        var logsDock = new ToolDock
-        {
-            Id = "logsDock",
-            Alignment = Alignment.Bottom,
-            Proportion = 0.35,
-            ActiveDockable = logs,
-            VisibleDockables = CreateList<IDockable>(logs),
-        };
-        var centerDock = new ProportionalDock
-        {
-            Id = "centerDock",
-            Orientation = Orientation.Vertical,
-            Proportion = 0.39,
-            VisibleDockables = CreateList<IDockable>(
-                workspaceDock,
-                new ProportionalDockSplitter(),
-                logsDock),
-        };
+        var workspaceDock = CreateDocumentDock();
+        workspaceDock.Id = "workspaceDock";
+        workspaceDock.IsCollapsable = false;
+        workspaceDock.Proportion = 0.65;
+        workspaceDock.ActiveDockable = workspace;
+        workspaceDock.VisibleDockables = CreateList<IDockable>(workspace);
+
+        var logsDock = CreateToolDock();
+        logsDock.Id = "logsDock";
+        logsDock.Alignment = Alignment.Bottom;
+        logsDock.Proportion = 0.35;
+        logsDock.ActiveDockable = logs;
+        logsDock.VisibleDockables = CreateList<IDockable>(logs);
+
+        var centerDock = CreateProportionalDock();
+        centerDock.Id = "centerDock";
+        centerDock.Orientation = Orientation.Vertical;
+        centerDock.Proportion = 0.39;
+        centerDock.VisibleDockables = CreateList<IDockable>(
+            workspaceDock,
+            CreateProportionalDockSplitter(),
+            logsDock);
 
         // East: remote tools over live view (legacy RightDock SouthHeight 360 ≈ 0.58 of the east column).
-        var remoteToolsDock = new ToolDock
-        {
-            Id = "remoteToolsDock",
-            Alignment = Alignment.Right,
-            Proportion = 0.42,
-            ActiveDockable = remoteTools,
-            VisibleDockables = CreateList<IDockable>(remoteTools),
-        };
-        var liveViewDock = new ToolDock
-        {
-            Id = "liveViewDock",
-            Alignment = Alignment.Right,
-            Proportion = 0.58,
-            ActiveDockable = liveView,
-            VisibleDockables = CreateList<IDockable>(liveView),
-        };
-        var eastDock = new ProportionalDock
-        {
-            Id = "eastDock",
-            Orientation = Orientation.Vertical,
-            Proportion = 0.32,
-            VisibleDockables = CreateList<IDockable>(
-                remoteToolsDock,
-                new ProportionalDockSplitter(),
-                liveViewDock),
-        };
+        var remoteToolsDock = CreateToolDock();
+        remoteToolsDock.Id = "remoteToolsDock";
+        remoteToolsDock.Alignment = Alignment.Right;
+        remoteToolsDock.Proportion = 0.42;
+        remoteToolsDock.ActiveDockable = remoteTools;
+        remoteToolsDock.VisibleDockables = CreateList<IDockable>(remoteTools);
 
-        var main = new ProportionalDock
-        {
-            Id = "mainLayout",
-            Orientation = Orientation.Horizontal,
-            VisibleDockables = CreateList<IDockable>(
-                controlTreeDock,
-                new ProportionalDockSplitter(),
-                centerDock,
-                new ProportionalDockSplitter(),
-                eastDock),
-        };
+        var liveViewDock = CreateToolDock();
+        liveViewDock.Id = "liveViewDock";
+        liveViewDock.Alignment = Alignment.Right;
+        liveViewDock.Proportion = 0.58;
+        liveViewDock.ActiveDockable = liveView;
+        liveViewDock.VisibleDockables = CreateList<IDockable>(liveView);
+
+        var eastDock = CreateProportionalDock();
+        eastDock.Id = "eastDock";
+        eastDock.Orientation = Orientation.Vertical;
+        eastDock.Proportion = 0.32;
+        eastDock.VisibleDockables = CreateList<IDockable>(
+            remoteToolsDock,
+            CreateProportionalDockSplitter(),
+            liveViewDock);
+
+        var main = CreateProportionalDock();
+        main.Id = "mainLayout";
+        main.Orientation = Orientation.Horizontal;
+        main.VisibleDockables = CreateList<IDockable>(
+            controlTreeDock,
+            CreateProportionalDockSplitter(),
+            centerDock,
+            CreateProportionalDockSplitter(),
+            eastDock);
 
         var root = CreateRootDock();
         root.Id = "root";
@@ -180,14 +168,7 @@ public sealed class RemoteControlDockFactory : Factory
     /// <inheritdoc />
     public override void InitLayout(IDockable layout)
     {
-        ContextLocator = new Dictionary<string, Func<object?>>
-        {
-            ["controlTree"] = () => _shell.ControlTree,
-            ["remoteTools"] = () => _shell.RemoteTools,
-            ["liveView"] = () => _shell.RemoteTools.LiveView,
-            ["logs"] = () => _shell.Logs,
-            ["workspace"] = () => _shell.Workspace,
-        };
+        ContextLocator = new Dictionary<string, Func<object?>>();
         DockableLocator = new Dictionary<string, Func<IDockable?>>();
         HostWindowLocator = new Dictionary<string, Func<IHostWindow?>>
         {
@@ -195,5 +176,53 @@ public sealed class RemoteControlDockFactory : Factory
         };
 
         base.InitLayout(layout);
+
+        // Re-attach panel view-models from the live shell (fresh layout: same instances; loaded layout:
+        // reconnects the deserialized structure to the running shell).
+        ReattachContent(layout);
+    }
+
+    /// <summary>
+    /// Sets each dockable's Content from the live shell view-model, matched by dockable type.
+    /// </summary>
+    /// <param name="layout">Root of the layout to re-attach.</param>
+    public void ReattachContent(IDockable layout)
+    {
+        foreach (var dockable in FlattenDockables(layout))
+        {
+            switch (dockable)
+            {
+                case ControlTreeDockable controlTree:
+                    controlTree.Content = _shell.ControlTree;
+                    break;
+                case RemoteToolsDockable remoteTools:
+                    remoteTools.Content = _shell.RemoteTools;
+                    break;
+                case LiveViewDockable liveView:
+                    liveView.Content = _shell.RemoteTools.LiveView;
+                    break;
+                case LogsDockable logs:
+                    logs.Content = _shell.Logs;
+                    break;
+                case WorkspaceDockable workspace:
+                    workspace.Content = _shell.Workspace;
+                    break;
+            }
+        }
+    }
+
+    private static IEnumerable<IDockable> FlattenDockables(IDockable dockable)
+    {
+        yield return dockable;
+        if (dockable is IDock dock && dock.VisibleDockables is { } children)
+        {
+            foreach (var child in children)
+            {
+                foreach (var nested in FlattenDockables(child))
+                {
+                    yield return nested;
+                }
+            }
+        }
     }
 }
