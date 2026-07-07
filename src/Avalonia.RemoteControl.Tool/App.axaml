@@ -1,6 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:docking="using:Avalonia.RemoteControl.Tool.Docking"
+             xmlns:dock="using:Dock.Avalonia.Themes.Fluent"
              x:Class="Avalonia.RemoteControl.Tool.App"
              RequestedThemeVariant="Dark">
   <Application.DataTemplates>
@@ -34,6 +35,7 @@
 
   <Application.Styles>
     <FluentTheme />
+    <dock:DockFluentTheme />
 
     <Style Selector="Window.vs-shell">
       <Setter Property="Background" Value="{StaticResource VsShellBackgroundBrush}" />

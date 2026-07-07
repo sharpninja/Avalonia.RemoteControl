@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
@@ -16,6 +17,8 @@ public sealed partial class LogPanel : UserControl
     /// </summary>
     public static readonly StyledProperty<bool> IsDockHostProperty =
         AvaloniaProperty.Register<LogPanel, bool>(nameof(IsDockHost), true);
+
+    private RemoteLogViewModel? subscribedViewModel;
 
     static LogPanel()
     {
@@ -55,21 +58,7 @@ public sealed partial class LogPanel : UserControl
     public RemoteLogViewModel? ViewModel
     {
         get => DataContext as RemoteLogViewModel;
-        set
-        {
-            if (ViewModel is { } previous)
-            {
-                previous.PropertyChanged -= ViewModelPropertyChanged;
-            }
-
-            DataContext = value;
-            if (value is not null)
-            {
-                value.PropertyChanged += ViewModelPropertyChanged;
-            }
-
-            UpdatePresentationState();
-        }
+        set => DataContext = value;
     }
 
     /// <summary>
@@ -77,6 +66,11 @@ public sealed partial class LogPanel : UserControl
     /// </summary>
     public void ScrollToEnd()
     {
+        if (RowsList is null)
+        {
+            return;
+        }
+
         var count = ViewModel?.Rows.Count ?? 0;
         if (count == 0)
         {
@@ -84,6 +78,36 @@ public sealed partial class LogPanel : UserControl
         }
 
         RowsList.SelectedIndex = count - 1;
+    }
+
+    /// <inheritdoc />
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+
+        if (subscribedViewModel is { } previous)
+        {
+            previous.PropertyChanged -= ViewModelPropertyChanged;
+            previous.Rows.CollectionChanged -= RowsCollectionChanged;
+        }
+
+        subscribedViewModel = DataContext as RemoteLogViewModel;
+        if (subscribedViewModel is not null)
+        {
+            subscribedViewModel.PropertyChanged += ViewModelPropertyChanged;
+            subscribedViewModel.Rows.CollectionChanged += RowsCollectionChanged;
+        }
+
+        UpdatePresentationState();
+        ScrollToEnd();
+    }
+
+    private void RowsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Add)
+        {
+            ScrollToEnd();
+        }
     }
 
     private void ViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -96,6 +120,11 @@ public sealed partial class LogPanel : UserControl
 
     private void UpdatePresentationState()
     {
+        if (RowsList is null)
+        {
+            return;
+        }
+
         var showPlaceholder = IsDockHost && ViewModel?.IsPoppedOut == true;
         RowsList.IsVisible = !showPlaceholder;
         RowsList.ItemsSource = showPlaceholder ? null : ViewModel?.Rows;

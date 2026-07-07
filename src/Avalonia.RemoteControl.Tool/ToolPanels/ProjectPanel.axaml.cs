@@ -17,16 +17,6 @@ public sealed partial class ProjectPanel : UserControl
     }
 
     /// <summary>
-    /// Raised when project save is requested.
-    /// </summary>
-    public event EventHandler? SaveProjectRequested;
-
-    /// <summary>
-    /// Raised when refresh is requested.
-    /// </summary>
-    public event EventHandler? RefreshRequested;
-
-    /// <summary>
     /// Gets or sets the panel view model.
     /// </summary>
     public ProjectPanelViewModel? ViewModel
@@ -37,11 +27,11 @@ public sealed partial class ProjectPanel : UserControl
 
     private void SaveProjectClicked(object? sender, RoutedEventArgs e)
     {
-        SaveProjectRequested?.Invoke(this, EventArgs.Empty);
+        ViewModel?.RequestSaveProject();
     }
 
     private void RefreshClicked(object? sender, RoutedEventArgs e)
     {
-        RefreshRequested?.Invoke(this, EventArgs.Empty);
+        ViewModel?.RequestRefresh();
     }
 }

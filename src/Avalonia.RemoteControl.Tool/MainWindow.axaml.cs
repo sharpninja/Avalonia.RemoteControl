@@ -14,6 +14,7 @@ using Avalonia.RemoteControl.Client.Profiles;
 using Avalonia.RemoteControl.Client.Security;
 using Avalonia.RemoteControl.Protocol;
 using Avalonia.RemoteControl.Protocol.V1;
+using Avalonia.RemoteControl.Tool.Docking;
 using Avalonia.Threading;
 
 namespace Avalonia.RemoteControl.Tool;
@@ -39,14 +40,11 @@ public sealed partial class MainWindow : Window
     private TreeSnapshot? lastSnapshot;
     private CancellationTokenSource? logStreamCancellation;
     private RemoteControlServerCertificateInfo? pendingCertificateInfo;
-    private readonly Dictionary<string, FloatingDockPaneWindow> floatingToolWindows = [];
-    private LogPanel? floatingLogPanel;
-    private RemoteViewControl? floatingLiveViewControl;
+    private readonly RemoteControlDockFactory dockFactory;
     private RemoteViewControl? dockedLiveViewControl;
     private bool isClosing;
     private bool isApplyingLayoutState;
     private bool isProjectLoaded;
-    private bool restoreFloatingLogOnOpen;
 
     private ControlTreePanelViewModel controlTreeView => shellView.ControlTree;
 
@@ -79,24 +77,25 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
 
-        ControlTreePanel.ViewModel = controlTreeView;
-        ControlTreePanel.SelectedItemChanged += (_, item) => ControlTreeSelectionChanged(item);
-        WorkspacePanel.ViewModel = workspaceView;
-        WorkspacePanel.SelectedTabChanged += (_, _) => ScheduleLayoutSave();
-        WorkspacePanel.Properties.PropertySelected += (_, row) => PropertySelectionChanged(row);
+        dockFactory = new RemoteControlDockFactory(shellView);
+        var layout = dockFactory.CreateLayout();
+        dockFactory.InitLayout(layout);
+        shellView.Layout = layout;
+        shellView.DockFactory = dockFactory;
+        Dock.Factory = dockFactory;
+        Dock.Layout = layout;
+
+        controlTreeView.PropertyChanged += ControlTreeViewPropertyChanged;
+        workspaceView.PropertyChanged += WorkspaceViewPropertyChanged;
+        propertiesView.PropertyChanged += PropertiesViewPropertyChanged;
         propertiesView.PropertyEditRequested += (_, args) => PropertyGridEditRequested(args);
         workspaceView.Terminal.PropertyChanged += WorkspaceTerminalPropertyChanged;
-        RemoteToolsPanel.ViewModel = remoteToolsView;
-        RemoteToolsPanel.SelectedTabChanged += (_, _) => ScheduleLayoutSave();
-        RemoteToolsPanel.Actions.InvokeClickRequested += (_, _) => InvokeClickClicked(null, new RoutedEventArgs());
-        RemoteToolsPanel.Actions.FocusRequested += (_, _) => InvokeFocusClicked(null, new RoutedEventArgs());
-        RemoteToolsPanel.Actions.SetPropertyRequested += (_, _) => SetPropertyClicked(null, new RoutedEventArgs());
-        RemoteToolsPanel.Project.SaveProjectRequested += (_, _) => SaveProjectClicked(null, new RoutedEventArgs());
-        RemoteToolsPanel.Project.RefreshRequested += (_, _) => RefreshProjectClicked(null, new RoutedEventArgs());
-        DockedLiveViewPanel.ViewModel = remoteToolsView.LiveView;
-        DockedLogPanel.ViewModel = logView;
-        DockedLogPanel.FloatRequested += (_, _) => ShowLogToolWindow("Log panel floated.");
-        DockedLogPanel.DockRequested += (_, _) => DockLogsToMain("Log panel docked.");
+        remoteToolsView.PropertyChanged += RemoteToolsViewPropertyChanged;
+        remoteToolsView.Actions.InvokeClickRequested += (_, _) => InvokeClickClicked(null, new RoutedEventArgs());
+        remoteToolsView.Actions.FocusRequested += (_, _) => InvokeFocusClicked(null, new RoutedEventArgs());
+        remoteToolsView.Actions.SetPropertyRequested += (_, _) => SetPropertyClicked(null, new RoutedEventArgs());
+        remoteToolsView.Project.SaveProjectRequested += (_, _) => SaveProjectClicked(null, new RoutedEventArgs());
+        remoteToolsView.Project.RefreshRequested += (_, _) => RefreshProjectClicked(null, new RoutedEventArgs());
         logView.PropertyChanged += LogViewPropertyChanged;
         AdbDeviceBox.ItemsSource = adbDevices;
         TransportProtocolBox.ItemsSource = new[]
@@ -116,14 +115,12 @@ public sealed partial class MainWindow : Window
         TransportProtocolBox.SelectionChanged += (_, _) => UpdateTerminalMcpProfileFromFields();
         AdbPathBox.Text = ProcessAdbCommandRunner.ResolveDefaultAdbPath();
         SizeChanged += (_, _) => ScheduleLayoutSave();
-        Opened += (_, _) => RestoreFloatingLogIfNeeded();
         layoutSaveTimer.Tick += (_, _) =>
         {
             layoutSaveTimer.Stop();
             _ = SaveProjectAsync();
         };
         UpdateLogStreamStatus("Log stream stopped.");
-        UpdateLogPresentationState();
         UpdateTerminalMcpProfileFromFields();
         UpdateProjectStatus();
 
@@ -135,7 +132,6 @@ public sealed partial class MainWindow : Window
             StopLogStream(addRow: false);
             StopDockedLiveView();
             projectRecorder?.Complete();
-            CloseFloatingToolWindows();
             mcpHostController?.Dispose();
             session?.Dispose();
             _ = SaveProjectAsync(captureLayout: false);
@@ -143,6 +139,38 @@ public sealed partial class MainWindow : Window
 
         _ = LoadProjectAsync();
         _ = LoadProfileAsync();
+    }
+
+    private void ControlTreeViewPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.Equals(e.PropertyName, nameof(ControlTreePanelViewModel.SelectedItem), StringComparison.Ordinal))
+        {
+            ControlTreeSelectionChanged(controlTreeView.SelectedItem);
+        }
+    }
+
+    private void PropertiesViewPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.Equals(e.PropertyName, nameof(PropertiesPanelViewModel.SelectedItem), StringComparison.Ordinal))
+        {
+            PropertySelectionChanged(propertiesView.SelectedItem);
+        }
+    }
+
+    private void WorkspaceViewPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.Equals(e.PropertyName, nameof(WorkspacePanelViewModel.SelectedTabIndex), StringComparison.Ordinal))
+        {
+            ScheduleLayoutSave();
+        }
+    }
+
+    private void RemoteToolsViewPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.Equals(e.PropertyName, nameof(RemoteToolsPanelViewModel.SelectedTabIndex), StringComparison.Ordinal))
+        {
+            ScheduleLayoutSave();
+        }
     }
 
     private async void ConnectClicked(object? sender, RoutedEventArgs e)
@@ -385,47 +413,6 @@ public sealed partial class MainWindow : Window
 
     private void OpenLiveViewClicked(object? sender, RoutedEventArgs e)
     {
-        _ = ShowLiveViewWindow("Live view opened.");
-    }
-
-    private bool ShowLiveViewWindow(string statusText)
-    {
-        if (session is null)
-        {
-            StatusText.Text = "Connect before opening live view.";
-            return false;
-        }
-
-        if (floatingToolWindows.TryGetValue("liveView", out var existing))
-        {
-            existing.Activate();
-            StatusText.Text = statusText;
-            return true;
-        }
-
-        StopDockedLiveView();
-        HideDockPane("liveView");
-        floatingLiveViewControl = CreateRemoteViewControl();
-        var viewModel = new LiveViewPanelViewModel
-        {
-            Content = floatingLiveViewControl,
-            PlaceholderText = "Live view is floating.",
-        };
-        var panel = new LiveViewPanel
-        {
-            ViewModel = viewModel,
-        };
-        var window = CreateFloatingToolWindow("liveView", "Live View", "\uE8A7", panel);
-        window.Closed += FloatingLiveViewClosed;
-        window.Show(this);
-        restoreDockedLiveViewOnConnect = false;
-        StatusText.Text = statusText;
-        ScheduleLayoutSave();
-        return true;
-    }
-
-    private void DockLiveViewClicked(object? sender, RoutedEventArgs e)
-    {
         DockLiveView();
     }
 
@@ -437,33 +424,15 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        if (dockedLiveViewControl is not null)
-        {
-            StatusText.Text = "Live view is already docked.";
-            return;
-        }
-
-        CloseFloatingToolWindow("liveView");
-
-        dockedLiveViewControl = CreateRemoteViewControl();
-        remoteToolsView.LiveView.Content = dockedLiveViewControl;
-        ShowDockPane("liveView");
-        restoreDockedLiveViewOnConnect = true;
-        StatusText.Text = "Live view docked on the right.";
-        ScheduleLayoutSave();
-    }
-
-    private void CloseDockedLiveViewClicked(object? sender, RoutedEventArgs e)
-    {
         if (dockedLiveViewControl is null)
         {
-            StatusText.Text = "Live view is not docked.";
-            return;
+            dockedLiveViewControl = CreateRemoteViewControl();
+            remoteToolsView.LiveView.Content = dockedLiveViewControl;
         }
 
-        StopDockedLiveView();
-        restoreDockedLiveViewOnConnect = false;
-        _ = ShowLiveViewWindow("Live view undocked.");
+        dockFactory.ShowLiveViewTool();
+        restoreDockedLiveViewOnConnect = true;
+        StatusText.Text = "Live view docked on the right.";
         ScheduleLayoutSave();
     }
 
@@ -480,300 +449,6 @@ public sealed partial class MainWindow : Window
         control.RemoteNodeClicked += async (_, nodeId) => await SelectRemoteTreeNodeAsync(nodeId);
         control.RemoteInputSent += (_, args) => RecordLiveInput(args.Events);
         return control;
-    }
-
-    private void FloatingLiveViewClosed(object? sender, EventArgs e)
-    {
-        floatingLiveViewControl?.Stop();
-        floatingLiveViewControl = null;
-        floatingToolWindows.Remove("liveView");
-        restoreDockedLiveViewOnConnect = false;
-        ScheduleLayoutSave();
-    }
-
-    private FloatingDockPaneWindow CreateFloatingToolWindow(
-        string panelId,
-        string title,
-        string glyph,
-        Control content)
-    {
-        var window = new FloatingDockPaneWindow(panelId, title, glyph, content);
-        floatingToolWindows[panelId] = window;
-        window.CommandRequested += FloatingToolWindowCommandRequested;
-        window.Closed += (_, _) =>
-        {
-            floatingToolWindows.Remove(panelId);
-            if (panelId is not ("logs" or "liveView"))
-            {
-                ShowDockPane(panelId);
-            }
-
-            ScheduleLayoutSave();
-        };
-
-        return window;
-    }
-
-    private void CloseFloatingToolWindow(string panelId)
-    {
-        if (!floatingToolWindows.Remove(panelId, out var window))
-        {
-            return;
-        }
-
-        window.Close();
-    }
-
-    private void CloseFloatingToolWindows()
-    {
-        foreach (var panelId in floatingToolWindows.Keys.ToArray())
-        {
-            CloseFloatingToolWindow(panelId);
-        }
-    }
-
-    private void FloatingToolWindowCommandRequested(object? sender, DockPaneCommandEventArgs e)
-    {
-        switch (e.Command)
-        {
-            case DockPaneCommand.Dock:
-            case DockPaneCommand.Restore:
-                DockToolPanel(e.PanelId);
-                break;
-            case DockPaneCommand.Close:
-                CloseFloatingToolWindow(e.PanelId);
-                break;
-            case DockPaneCommand.AutoHide:
-                DockToolPanel(e.PanelId);
-                break;
-            case DockPaneCommand.Float:
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(e.Command));
-        }
-    }
-
-    private void DockPaneCommandRequested(object? sender, DockPaneCommandEventArgs e)
-    {
-        switch (e.Command)
-        {
-            case DockPaneCommand.Float:
-                FloatToolPanel(e.PanelId);
-                break;
-            case DockPaneCommand.Dock:
-            case DockPaneCommand.Restore:
-                DockToolPanel(e.PanelId);
-                break;
-            case DockPaneCommand.AutoHide:
-                StatusText.Text = $"{GetPanelTitle(e.PanelId)} auto-hide toggled.";
-                ScheduleLayoutSave();
-                break;
-            case DockPaneCommand.Close:
-                StatusText.Text = $"{GetPanelTitle(e.PanelId)} hidden.";
-                ScheduleLayoutSave();
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(e.Command));
-        }
-    }
-
-    private void DockPaneHeaderDragCompleted(object? sender, DockPaneDragCompletedEventArgs e)
-    {
-        FloatToolPanel(e.PanelId);
-    }
-
-    private void FloatToolPanel(string panelId)
-    {
-        if (floatingToolWindows.TryGetValue(panelId, out var existing))
-        {
-            existing.Activate();
-            HideDockPane(panelId);
-            return;
-        }
-
-        switch (panelId)
-        {
-            case "logs":
-                ShowLogToolWindow("Log panel floated.");
-                return;
-            case "liveView":
-                ShowLiveViewWindow("Live view floated.");
-                return;
-        }
-
-        var content = CreatePanelContent(panelId, floating: true);
-        if (content is null)
-        {
-            StatusText.Text = $"Panel {panelId} cannot be floated.";
-            return;
-        }
-
-        HideDockPane(panelId);
-
-        var window = CreateFloatingToolWindow(panelId, GetPanelTitle(panelId), GetPanelGlyph(panelId), content);
-        window.Show(this);
-        StatusText.Text = $"{GetPanelTitle(panelId)} floated.";
-        ScheduleLayoutSave();
-    }
-
-    private void DockToolPanel(string panelId)
-    {
-        switch (panelId)
-        {
-            case "logs":
-                DockLogsToMain("Log panel docked.");
-                return;
-            case "liveView":
-                DockLiveView();
-                return;
-        }
-
-        CloseFloatingToolWindow(panelId);
-        ShowDockPane(panelId);
-
-        StatusText.Text = $"{GetPanelTitle(panelId)} docked.";
-        ScheduleLayoutSave();
-    }
-
-    private void HideDockPane(string panelId)
-    {
-        SetDockPaneVisibility(panelId, isVisible: false);
-    }
-
-    private void ShowDockPane(string panelId)
-    {
-        SetDockPaneVisibility(panelId, isVisible: true);
-    }
-
-    private void SetDockPaneVisibility(string panelId, bool isVisible)
-    {
-        if (GetDockPane(panelId) is not { } pane)
-        {
-            return;
-        }
-
-        if (isVisible)
-        {
-            pane.IsAutoHidden = false;
-        }
-
-        if (pane.IsVisible == isVisible)
-        {
-            return;
-        }
-
-        pane.IsVisible = isVisible;
-        WorkspaceDockLayout.InvalidateMeasure();
-        WorkspaceDockLayout.InvalidateArrange();
-        RightDockLayout.InvalidateMeasure();
-        RightDockLayout.InvalidateArrange();
-    }
-
-    private Control? CreatePanelContent(string panelId, bool floating)
-    {
-        return panelId switch
-        {
-            "controlTree" => CreateControlTreePanel(),
-            "properties" => CreatePropertiesPanel(),
-            "remoteTools" => CreateRemoteToolsPanel(floating),
-            _ => null,
-        };
-    }
-
-    private ControlTreePanel CreateControlTreePanel()
-    {
-        var panel = new ControlTreePanel
-        {
-            ViewModel = controlTreeView,
-        };
-        panel.SelectedItemChanged += (_, item) => ControlTreeSelectionChanged(item);
-        return panel;
-    }
-
-    private PropertiesPanel CreatePropertiesPanel()
-    {
-        var panel = new PropertiesPanel
-        {
-            ViewModel = propertiesView,
-        };
-        panel.PropertySelected += (_, row) => PropertySelectionChanged(row);
-        return panel;
-    }
-
-    private WorkspacePanel CreateWorkspacePanel()
-    {
-        var panel = new WorkspacePanel
-        {
-            ViewModel = workspaceView,
-        };
-        panel.SelectedTabChanged += (_, _) => ScheduleLayoutSave();
-        panel.Properties.PropertySelected += (_, row) => PropertySelectionChanged(row);
-        return panel;
-    }
-
-    private RemoteToolsPanel CreateRemoteToolsPanel(bool floating)
-    {
-        if (floating)
-        {
-            StopDockedLiveView();
-        }
-
-        var panel = new RemoteToolsPanel
-        {
-            ViewModel = remoteToolsView,
-        };
-        WireRemoteToolsPanel(panel);
-        return panel;
-    }
-
-    private void WireRemoteToolsPanel(RemoteToolsPanel panel)
-    {
-        panel.SelectedTabChanged += (_, _) => ScheduleLayoutSave();
-        panel.Actions.InvokeClickRequested += (_, _) => InvokeClickClicked(null, new RoutedEventArgs());
-        panel.Actions.FocusRequested += (_, _) => InvokeFocusClicked(null, new RoutedEventArgs());
-        panel.Actions.SetPropertyRequested += (_, _) => SetPropertyClicked(null, new RoutedEventArgs());
-        panel.Project.SaveProjectRequested += (_, _) => SaveProjectClicked(null, new RoutedEventArgs());
-        panel.Project.RefreshRequested += (_, _) => RefreshProjectClicked(null, new RoutedEventArgs());
-    }
-
-    private DockPaneChrome? GetDockPane(string panelId)
-    {
-        return panelId switch
-        {
-            "controlTree" => ControlTreePane,
-            "remoteTools" => RemoteToolsPane,
-            "liveView" => LiveViewPane,
-            "logs" => LogsPane,
-            _ => null,
-        };
-    }
-
-    private static string GetPanelTitle(string panelId)
-    {
-        return panelId switch
-        {
-            "controlTree" => "Control Tree",
-            "properties" => "Properties",
-            "workspace" => "Workspace",
-            "remoteTools" => "Remote Tools",
-            "logs" => "Logs",
-            "liveView" => "Live View",
-            _ => panelId,
-        };
-    }
-
-    private static string GetPanelGlyph(string panelId)
-    {
-        return panelId switch
-        {
-            "controlTree" => "\uE8B7",
-            "properties" => "\uE8EC",
-            "workspace" => "\uE756",
-            "remoteTools" => "\uE713",
-            "logs" => "\uE8A5",
-            "liveView" => "\uE8A7",
-            _ => "\uE8B7",
-        };
     }
 
     private async Task RefreshSnapshotAsync()
@@ -823,7 +498,8 @@ public sealed partial class MainWindow : Window
         {
             if (FindTreeItem(root, nodeId) is { } item)
             {
-                ControlTreePanel.SelectItem(item);
+                item.ExpandAncestors();
+                controlTreeView.SelectedItem = item;
                 ControlTreeSelectionChanged(item);
                 StatusText.Text = $"Selected {item.Header} from live view.";
                 return true;
@@ -1008,77 +684,6 @@ public sealed partial class MainWindow : Window
         StartLogStream();
     }
 
-    private void PopOutLogsClicked(object? sender, RoutedEventArgs e)
-    {
-        ShowLogToolWindow("Log panel floated.");
-    }
-
-    private bool ShowLogToolWindow(string statusText)
-    {
-        if (floatingToolWindows.TryGetValue("logs", out var existing))
-        {
-            existing.Activate();
-            HideDockPane("logs");
-            StatusText.Text = statusText;
-            return true;
-        }
-
-        floatingLogPanel = new LogPanel
-        {
-            ViewModel = logView,
-            IsDockHost = false,
-        };
-        floatingLogPanel.DockRequested += (_, _) => DockLogsToMain("Log panel docked.");
-
-        var window = CreateFloatingToolWindow("logs", "Logs", "\uE8A5", floatingLogPanel);
-        window.Closed += FloatingLogToolWindowClosed;
-        logView.PopOut();
-        UpdateLogPresentationState();
-        HideDockPane("logs");
-        window.Show(this);
-        StatusText.Text = statusText;
-        ScheduleLayoutSave();
-        return true;
-    }
-
-    private void FloatingLogToolWindowClosed(object? sender, EventArgs e)
-    {
-        floatingToolWindows.Remove("logs");
-        floatingLogPanel = null;
-
-        if (logView.IsPoppedOut)
-        {
-            restoreFloatingLogOnOpen = false;
-            logView.Dock();
-            UpdateLogPresentationState();
-            ShowDockPane("logs");
-            StatusText.Text = "Log window closed.";
-            ScheduleLayoutSave();
-        }
-    }
-
-    private void DockLogsToMain(string statusText)
-    {
-        restoreFloatingLogOnOpen = false;
-        logView.Dock();
-        UpdateLogPresentationState();
-        ShowDockPane("logs");
-        CloseFloatingToolWindow("logs");
-
-        StatusText.Text = statusText;
-        ScheduleLayoutSave();
-    }
-
-    private void UpdateLogPresentationState()
-    {
-        DockedLogPanel.ViewModel = logView;
-    }
-
-    private void DockLogsClicked(object? sender, RoutedEventArgs e)
-    {
-        DockLogsToMain("Log window docked.");
-    }
-
     private void LogViewPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (!string.Equals(e.PropertyName, nameof(RemoteLogViewModel.SelectedVerbosity), StringComparison.Ordinal))
@@ -1111,6 +716,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        dockFactory.ShowLogsTool();
         StopLogStream(addRow: false);
         logStreamCancellation = new CancellationTokenSource();
         var minimumLevel = SelectedLogMinimumLevel;
@@ -1200,12 +806,6 @@ public sealed partial class MainWindow : Window
         }
 
         logView.Rows.Add(row);
-        if (!logView.IsPoppedOut)
-        {
-            DockedLogPanel.ScrollToEnd();
-        }
-
-        floatingLogPanel?.ScrollToEnd();
 
         if (projectRecorder is not null)
         {
@@ -1313,19 +913,11 @@ public sealed partial class MainWindow : Window
             layout.WindowY = Position.Y;
         }
 
-        layout.TreePaneWidth = WorkspaceDockLayout.WestWidth;
-        layout.RightPaneWidth = WorkspaceDockLayout.EastWidth;
-        layout.LogPaneHeight = WorkspaceDockLayout.SouthHeight;
-        layout.RightToolTabIndex = Math.Max(0, RemoteToolsPanel.SelectedTabIndex);
-        layout.WorkspaceTabIndex = Math.Max(0, WorkspacePanel.SelectedTabIndex);
+        layout.RightToolTabIndex = Math.Max(0, remoteToolsView.SelectedTabIndex);
+        layout.WorkspaceTabIndex = Math.Max(0, workspaceView.SelectedTabIndex);
         layout.TerminalWorkingDirectory = workspaceView.Terminal.WorkingDirectory;
-        layout.LogsPoppedOut = logView.IsPoppedOut;
-        layout.LiveViewDocked = LiveViewPane.IsVisible || dockedLiveViewControl is not null || restoreDockedLiveViewOnConnect;
+        layout.LiveViewDocked = dockedLiveViewControl is not null || restoreDockedLiveViewOnConnect;
         layout.LiveViewDockStateInitialized = true;
-        layout.ControlTreeAutoHidden = ControlTreePane.IsAutoHidden;
-        layout.PropertiesAutoHidden = false;
-        layout.RemoteToolsAutoHidden = RemoteToolsPane.IsAutoHidden;
-        layout.LogsAutoHidden = LogsPane.IsAutoHidden;
     }
 
     private void ApplyLayoutState(RemoteControlClientLayoutState? layout)
@@ -1353,41 +945,22 @@ public sealed partial class MainWindow : Window
                 WindowState = savedState;
             }
 
-            WorkspaceDockLayout.WestWidth = Clamp(layout.TreePaneWidth, 220, 800);
-            WorkspaceDockLayout.EastWidth = Clamp(layout.RightPaneWidth, 300, 900);
-            WorkspaceDockLayout.SouthHeight = Clamp(layout.LogPaneHeight, 120, 500);
-            RemoteToolsPanel.SelectedTabIndex = Math.Clamp(layout.RightToolTabIndex, 0, 1);
-            WorkspacePanel.SelectedTabIndex = Math.Clamp(layout.WorkspaceTabIndex, 0, 1);
+            remoteToolsView.SelectedTabIndex = Math.Clamp(layout.RightToolTabIndex, 0, 1);
+            workspaceView.SelectedTabIndex = Math.Clamp(layout.WorkspaceTabIndex, 0, 1);
             workspaceView.Terminal.WorkingDirectory = string.IsNullOrWhiteSpace(layout.TerminalWorkingDirectory)
                 ? ToolProcessContext.StartupWorkingDirectory
                 : ToolProcessContext.ResolveStartupWorkingDirectory(layout.TerminalWorkingDirectory);
             shellView.ApplyLayoutState(layout);
-            SetDockPaneVisibility("liveView", restoreDockedLiveViewOnConnect);
-            ControlTreePane.IsAutoHidden = layout.ControlTreeAutoHidden;
-            RemoteToolsPane.IsAutoHidden = layout.RemoteToolsAutoHidden;
-            LogsPane.IsAutoHidden = layout.LogsAutoHidden;
 
-            if (layout.LogsPoppedOut)
+            if (!restoreDockedLiveViewOnConnect)
             {
-                restoreFloatingLogOnOpen = true;
-                Dispatcher.UIThread.Post(RestoreFloatingLogIfNeeded);
+                dockFactory.HideLiveViewTool();
             }
         }
         finally
         {
             isApplyingLayoutState = false;
         }
-    }
-
-    private void RestoreFloatingLogIfNeeded()
-    {
-        if (!restoreFloatingLogOnOpen || !IsVisible)
-        {
-            return;
-        }
-
-        restoreFloatingLogOnOpen = false;
-        _ = ShowLogToolWindow("Log panel restored.");
     }
 
     private static double Clamp(double value, double minimum, double maximum)

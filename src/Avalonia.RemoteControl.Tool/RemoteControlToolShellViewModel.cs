@@ -2,6 +2,8 @@ using Avalonia.RemoteControl.Client.Live;
 using Avalonia.RemoteControl.Client.Logging;
 using Avalonia.RemoteControl.Client.Projects;
 using Avalonia.RemoteControl.Protocol.V1;
+using Avalonia.RemoteControl.Tool.Docking;
+using Dock.Model.Controls;
 
 namespace Avalonia.RemoteControl.Tool;
 
@@ -46,6 +48,16 @@ public sealed class RemoteControlToolShellViewModel
     /// Gets the shared log panel state.
     /// </summary>
     public RemoteLogViewModel Logs { get; } = new();
+
+    /// <summary>
+    /// Gets or sets the Dock.Avalonia root layout hosting the shell dockables.
+    /// </summary>
+    public IRootDock? Layout { get; set; }
+
+    /// <summary>
+    /// Gets or sets the factory that builds and mutates the shell dock layout.
+    /// </summary>
+    public RemoteControlDockFactory? DockFactory { get; set; }
 
     /// <summary>
     /// Gets or sets live-view capabilities for the current connection.

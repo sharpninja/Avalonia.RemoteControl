@@ -8,6 +8,8 @@ namespace Avalonia.RemoteControl.Tool;
 /// </summary>
 public sealed partial class LiveViewPanel : UserControl
 {
+    private LiveViewPanelViewModel? subscribedViewModel;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="LiveViewPanel"/> class.
     /// </summary>
@@ -22,21 +24,26 @@ public sealed partial class LiveViewPanel : UserControl
     public LiveViewPanelViewModel? ViewModel
     {
         get => DataContext as LiveViewPanelViewModel;
-        set
+        set => DataContext = value;
+    }
+
+    /// <inheritdoc />
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+
+        if (subscribedViewModel is { } previous)
         {
-            if (ViewModel is { } previous)
-            {
-                previous.PropertyChanged -= ViewModelPropertyChanged;
-            }
-
-            DataContext = value;
-            if (value is not null)
-            {
-                value.PropertyChanged += ViewModelPropertyChanged;
-            }
-
-            UpdatePlaceholder();
+            previous.PropertyChanged -= ViewModelPropertyChanged;
         }
+
+        subscribedViewModel = DataContext as LiveViewPanelViewModel;
+        if (subscribedViewModel is not null)
+        {
+            subscribedViewModel.PropertyChanged += ViewModelPropertyChanged;
+        }
+
+        UpdatePlaceholder();
     }
 
     private void ViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -50,6 +57,11 @@ public sealed partial class LiveViewPanel : UserControl
 
     private void UpdatePlaceholder()
     {
+        if (Placeholder is null)
+        {
+            return;
+        }
+
         Placeholder.IsVisible = ViewModel?.HasContent != true;
     }
 }

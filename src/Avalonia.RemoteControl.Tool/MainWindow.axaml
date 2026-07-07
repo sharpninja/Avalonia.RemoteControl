@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:tool="using:Avalonia.RemoteControl.Tool"
+        xmlns:dockc="using:Dock.Avalonia.Controls"
         x:Class="Avalonia.RemoteControl.Tool.MainWindow"
         Title="Avalonia Remote Control"
         Width="1180"
@@ -76,69 +77,9 @@
       </Grid>
     </Border>
 
-    <tool:DockLayout x:Name="WorkspaceDockLayout"
-                     Grid.Row="1"
-                     Background="{StaticResource VsDockSeparatorBrush}"
-                     DockSpacing="5"
-                     WestWidth="340"
-                     EastWidth="390"
-                     SouthHeight="220"
-                     Margin="0,0,0,24">
-      <tool:DockPaneChrome x:Name="ControlTreePane"
-                           tool:DockLayout.Region="West"
-                           PanelId="controlTree"
-                           Title="Control Tree"
-                           Glyph="&#xE8B7;"
-                           CommandRequested="DockPaneCommandRequested"
-                           HeaderDragCompleted="DockPaneHeaderDragCompleted">
-        <tool:DockPaneChrome.Body>
-          <tool:ControlTreePanel x:Name="ControlTreePanel" />
-        </tool:DockPaneChrome.Body>
-      </tool:DockPaneChrome>
-
-      <tool:DockLayout x:Name="RightDockLayout"
-                       tool:DockLayout.Region="East"
-                       Background="{StaticResource VsDockSeparatorBrush}"
-                       DockSpacing="5"
-                       SouthHeight="360">
-        <tool:DockPaneChrome x:Name="RemoteToolsPane"
-                             PanelId="remoteTools"
-                             Title="Remote Tools"
-                             Glyph="&#xE713;"
-                             CommandRequested="DockPaneCommandRequested"
-                             HeaderDragCompleted="DockPaneHeaderDragCompleted">
-          <tool:DockPaneChrome.Body>
-            <tool:RemoteToolsPanel x:Name="RemoteToolsPanel" />
-          </tool:DockPaneChrome.Body>
-        </tool:DockPaneChrome>
-
-        <tool:DockPaneChrome x:Name="LiveViewPane"
-                             tool:DockLayout.Region="South"
-                             PanelId="liveView"
-                             Title="Live View"
-                             Glyph="&#xE8A7;"
-                             CommandRequested="DockPaneCommandRequested"
-                             HeaderDragCompleted="DockPaneHeaderDragCompleted">
-          <tool:DockPaneChrome.Body>
-            <tool:LiveViewPanel x:Name="DockedLiveViewPanel" />
-          </tool:DockPaneChrome.Body>
-        </tool:DockPaneChrome>
-      </tool:DockLayout>
-
-      <tool:DockPaneChrome x:Name="LogsPane"
-                           tool:DockLayout.Region="South"
-                           PanelId="logs"
-                           Title="Logs"
-                           Glyph="&#xE8A5;"
-                           CommandRequested="DockPaneCommandRequested"
-                           HeaderDragCompleted="DockPaneHeaderDragCompleted">
-        <tool:DockPaneChrome.Body>
-          <tool:LogPanel x:Name="DockedLogPanel" IsDockHost="True" />
-        </tool:DockPaneChrome.Body>
-      </tool:DockPaneChrome>
-
-      <tool:WorkspacePanel x:Name="WorkspacePanel" />
-    </tool:DockLayout>
+    <dockc:DockControl x:Name="Dock"
+                       Grid.Row="1"
+                       Margin="0,0,0,24" />
 
     <Border Grid.Row="1" Classes="vs-status-bar" VerticalAlignment="Bottom" HorizontalAlignment="Stretch">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">

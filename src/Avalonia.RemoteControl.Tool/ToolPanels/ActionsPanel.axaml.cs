@@ -17,21 +17,6 @@ public sealed partial class ActionsPanel : UserControl
     }
 
     /// <summary>
-    /// Raised when click invocation is requested.
-    /// </summary>
-    public event EventHandler? InvokeClickRequested;
-
-    /// <summary>
-    /// Raised when focus invocation is requested.
-    /// </summary>
-    public event EventHandler? FocusRequested;
-
-    /// <summary>
-    /// Raised when property mutation is requested.
-    /// </summary>
-    public event EventHandler? SetPropertyRequested;
-
-    /// <summary>
     /// Gets or sets the panel view model.
     /// </summary>
     public ActionsPanelViewModel? ViewModel
@@ -56,12 +41,12 @@ public sealed partial class ActionsPanel : UserControl
 
     private void InvokeClickClicked(object? sender, RoutedEventArgs e)
     {
-        InvokeClickRequested?.Invoke(this, EventArgs.Empty);
+        ViewModel?.RequestInvokeClick();
     }
 
     private void FocusClicked(object? sender, RoutedEventArgs e)
     {
-        FocusRequested?.Invoke(this, EventArgs.Empty);
+        ViewModel?.RequestFocus();
     }
 
     private void SetPropertyClicked(object? sender, RoutedEventArgs e)
@@ -70,8 +55,7 @@ public sealed partial class ActionsPanel : UserControl
         {
             viewModel.PropertyName = PropertyNameBox.Text ?? string.Empty;
             viewModel.PropertyValue = PropertyValueBox.Text ?? string.Empty;
+            viewModel.RequestSetProperty();
         }
-
-        SetPropertyRequested?.Invoke(this, EventArgs.Empty);
     }
 }
