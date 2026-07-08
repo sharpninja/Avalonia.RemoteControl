@@ -59,6 +59,7 @@
 - `TEST-CLIENT-011`: Build and unit validation verify the dock chrome model persists panel state and that the Avalonia XAML for icon commands, draggable headers, floating windows, dock-back commands, and hidden or auto-hide states compiles without regressing existing log and live-view behavior.
 - `TEST-CLIENT-014`: Unit tests verify both the legacy diagnostic stdio server and the in-process Streamable HTTP MCP endpoint handle initialize, tool listing, and tool call JSON-RPC messages without emitting non-MCP payloads.
 - `TEST-CLIENT-015`: Unit tests verify the embedded terminal Codex MCP preset registers the running app's loopback MCP URL, seeds guidance for using capabilities, snapshots, focus, click, and property tools with tree-first node discovery instead of screenshots, uses the captured tool startup working directory instead of a later process current directory, returns equivalent MCP initialize instructions, and does not pass remote endpoint, transport, bearer token, environment variable names, profile arguments, or `avalonia-remote mcp` child-process commands.
+- `TEST-CLIENT-018`: Unit tests verify the server exposes the configured audit identity through capabilities, bridge and gRPC clients preserve it, and the desktop shell stores and resets the displayed identity.
 
 ## MCP Server aiUnit Integration Tests
 

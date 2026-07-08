@@ -49,6 +49,7 @@
 - `TR-CLIENT-UI-002`: The desktop tool defines reusable Visual Studio 2026-like Avalonia resources and styles for the entire shell, including command bars, status bars, text inputs, combo boxes, buttons, list/tree surfaces, tab strips, tool-window headers, dock placeholders, and generic floating tool windows.
 - `TR-CLIENT-UI-003`: The desktop tool implements a reusable dock chrome surface for panels and floating windows that renders Visual Studio-like command icons, tooltips, draggable headers, drag state, dock, float, auto-hide, and close commands, and routes those commands through explicit panel identifiers.
 - `TR-CLIENT-UI-004`: Every displayed dock panel is a custom Avalonia control backed by a view model; the main window composes panel hosts and coordinates cross-panel session actions rather than owning each panel's internal UI.
+- `TR-CLIENT-UI-008`: The desktop client displays the authenticated audit identity returned by endpoint capabilities together with connection state and transport mode so users can correlate visible client state with remote audit logs.
 
 ## Client Project System
 

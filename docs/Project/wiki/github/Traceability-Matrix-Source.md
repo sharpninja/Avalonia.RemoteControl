@@ -276,6 +276,7 @@ Requirements:
 - `TR-PACK-PACKAGE-003`
 - `TR-CLIENT-UI-001`
 - `TR-CLIENT-UI-002`
+- `TR-CLIENT-UI-008`
 - `TR-SEC-SECURITY-016`
 - `TR-SEC-SECURITY-017`
 - `TR-ADB-CONNECTIVITY-016`
@@ -283,6 +284,14 @@ Requirements:
 Tests/evidence:
 
 - `TEST-PACK-002`
+- `TEST-CLIENT-018`
+
+Implemented evidence:
+
+- `RemoteControlReadOnlyInspectionTests` covers authenticated audit identity in runtime and gRPC capabilities.
+- `RemoteControlDesktopSessionTests` covers authenticated audit identity propagation through hosted gRPC and Android bridge transports.
+- `RemoteControlTerminalPanelTests` covers shell storage and reset of the displayed audit identity.
+- `RemoteControlProjectSystemTests` covers persistence of the authenticated audit identity in project session history.
 - `TEST-PACK-003`
 - `TEST-PACK-004`
 - `TEST-CLIENT-005`

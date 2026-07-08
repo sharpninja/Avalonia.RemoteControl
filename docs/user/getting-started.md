@@ -31,7 +31,7 @@ avalonia-remote --help
 For a desktop or server-capable Avalonia app, add:
 
 ```powershell
-dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.7.3
+dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.7.4
 ```
 
 The server package brings in the runtime and protocol packages.

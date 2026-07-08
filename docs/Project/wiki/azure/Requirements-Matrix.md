@@ -41,6 +41,7 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | FR-CLIENT-022 | Tracked | Functional-Requirements.md |
 | FR-CLIENT-023 | Tracked | Functional-Requirements.md |
 | FR-CLIENT-024 | Tracked | Functional-Requirements.md |
+| FR-DOCKING-001 | Tracked | Functional-Requirements.md |
 | FR-LOG-001 | Tracked | Functional-Requirements.md |
 | FR-LOG-002 | Tracked | Functional-Requirements.md |
 | FR-LOG-003 | Tracked | Functional-Requirements.md |
@@ -124,11 +125,14 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TR-CLIENT-UI-005 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-UI-006 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-UI-007 | Tracked | Technical-Requirements.md |
+| TR-CLIENT-UI-008 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-001 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-002 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-003 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-004 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-005 | Tracked | Technical-Requirements.md |
+| TR-DOCKING-LAYOUT-001 | Tracked | Technical-Requirements.md |
+| TR-DOCKING-PERSISTENCE-001 | Tracked | Technical-Requirements.md |
 | TR-DOC-USER-001 | Tracked | Technical-Requirements.md |
 | TR-GRPC-PROTOCOL-001 | Tracked | Technical-Requirements.md |
 | TR-GRPC-PROTOCOL-002 | Tracked | Technical-Requirements.md |
@@ -242,7 +246,9 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TEST-CLIENT-015 | Tracked | Testing-Requirements.md |
 | TEST-CLIENT-016 | Tracked | Testing-Requirements.md |
 | TEST-CLIENT-017 | Tracked | Testing-Requirements.md |
+| TEST-CLIENT-018 | Tracked | Testing-Requirements.md |
 | TEST-DOC-001 | Tracked | Testing-Requirements.md |
+| TEST-DOCKING-001 | Tracked | Testing-Requirements.md |
 | TEST-GATE-001 | Tracked | Testing-Requirements.md |
 | TEST-GATE-002 | Tracked | Testing-Requirements.md |
 | TEST-GATE-003 | Tracked | Testing-Requirements.md |

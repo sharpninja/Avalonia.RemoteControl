@@ -162,6 +162,6 @@ Check:
 Use the `SharpNinja.Avalonia.RemoteControl.*` package IDs. The older `Avalonia.RemoteControl.*` IDs are not the public package names.
 
 ```powershell
-dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.7.3
-dotnet add package SharpNinja.Avalonia.RemoteControl.Runtime --version 0.7.3
+dotnet add package SharpNinja.Avalonia.RemoteControl.Server --version 0.7.4
+dotnet add package SharpNinja.Avalonia.RemoteControl.Runtime --version 0.7.4
 ```

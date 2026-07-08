@@ -145,7 +145,7 @@ Remote input also depends on this setting. `AllowRemoteInput = true` is not enou
 
 `AllowRemoteFrames`
 
-Enables live PNG frame streaming for the live-view panel, whether it is docked or hosted by a generic floating tool window. The default is false.
+Enables live PNG frame streaming for the live-view panel, whether it is docked or floated into its own window. The default is false.
 
 Frame streaming exposes what the user would see on the target app surface. That may include business data, PII, credentials accidentally shown in UI, map positions, or other sensitive state. Enable it only when the debugging operator is trusted to view the app.
 
@@ -280,7 +280,7 @@ Changing verbosity restarts an active log stream with the new minimum level.
 
 Log floating
 
-The desktop client can open the current log view in a generic floating tool window. The floating panel owns the visible log list while it is open, so the main window shows that logs are floating instead of rendering the same rows twice. Dock returns the same shared log view model to the main window. The stream, verbosity, status text, entry count, and buffered rows are shared, so floating or docking does not restart streaming or duplicate remote log requests.
+The Logs pane can be dragged out of the shell to float in its own window and dragged back to re-dock. The stream, verbosity, status text, entry count, and buffered rows are shared, so floating or docking does not restart streaming or duplicate remote log requests.
 
 Save and Forget
 

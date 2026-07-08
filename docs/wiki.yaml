@@ -1,0 +1,293 @@
+schema: mcp-wiki-export/v1
+home:
+  document: home
+documents:
+- id: home
+  title: Home
+  source: generated:home
+  target: Home.md
+  platforms:
+  - github
+  - azure
+- id: functional
+  title: Functional Requirements
+  source: generated:functional
+  target: Functional-Requirements.md
+  platforms:
+  - github
+  - azure
+- id: technical
+  title: Technical Requirements
+  source: generated:technical
+  target: Technical-Requirements.md
+  platforms:
+  - github
+  - azure
+- id: testing
+  title: Testing Requirements
+  source: generated:testing
+  target: Testing-Requirements.md
+  platforms:
+  - github
+  - azure
+- id: mapping
+  title: TR per FR Mapping
+  source: generated:mapping
+  target: TR-per-FR-Mapping.md
+  platforms:
+  - github
+  - azure
+- id: matrix
+  title: Requirements Matrix
+  source: generated:matrix
+  target: Requirements-Matrix.md
+  platforms:
+  - github
+  - azure
+- id: user-index
+  title: User Docs Index
+  source: docs/user/index.md
+  target: User-Docs-Index.md
+  platforms:
+  - github
+  - azure
+- id: user-getting-started
+  title: Getting Started
+  source: docs/user/getting-started.md
+  target: Getting-Started.md
+  platforms:
+  - github
+  - azure
+- id: user-server-integration
+  title: Server Integration
+  source: docs/user/server-integration.md
+  target: Server-Integration.md
+  platforms:
+  - github
+  - azure
+- id: user-client-tool
+  title: Client Tool
+  source: docs/user/client-tool.md
+  target: Client-Tool.md
+  platforms:
+  - github
+  - azure
+- id: user-android-adb
+  title: Android ADB Connections
+  source: docs/user/android-adb.md
+  target: Android-ADB.md
+  platforms:
+  - github
+  - azure
+- id: user-codex-mcp
+  title: Codex MCP
+  source: docs/user/codex-mcp.md
+  target: Codex-MCP.md
+  platforms:
+  - github
+  - azure
+- id: user-settings
+  title: Settings Guide
+  source: docs/user/settings.md
+  target: Settings-Guide.md
+  platforms:
+  - github
+  - azure
+- id: user-security
+  title: Security Guide
+  source: docs/user/security.md
+  target: Security.md
+  platforms:
+  - github
+  - azure
+- id: user-troubleshooting
+  title: Troubleshooting
+  source: docs/user/troubleshooting.md
+  target: Troubleshooting.md
+  platforms:
+  - github
+  - azure
+- id: arch-overview
+  title: Architecture Overview
+  source: docs/architecture/overview.md
+  target: Architecture-Overview.md
+  platforms:
+  - github
+  - azure
+- id: arch-security-model
+  title: Security Model
+  source: docs/architecture/security-model.md
+  target: Security-Model.md
+  platforms:
+  - github
+  - azure
+- id: arch-android-adb-connectivity
+  title: Android ADB Connectivity
+  source: docs/architecture/android-adb-connectivity.md
+  target: Android-ADB-Connectivity.md
+  platforms:
+  - github
+  - azure
+- id: arch-android-bridge-transport
+  title: Android Bridge Transport
+  source: docs/architecture/android-bridge-transport.md
+  target: Android-Bridge-Transport.md
+  platforms:
+  - github
+  - azure
+- id: arch-android-transport-spike
+  title: Android Transport Spike
+  source: docs/architecture/android-transport-spike-2026-05-25.md
+  target: Android-Transport-Spike-2026-05-25.md
+  platforms:
+  - github
+  - azure
+- id: arch-live-interactive-view
+  title: Live Interactive View
+  source: docs/architecture/live-interactive-view.md
+  target: Live-Interactive-View.md
+  platforms:
+  - github
+  - azure
+- id: arch-project-sessions-and-replay
+  title: Project Sessions And Replay
+  source: docs/architecture/project-sessions-and-replay.md
+  target: Project-Sessions-And-Replay.md
+  platforms:
+  - github
+  - azure
+- id: arch-tool-mcp-host
+  title: Tool MCP Host
+  source: docs/architecture/tool-mcp-host.md
+  target: Tool-MCP-Host.md
+  platforms:
+  - github
+  - azure
+- id: proj-readme
+  title: README
+  source: README.md
+  target: Repository-README.md
+  platforms:
+  - github
+  - azure
+- id: proj-development-process
+  title: Development Process
+  source: docs/Development-Process.md
+  target: Development-Process.md
+  platforms:
+  - github
+  - azure
+- id: proj-release-notes
+  title: Release Notes
+  source: docs/release.md
+  target: Release-Notes.md
+  platforms:
+  - github
+  - azure
+- id: proj-product
+  title: Product Requirements
+  source: docs/requirements/product.md
+  target: Product-Requirements.md
+  platforms:
+  - github
+  - azure
+- id: proj-fr-source
+  title: Functional Requirements Source
+  source: docs/requirements/functional-requirements.md
+  target: Functional-Requirements-Source.md
+  platforms:
+  - github
+  - azure
+- id: proj-tr-source
+  title: Technical Requirements Source
+  source: docs/requirements/technical-requirements.md
+  target: Technical-Requirements-Source.md
+  platforms:
+  - github
+  - azure
+- id: proj-test-source
+  title: Testing Requirements Source
+  source: docs/requirements/testing-requirements.md
+  target: Testing-Requirements-Source.md
+  platforms:
+  - github
+  - azure
+- id: proj-matrix-source
+  title: Traceability Matrix Source
+  source: docs/requirements/traceability-matrix.md
+  target: Traceability-Matrix-Source.md
+  platforms:
+  - github
+  - azure
+- id: proj-manual-evidence
+  title: Manual Acceptance Evidence
+  source: docs/requirements/manual-acceptance-evidence.md
+  target: Manual-Acceptance-Evidence.md
+  platforms:
+  - github
+  - azure
+navigation:
+- document: home
+  children: []
+- document: functional
+  children: []
+- document: technical
+  children: []
+- document: testing
+  children: []
+- document: mapping
+  children: []
+- document: matrix
+  children: []
+- document: user-index
+  children:
+  - document: user-getting-started
+    children: []
+  - document: user-server-integration
+    children: []
+  - document: user-client-tool
+    children: []
+  - document: user-android-adb
+    children: []
+  - document: user-codex-mcp
+    children: []
+  - document: user-settings
+    children: []
+  - document: user-security
+    children: []
+  - document: user-troubleshooting
+    children: []
+- document: arch-overview
+  children:
+  - document: arch-security-model
+    children: []
+  - document: arch-android-adb-connectivity
+    children: []
+  - document: arch-android-bridge-transport
+    children: []
+  - document: arch-android-transport-spike
+    children: []
+  - document: arch-live-interactive-view
+    children: []
+  - document: arch-project-sessions-and-replay
+    children: []
+  - document: arch-tool-mcp-host
+    children: []
+- document: proj-readme
+  children:
+  - document: proj-development-process
+    children: []
+  - document: proj-release-notes
+    children: []
+  - document: proj-product
+    children: []
+  - document: proj-fr-source
+    children: []
+  - document: proj-tr-source
+    children: []
+  - document: proj-test-source
+    children: []
+  - document: proj-matrix-source
+    children: []
+  - document: proj-manual-evidence
+    children: []
