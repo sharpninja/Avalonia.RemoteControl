@@ -228,66 +228,46 @@ documents:
   - azure
 navigation:
 - document: home
-  children: []
-- document: functional
-  children: []
-- document: technical
-  children: []
-- document: testing
-  children: []
-- document: mapping
-  children: []
-- document: matrix
-  children: []
-- document: user-index
+- title: Requirements
+  path: Requirements
   children:
+  - document: functional
+  - document: technical
+  - document: testing
+  - document: mapping
+  - document: matrix
+- title: User Guides
+  path: User-Guides
+  children:
+  - document: user-index
   - document: user-getting-started
-    children: []
   - document: user-server-integration
-    children: []
   - document: user-client-tool
-    children: []
   - document: user-android-adb
-    children: []
   - document: user-codex-mcp
-    children: []
   - document: user-settings
-    children: []
   - document: user-security
-    children: []
   - document: user-troubleshooting
-    children: []
-- document: arch-overview
+- title: Architecture
+  path: Architecture
   children:
+  - document: arch-overview
   - document: arch-security-model
-    children: []
   - document: arch-android-adb-connectivity
-    children: []
   - document: arch-android-bridge-transport
-    children: []
   - document: arch-android-transport-spike
-    children: []
   - document: arch-live-interactive-view
-    children: []
   - document: arch-project-sessions-and-replay
-    children: []
   - document: arch-tool-mcp-host
-    children: []
-- document: proj-readme
+- title: Project Documentation
+  path: Project-Documentation
   children:
+  - document: proj-readme
   - document: proj-development-process
-    children: []
   - document: proj-release-notes
-    children: []
   - document: proj-product
-    children: []
   - document: proj-fr-source
-    children: []
   - document: proj-tr-source
-    children: []
   - document: proj-test-source
-    children: []
   - document: proj-matrix-source
-    children: []
   - document: proj-manual-evidence
-    children: []
