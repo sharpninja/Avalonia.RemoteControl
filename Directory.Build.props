@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>0.7.3</VersionPrefix>
+    <VersionPrefix>0.7.4</VersionPrefix>
     <Authors>Sharp Ninja</Authors>
     <Company>Sharp Ninja</Company>
     <Product>Avalonia.RemoteControl</Product>
