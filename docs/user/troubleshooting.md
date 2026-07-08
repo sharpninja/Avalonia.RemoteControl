@@ -7,8 +7,8 @@ For setting-by-setting explanations, see [Settings Guide](settings.md).
 Install or update the .NET tool:
 
 ```powershell
-dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.7.3
-dotnet tool update --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.7.3
+dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool
+dotnet tool update --global SharpNinja.Avalonia.RemoteControl.Tool
 ```
 
 Make sure the .NET global tools directory is on `PATH`.

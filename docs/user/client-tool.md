@@ -5,7 +5,7 @@
 ## Install
 
 ```powershell
-dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.7.3
+dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool
 ```
 
 ## Launch The Desktop Client
@@ -20,7 +20,7 @@ The client supports:
 - Network/TLS connections.
 - ADB-forwarded Android connections.
 - Tree rendering.
-- Live screenshot rendering in a docked or generic floating tool window when the debuggee enables frame streaming.
+- Live screenshot rendering in a docked or floating live-view pane when the debuggee enables frame streaming.
 - Tree replica rendering in the live window for structural debugging.
 - Pointer, wheel, keyboard, and text input forwarding when the debuggee enables remote input.
 - Selected-node property inspection.
@@ -102,7 +102,7 @@ After a successful connection:
 
 ## Live View
 
-After a successful connection, click Live View to open the live remote UI in a generic floating tool window. To keep the live view inside the main client, open the right-side Live View tab; the same live-view panel can be docked or floated from its tool-window header icons.
+After a successful connection, click Live View to show the Live View pane, docked below Remote Tools on the right. Drag the Live View tab out (or use the pane's float control) to float it in its own window, and drag it back to re-dock; the floating and docked live views share the same rendering and behavior.
 
 The live panel has two modes:
 
@@ -111,7 +111,7 @@ The live panel has two modes:
 
 Clicking a visible control in the live panel selects the matching node in the main Control Tree when the node is present in the latest tree snapshot. The selected live-view overlay outline is highlighted in gold.
 
-The docked and floating live views use the same rendering, overlay, input, and tree-selection behavior. Floating creates a live-view panel in the generic tool-window host without disconnecting the main client.
+The docked and floating live views use the same rendering, overlay, input, and tree-selection behavior. Floating a pane never disconnects the main client.
 
 The overlay checkbox draws the latest tree bounds over either mode. Pointer, wheel, keyboard, and text input are sent in root-relative DIPs so the same live panel works with gRPC and Android bridge sessions.
 
@@ -131,7 +131,7 @@ The client starts streaming `ILogger` entries after a successful connection. Cli
 
 Changing verbosity restarts an active stream with the new minimum level. The log header shows whether the stream is active, how many entries are displayed, and any stream failure.
 
-Click Float, or use the log panel header icon, to open the current log stream in a generic floating tool window. While the floating panel is open, the main window removes the embedded log list so there is only one visible dock owner of the rows. The floating log panel has the same Verbosity selector as the docked log panel; changing either selector updates the shared stream setting and restarts an active stream at the new minimum level. Click the dock icon in the floating tool window or Dock Logs in the main placeholder to return the same shared log view model to the main window. Floating and docking do not start a second stream.
+The Logs pane is docked at the bottom of the workspace. Drag its tab out (or use the pane's float control) to float it in its own window, and drag it back to re-dock. Floating and docking share the same log view model and never start a second stream, and the Verbosity selector continues to control that shared stream.
 
 ## Project Tab
 
@@ -139,6 +139,6 @@ The right-side Project tab shows the active client project, project storage root
 
 ## Dockable Panels
 
-The desktop client uses Visual Studio-like tool-window chrome across the whole shell: compact command bars, dark input fields, tabbed tool panes, darker dock surfaces, draggable pane headers, splitters, thin separators, visible header icons, and a blue accent on active docked surfaces. The styling and behavior are shared by the control tree, property inspector, action/live-view/project pane, log panel, and generic floating tool windows.
+The desktop client docks its panels with [Dock.Avalonia](https://github.com/wieslawsoltes/Dock), styled to match a Visual Studio dark shell: a compact command bar, dark input fields, and dockable tool panes with pin, float, and close controls on their headers. The Control Tree docks to the left, the Workspace document (Terminal and Properties tabs) fills the center above the Logs pane, and Remote Tools sits above Live View on the right.
 
-Each docked surface hosts a custom panel control backed by a view model; the main window is the container that composes panels and coordinates remote-session actions. The main workspace splitters and dock state are persisted in the project file. On startup, the client restores the previous window size, tree pane width, right tool-pane width, log pane height, selected right-side tab, log floating state, dock-pane auto-hide state, and docked live-view preference. If the saved layout had live view docked, the client restores that dock after the next successful connection because live streaming needs an active remote session.
+Drag a pane's tab or header to rearrange it, float it into its own window, or dock it elsewhere, then drag it back to return it to the shell. The full dock layout (pane arrangement, proportions, and floating windows) is saved per project and restored on the next launch, alongside the window size, selected tabs, and docked live-view preference. If the saved layout had live view docked, the client restores that dock after the next successful connection because live streaming needs an active remote session.

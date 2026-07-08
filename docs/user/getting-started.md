@@ -11,13 +11,13 @@ This guide connects a local Avalonia desktop app to the Avalonia.RemoteControl c
 ## Install The Client Tool
 
 ```powershell
-dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.7.3
+dotnet tool install --global SharpNinja.Avalonia.RemoteControl.Tool
 ```
 
 Update later with:
 
 ```powershell
-dotnet tool update --global SharpNinja.Avalonia.RemoteControl.Tool --version 0.7.3
+dotnet tool update --global SharpNinja.Avalonia.RemoteControl.Tool
 ```
 
 Verify the command:
