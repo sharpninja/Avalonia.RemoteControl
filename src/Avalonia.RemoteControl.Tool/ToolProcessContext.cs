@@ -94,7 +94,10 @@ public static class ToolProcessContext
             return false;
         }
 
-        return Directory.Exists(Path.Combine(directory, ".git")) ||
+        // A standard repository has .git/HEAD; a worktree or submodule uses a .git pointer file.
+        // A stray or invalid .git directory without HEAD (for example a leftover folder in the user
+        // home) must not be treated as a repository root, or it would suppress stale-folder redirect.
+        return File.Exists(Path.Combine(directory, ".git", "HEAD")) ||
             File.Exists(Path.Combine(directory, ".git"));
     }
 

@@ -9,6 +9,16 @@ namespace Avalonia.RemoteControl.Tests;
 
 public sealed class RemoteControlTerminalPanelTests
 {
+    /// <summary>
+    /// Creates a directory that a real git checkout root would present: a .git directory
+    /// containing a HEAD file. A bare .git directory without HEAD is intentionally not a repo.
+    /// </summary>
+    private static void CreateGitRepository(string directory)
+    {
+        Directory.CreateDirectory(Path.Combine(directory, ".git"));
+        File.WriteAllText(Path.Combine(directory, ".git", "HEAD"), "ref: refs/heads/main\n");
+    }
+
     [Fact]
     public void TerminalPanelViewModelDefaultsToInteractiveShell()
     {
@@ -62,7 +72,7 @@ public sealed class RemoteControlTerminalPanelTests
         var staleWorkspace = Path.Combine(root, "stale", "Avalonia.RemoteControl");
         var realWorkspace = Path.Combine(workspaceRoot, "Avalonia.RemoteControl");
         Directory.CreateDirectory(staleWorkspace);
-        Directory.CreateDirectory(Path.Combine(realWorkspace, ".git"));
+        CreateGitRepository(realWorkspace);
         var previousRoots = Environment.GetEnvironmentVariable(ToolProcessContext.WorkspaceRootsEnvironmentVariable);
 
         try
@@ -73,6 +83,57 @@ public sealed class RemoteControlTerminalPanelTests
 
             Assert.Equal(Path.GetFullPath(realWorkspace), viewModel.StartupWorkingDirectory);
             Assert.Equal(Path.GetFullPath(realWorkspace), viewModel.WorkingDirectory);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ToolProcessContext.WorkspaceRootsEnvironmentVariable, previousRoots);
+        }
+    }
+
+    [Fact]
+    public void TerminalPanelViewModelRedirectsStaleFolderDespiteAncestorGitDirectory()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "arc-workspace-roots", Guid.NewGuid().ToString("N"));
+        // Plant a stray/invalid .git directory in an ancestor (as a home-dir git folder would appear)
+        // so IsInsideGitRepository would short-circuit if the redirect did not take precedence.
+        Directory.CreateDirectory(Path.Combine(root, ".git"));
+        var workspaceRoot = Path.Combine(root, "github");
+        var staleWorkspace = Path.Combine(root, "stale", "Avalonia.RemoteControl");
+        var realWorkspace = Path.Combine(workspaceRoot, "Avalonia.RemoteControl");
+        Directory.CreateDirectory(staleWorkspace);
+        CreateGitRepository(realWorkspace);
+        var previousRoots = Environment.GetEnvironmentVariable(ToolProcessContext.WorkspaceRootsEnvironmentVariable);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(ToolProcessContext.WorkspaceRootsEnvironmentVariable, workspaceRoot);
+
+            var viewModel = new TerminalPanelViewModel(staleWorkspace);
+
+            Assert.Equal(Path.GetFullPath(realWorkspace), viewModel.StartupWorkingDirectory);
+            Assert.Equal(Path.GetFullPath(realWorkspace), viewModel.WorkingDirectory);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ToolProcessContext.WorkspaceRootsEnvironmentVariable, previousRoots);
+        }
+    }
+
+    [Fact]
+    public void TerminalPanelViewModelKeepsRepositoryRootLaunchDirectory()
+    {
+        var repoRoot = Path.Combine(Path.GetTempPath(), "arc-repo-root", Guid.NewGuid().ToString("N"));
+        CreateGitRepository(repoRoot);
+        var previousRoots = Environment.GetEnvironmentVariable(ToolProcessContext.WorkspaceRootsEnvironmentVariable);
+
+        try
+        {
+            // No workspace roots configured; the launch directory is itself a checkout root.
+            Environment.SetEnvironmentVariable(ToolProcessContext.WorkspaceRootsEnvironmentVariable, null);
+
+            var viewModel = new TerminalPanelViewModel(repoRoot);
+
+            Assert.Equal(Path.GetFullPath(repoRoot), viewModel.StartupWorkingDirectory);
         }
         finally
         {

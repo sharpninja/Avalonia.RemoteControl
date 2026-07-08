@@ -143,7 +143,7 @@ public sealed class RemoteControlCommandTests
             (_, args) =>
             {
                 tapped = true;
-                tappedPosition = args.GetPosition(root);
+                tappedPosition = args.GetPosition(null);
             });
         var provider = CreateSnapshotProvider();
         var snapshot = await provider.CaptureSnapshotAsync(root);
@@ -173,7 +173,7 @@ public sealed class RemoteControlCommandTests
             InputElement.PointerPressedEvent,
             (_, args) =>
             {
-                pressedPosition = args.GetPosition(root);
+                pressedPosition = args.GetPosition(null);
                 pressedUpdateKind = args.Properties.PointerUpdateKind;
                 pressedLeftButton = args.Properties.IsLeftButtonPressed;
             });
@@ -181,7 +181,7 @@ public sealed class RemoteControlCommandTests
             InputElement.PointerReleasedEvent,
             (_, args) =>
             {
-                releasedPosition = args.GetPosition(root);
+                releasedPosition = args.GetPosition(null);
                 releasedUpdateKind = args.Properties.PointerUpdateKind;
                 releasedLeftButton = args.Properties.IsLeftButtonPressed;
                 initialPressButton = args.InitialPressMouseButton;
@@ -313,7 +313,7 @@ public sealed class RemoteControlCommandTests
         root.Arrange(new Rect(0, 0, 30, 10));
         root.AddHandler(
             InputElement.PointerPressedEvent,
-            (_, args) => pressedPosition = args.GetPosition(root));
+            (_, args) => pressedPosition = args.GetPosition(null));
         var provider = CreateSnapshotProvider();
         var options = new AvaloniaRemoteControlOptions
         {

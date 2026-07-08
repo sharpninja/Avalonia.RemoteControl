@@ -82,7 +82,7 @@ public sealed class RemoteControlLiveRuntimeTests
         root.Arrange(new Rect(0, 0, 100, 50));
         root.AddHandler(
             InputElement.PointerPressedEvent,
-            (_, args) => pressedPoint = args.GetPosition(root));
+            (_, args) => pressedPoint = args.GetPosition(null));
         var dispatcher = CreateInputDispatcher(root, new AvaloniaRemoteControlOptions
         {
             AllowRemoteActions = true,
