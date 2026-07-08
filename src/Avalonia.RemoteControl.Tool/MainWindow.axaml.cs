@@ -41,6 +41,7 @@ public sealed partial class MainWindow : Window
     private CancellationTokenSource? logStreamCancellation;
     private RemoteControlServerCertificateInfo? pendingCertificateInfo;
     private readonly RemoteControlDockFactory dockFactory;
+    private readonly RemoteControlDockLayoutStore dockLayoutStore = new();
     private RemoteViewControl? dockedLiveViewControl;
     private bool isClosing;
     private bool isApplyingLayoutState;
@@ -918,6 +919,20 @@ public sealed partial class MainWindow : Window
         layout.TerminalWorkingDirectory = workspaceView.Terminal.WorkingDirectory;
         layout.LiveViewDocked = dockedLiveViewControl is not null || restoreDockedLiveViewOnConnect;
         layout.LiveViewDockStateInitialized = true;
+
+        // Persist the full dock tree (proportions, drag rearrangement) via Dock's serializer, keyed by project.
+        // Serialization is atomic (see the store), so a failure here never corrupts the last good layout.
+        if (Dock.Layout is Dock.Model.Controls.IRootDock rootDock)
+        {
+            try
+            {
+                dockLayoutStore.Save(rootDock, projectDocument.ProjectId);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Dock layout save failed: {ex.Message}");
+            }
+        }
     }
 
     private void ApplyLayoutState(RemoteControlClientLayoutState? layout)
@@ -981,6 +996,22 @@ public sealed partial class MainWindow : Window
                 ?? RemoteControlProjectDocument.Create(
                     RemoteControlProjectIds.DefaultProjectId,
                     RemoteControlProjectIds.DefaultProjectName);
+
+            // Restore the persisted dock tree (re-attaches panel view-models from the live shell); fall back
+            // to the default layout already assigned in the constructor when none exists or it fails to load.
+            try
+            {
+                if (dockLayoutStore.Load(projectDocument.ProjectId, dockFactory) is { } savedDock)
+                {
+                    shellView.Layout = savedDock;
+                    Dock.Layout = savedDock;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Dock layout load failed: {ex.Message}");
+            }
+
             ApplyLayoutState(projectDocument.ClientLayout);
             isProjectLoaded = true;
             await SaveProjectAsync();

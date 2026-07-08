@@ -14,11 +14,11 @@ public sealed class RemoteControlDockViewResolutionTests
         var shell = new RemoteControlToolShellViewModel(Path.GetTempPath());
         var locator = new RemoteControlDockViewLocator();
 
-        var controlTree = locator.Build(new ControlTreeDockable(shell.ControlTree));
-        var remoteTools = locator.Build(new RemoteToolsDockable(shell.RemoteTools));
-        var liveView = locator.Build(new LiveViewDockable(shell.RemoteTools.LiveView));
-        var logs = locator.Build(new LogsDockable(shell.Logs));
-        var workspace = locator.Build(new WorkspaceDockable(shell.Workspace));
+        var controlTree = locator.Build(Dockable(RemoteControlDockFactory.ControlTreeId, shell.ControlTree));
+        var remoteTools = locator.Build(Dockable(RemoteControlDockFactory.RemoteToolsId, shell.RemoteTools));
+        var liveView = locator.Build(Dockable(RemoteControlDockFactory.LiveViewId, shell.RemoteTools.LiveView));
+        var logs = locator.Build(Dockable(RemoteControlDockFactory.LogsId, shell.Logs));
+        var workspace = locator.Build(Dockable(RemoteControlDockFactory.WorkspaceId, shell.Workspace));
 
         Assert.IsType<ControlTreePanel>(controlTree);
         Assert.Same(shell.ControlTree, controlTree!.DataContext);
@@ -42,7 +42,7 @@ public sealed class RemoteControlDockViewResolutionTests
         var shell = new RemoteControlToolShellViewModel(Path.GetTempPath());
         var locator = new RemoteControlDockViewLocator();
 
-        var view = (WorkspacePanel)locator.Build(new WorkspaceDockable(shell.Workspace))!;
+        var view = (WorkspacePanel)locator.Build(Dockable(RemoteControlDockFactory.WorkspaceId, shell.Workspace))!;
         var window = Show(view);
         try
         {
@@ -66,7 +66,7 @@ public sealed class RemoteControlDockViewResolutionTests
         var shell = new RemoteControlToolShellViewModel(Path.GetTempPath());
         var locator = new RemoteControlDockViewLocator();
 
-        var view = (RemoteToolsPanel)locator.Build(new RemoteToolsDockable(shell.RemoteTools))!;
+        var view = (RemoteToolsPanel)locator.Build(Dockable(RemoteControlDockFactory.RemoteToolsId, shell.RemoteTools))!;
         var window = Show(view);
         try
         {
@@ -83,6 +83,9 @@ public sealed class RemoteControlDockViewResolutionTests
             window.Close();
         }
     }
+
+    private static Dock.Model.Mvvm.Controls.Tool Dockable(string id, object context)
+        => new() { Id = id, Context = context };
 
     // Attach the control to a top level so inherited-DataContext bindings on nested panels activate.
     private static Window Show(Control control)

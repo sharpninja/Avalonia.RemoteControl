@@ -83,15 +83,15 @@ public sealed class RemoteControlDockFactoryTests
     {
         var layout = CreateFactory().CreateLayout();
 
-        Assert.False(Find<WorkspaceDockable>(layout, "workspace").CanClose);
+        Assert.False(Find<IDockable>(layout, "workspace").CanClose);
 
-        Assert.True(Find<LiveViewDockable>(layout, "liveView").CanClose);
-        Assert.True(Find<LiveViewDockable>(layout, "liveView").CanFloat);
-        Assert.True(Find<LogsDockable>(layout, "logs").CanClose);
-        Assert.True(Find<LogsDockable>(layout, "logs").CanFloat);
+        Assert.True(Find<IDockable>(layout, "liveView").CanClose);
+        Assert.True(Find<IDockable>(layout, "liveView").CanFloat);
+        Assert.True(Find<IDockable>(layout, "logs").CanClose);
+        Assert.True(Find<IDockable>(layout, "logs").CanFloat);
 
-        Assert.True(Find<ControlTreeDockable>(layout, "controlTree").CanFloat);
-        Assert.True(Find<RemoteToolsDockable>(layout, "remoteTools").CanFloat);
+        Assert.True(Find<IDockable>(layout, "controlTree").CanFloat);
+        Assert.True(Find<IDockable>(layout, "remoteTools").CanFloat);
     }
 
     private static T Find<T>(IDockable root, string id)
