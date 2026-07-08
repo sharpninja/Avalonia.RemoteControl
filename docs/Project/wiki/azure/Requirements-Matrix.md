@@ -103,6 +103,7 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TR-ANDROID-AVD-001 | Tracked | Technical-Requirements.md |
 | TR-ANDROID-LOG-001 | Tracked | Technical-Requirements.md |
 | TR-ANDROID-MCP-001 | Tracked | Technical-Requirements.md |
+| TR-BUILD-DEPENDENCIES-001 | Tracked | Technical-Requirements.md |
 | TR-CI-RELEASE-001 | Tracked | Technical-Requirements.md |
 | TR-CI-RELEASE-002 | Tracked | Technical-Requirements.md |
 | TR-CI-RELEASE-003 | Tracked | Technical-Requirements.md |
@@ -126,6 +127,7 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TR-CLIENT-UI-006 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-UI-007 | Tracked | Technical-Requirements.md |
 | TR-CLIENT-UI-008 | Tracked | Technical-Requirements.md |
+| TR-CLIENT-WORKSPACEROOT-001 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-001 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-002 | Tracked | Technical-Requirements.md |
 | TR-DI-HOSTING-003 | Tracked | Technical-Requirements.md |
@@ -227,6 +229,7 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TEST-AVA-005 | Tracked | Testing-Requirements.md |
 | TEST-AVA-006 | Tracked | Testing-Requirements.md |
 | TEST-AVA-007 | Tracked | Testing-Requirements.md |
+| TEST-BUILD-001 | Tracked | Testing-Requirements.md |
 | TEST-CI-001 | Tracked | Testing-Requirements.md |
 | TEST-CI-002 | Tracked | Testing-Requirements.md |
 | TEST-CLIENT-001 | Tracked | Testing-Requirements.md |
@@ -247,6 +250,7 @@ Traceability policy: see `Requirements-Traceability-Policy.md`.
 | TEST-CLIENT-016 | Tracked | Testing-Requirements.md |
 | TEST-CLIENT-017 | Tracked | Testing-Requirements.md |
 | TEST-CLIENT-018 | Tracked | Testing-Requirements.md |
+| TEST-CLIENT-WORKSPACEROOT-001 | Tracked | Testing-Requirements.md |
 | TEST-DOC-001 | Tracked | Testing-Requirements.md |
 | TEST-DOCKING-001 | Tracked | Testing-Requirements.md |
 | TEST-GATE-001 | Tracked | Testing-Requirements.md |

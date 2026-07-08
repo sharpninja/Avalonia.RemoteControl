@@ -140,6 +140,15 @@ Scope: layer-1+
 **Android MCP tool catalog** — Additive MCP tools must be registered in the embedded client MCP server with JSON-schema inputs, sanitized outputs, and deterministic tool names prefixed with avalonia_android_ for device, emulator, app, log, screenshot, UI tree, and input operations.
 Scope: layer-1+
 
+## TR-BUILD-DEPENDENCIES-001
+
+**NuGet dependencies kept current and mutually compatible on net10.0.** — All centrally-managed packages are upgraded to the highest version mutually compatible with every other dependency and the net10.0/net10.0-android target frameworks, applied in gated slices with lockstep families moving together and no NU1605 downgrade.
+Scope: layer-1+
+**Acceptance Criteria:**
+- [ ] Directory.Packages.props resolves with no NU1605 downgrade warning.
+- [ ] dotnet build -c Release completes with zero errors.
+- [ ] Avalonia and Dock lockstep families move together to a single version.
+
 ## TR-CI-RELEASE-001
 
 **GitHub Actions restores, builds, tests, packs, and uploads artifacts.** — GitHub Actions restores, builds, tests, packs, and uploads artifacts.
@@ -254,6 +263,15 @@ Scope: layer-1+
 
 **Display authenticated audit identity** — The desktop client must display the authenticated audit identity returned by endpoint capabilities together with connection state and transport mode so users can correlate visible client state with remote audit logs.
 Scope: layer-1+
+
+## TR-CLIENT-WORKSPACEROOT-001
+
+**Startup working directory redirects a stale non-repository folder to a matching workspace checkout even when an ancestor holds a stray .git.** — ResolveStartupWorkingDirectory keeps the launch directory when it is itself a git checkout root; otherwise it first redirects to a matching checkout under a configured workspace root, and only then falls back to the ancestor git check. A stray or invalid .git directory in an ancestor (for example the user home) must not suppress the redirect.
+Scope: layer-1+
+**Acceptance Criteria:**
+- [ ] A launch directory that is a git checkout root is returned unchanged.
+- [ ] A stale folder whose leaf name matches a checkout under a configured workspace root redirects to that checkout even when an ancestor contains a stray .git directory.
+- [ ] Launching inside a real checkout is unaffected.
 
 ## TR-DI-HOSTING-001
 

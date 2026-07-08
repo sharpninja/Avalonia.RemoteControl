@@ -139,6 +139,17 @@ Validation must cover that frame capture, tree snapshots, and input dispatch use
 
 
 
+## TEST-BUILD
+
+### TEST-BUILD-001
+
+After each dependency upgrade slice, dotnet build -c Release succeeds and the xunit.v3 in-process runner reports zero failed (allowing only the one documented environment-specific baseline failure) and zero newly skipped.
+
+**Acceptance Criteria:**
+- [ ] dotnet build -c Release: 0 errors.
+- [ ] Test exe: 0 failed beyond documented baseline, 0 newly skipped.
+
+
 ## TEST-CI
 
 ### TEST-CI-001
@@ -243,6 +254,18 @@ Unit tests verify enum-valued remote properties expose an enum descriptor type w
 
 Tests must prove the server exposes the configured audit identity through capabilities, bridge and gRPC clients preserve it, and the desktop shell stores and resets the displayed identity.
 
+
+
+## TEST-CLIENT-WORKSPACEROOT
+
+### TEST-CLIENT-WORKSPACEROOT-001
+
+A headless-free unit test plants a stray .git directory in an ancestor of a stale fixture, points the workspace-roots env var at a real checkout, and asserts TerminalPanelViewModel resolves StartupWorkingDirectory/WorkingDirectory to the real checkout. A second test asserts a launch directory that is itself a checkout root is returned unchanged.
+
+**Acceptance Criteria:**
+- [ ] Redirect test is red before the resolver reorder and green after.
+- [ ] Repository-root-keep test stays green.
+- [ ] Full suite: 0 failed, 0 skipped.
 
 
 ## TEST-DOC

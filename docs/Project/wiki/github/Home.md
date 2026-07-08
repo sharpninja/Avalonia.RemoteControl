@@ -1,46 +1,38 @@
-# Avalonia.RemoteControl Documentation
+# Requirements
 
-This wiki is generated from MCP requirements export and then synchronized with the repository documentation by `scripts/Sync-GitHubWikiDocs.ps1`.
-
-## Generated Requirements
-
-- [Functional Requirements](Functional-Requirements)
-- [Technical Requirements](Technical-Requirements)
-- [Testing Requirements](Testing-Requirements)
-- [Traceability Mapping](TR-per-FR-Mapping)
-- [Requirements Matrix](Requirements-Matrix)
-
-## User Guides
-
-- [User Docs Index](User-Docs-Index)
-- [Getting Started](Getting-Started)
-- [Server Integration](Server-Integration)
-- [Client Tool](Client-Tool)
-- [Android ADB Connections](Android-ADB)
-- [Codex MCP](Codex-MCP)
-- [Settings Guide](Settings-Guide)
-- [Security Guide](Security)
-- [Troubleshooting](Troubleshooting)
-
-## Architecture
-
-- [Architecture Overview](Architecture-Overview)
-- [Security Model](Security-Model)
-- [Android ADB Connectivity](Android-ADB-Connectivity)
-- [Android Bridge Transport](Android-Bridge-Transport)
-- [Android Transport Spike](Android-Transport-Spike-2026-05-25)
-- [Live Interactive View](Live-Interactive-View)
-- [Project Sessions And Replay](Project-Sessions-And-Replay)
-- [Tool MCP Host](Tool-MCP-Host)
-
-## Project Documentation
-
-- [README](Repository-README)
-- [Development Process](Development-Process)
-- [Release Notes](Release-Notes)
-- [Product Requirements](Product-Requirements)
-- [Functional Requirements Source](Functional-Requirements-Source)
-- [Technical Requirements Source](Technical-Requirements-Source)
-- [Testing Requirements Source](Testing-Requirements-Source)
-- [Traceability Matrix Source](Traceability-Matrix-Source)
-- [Manual Acceptance Evidence](Manual-Acceptance-Evidence)
+- [Home](Home)
+- Requirements
+  - [Functional Requirements](Functional-Requirements)
+  - [Technical Requirements](Technical-Requirements)
+  - [Testing Requirements](Testing-Requirements)
+  - [TR per FR Mapping](TR-per-FR-Mapping)
+  - [Requirements Matrix](Requirements-Matrix)
+- User Guides
+  - [User Docs Index](User-Docs-Index)
+  - [Getting Started](Getting-Started)
+  - [Server Integration](Server-Integration)
+  - [Client Tool](Client-Tool)
+  - [Android ADB Connections](Android-ADB)
+  - [Codex MCP](Codex-MCP)
+  - [Settings Guide](Settings-Guide)
+  - [Security Guide](Security)
+  - [Troubleshooting](Troubleshooting)
+- Architecture
+  - [Architecture Overview](Architecture-Overview)
+  - [Security Model](Security-Model)
+  - [Android ADB Connectivity](Android-ADB-Connectivity)
+  - [Android Bridge Transport](Android-Bridge-Transport)
+  - [Android Transport Spike](Android-Transport-Spike-2026-05-25)
+  - [Live Interactive View](Live-Interactive-View)
+  - [Project Sessions And Replay](Project-Sessions-And-Replay)
+  - [Tool MCP Host](Tool-MCP-Host)
+- Project Documentation
+  - [README](Repository-README)
+  - [Development Process](Development-Process)
+  - [Release Notes](Release-Notes)
+  - [Product Requirements](Product-Requirements)
+  - [Functional Requirements Source](Functional-Requirements-Source)
+  - [Technical Requirements Source](Technical-Requirements-Source)
+  - [Testing Requirements Source](Testing-Requirements-Source)
+  - [Traceability Matrix Source](Traceability-Matrix-Source)
+  - [Manual Acceptance Evidence](Manual-Acceptance-Evidence)
