@@ -5,8 +5,12 @@ using Avalonia.RemoteControl.Server;
 using Avalonia.RemoteControl.Server.Bridge;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Avalonia.RemoteControl.Server.Threading;
+using Avalonia.RemoteControl.Server.Runtime;
+using Avalonia.RemoteControl.Server.Security;
 using Google.Protobuf;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace Avalonia.RemoteControl.Tests;
 
@@ -57,6 +61,35 @@ public sealed class RemoteControlBridgeRequestHandlerTests
         Assert.Equal(RemoteControlProtocol.DisplayVersion, response.ProtocolVersion);
         Assert.Equal(RemoteControlProtocol.DisplayVersion, capabilities.ProtocolVersion);
         Assert.True(capabilities.SupportsTreeSnapshots);
+    }
+
+    [Fact]
+    public async Task BridgeCapabilitiesReportTheAuthenticatedRequestIdentity()
+    {
+        await using var provider = CreateProvider(new TextBlock(), options =>
+        {
+            options.AuthenticationToken = "runtime-token";
+            options.AuthenticatedClientIdentity = string.Empty;
+        });
+        var authenticationOptions = Options.Create(new AvaloniaRemoteControlOptions
+        {
+            RequireAuthentication = true,
+            AuthenticationToken = "dev-token",
+            AuthenticatedClientIdentity = "authenticated-bridge-client",
+        });
+        var handler = new RemoteControlBridgeRequestHandler(
+            provider.GetRequiredService<IRemoteControlRuntime>(),
+            new RemoteControlBearerTokenAuthenticator(authenticationOptions),
+            NullLogger<RemoteControlBridgeRequestHandler>.Instance);
+
+        var response = await handler.HandleAsync(CreateRequest(
+            "req-cap-identity-001",
+            BridgeMethod.GetCapabilities,
+            new GetCapabilitiesRequest().ToByteString()));
+        var capabilities = GetCapabilitiesResponse.Parser.ParseFrom(response.Payload);
+
+        Assert.Equal(BridgeStatus.Ok, response.Status);
+        Assert.Equal("authenticated-bridge-client", capabilities.AuthenticatedClientIdentity);
     }
 
     [Fact]

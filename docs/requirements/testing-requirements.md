@@ -26,7 +26,7 @@
 
 - `TEST-AVA-001`: Headless Avalonia tests prove dispatcher-safe tree capture.
 - `TEST-AVA-002`: Headless Avalonia tests prove live update signaling after layout/state changes.
-- `TEST-AVA-003`: Headless Avalonia tests prove click/focus invocation for supported controls.
+- `TEST-AVA-003`: Headless Avalonia tests prove click/focus invocation for supported controls, including a `ToggleButton`/Expander header whose remote click changes checked/expanded state once, an eligible handler that runs once, a visible `ComboBoxItem` whose remote click selects the parent `ComboBox` item and closes its dropdown, and denied actions that leave state and selection unchanged.
 - `TEST-AVA-004`: Headless Avalonia tests prove safe property mutation on sample controls.
 - `TEST-AVA-005`: Headless Avalonia tests prove dispatcher-safe frame capture, max size rejection, and frame stream cancellation.
 - `TEST-AVA-006`: Headless Avalonia tests prove pointer, wheel, keyboard, and text input dispatch to the remote root or focused control.
@@ -93,6 +93,10 @@
 - `TEST-ADB-012`: Unit tests verify ADB connect can save a default profile with the marker-discovered transport protocol and the desktop UI/session factory can reopen that profile without using the gRPC default.
 - `TEST-ADB-013`: Unit tests verify bridge streaming for tree and frame streams, bridge cancellation by socket close, and unsupported capability handling.
 - `TEST-ADB-014`: Unit tests verify package-marker ADB connect fails before forwarding when `pidof` shows the package is stopped, and verify a bridge connection that closes before a response frame is reported as a clean diagnostic.
+  - `ac-1`: A false then true `pidof` sequence succeeds without invoking `adb monkey` when `LaunchPackageIfStopped` is false.
+  - `ac-2`: A persistently stopped package reaches the configured timeout, throws the sanitized stopped-package error, never invokes `adb monkey`, and never creates a forward.
+  - `ac-3`: A transient early-closed bridge probe retries and succeeds within the configured readiness timeout.
+  - `ac-4`: A bridge probe that remains unavailable reaches the readiness timeout, returns a sanitized diagnostic, and applies configured forward cleanup.
 - `TEST-ADB-015`: Unit tests verify the reusable ADB desktop/CLI connection workflow can launch a stopped package, wait for it to run, discover marker metadata, create a forward, probe capabilities, and save a transport-aware profile without exposing tokens in status output.
 - `TEST-ADB-016`: Unit tests verify an explicit ADB bridge connection can create a selected-device host-to-device forward, probe the forwarded endpoint, and save a desktop profile with serial, host port, device port, adb mode, and `arc-protobuf-v1` transport metadata.
 

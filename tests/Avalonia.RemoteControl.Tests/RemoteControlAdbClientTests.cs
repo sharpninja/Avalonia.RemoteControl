@@ -375,6 +375,278 @@ public sealed class RemoteControlAdbClientTests
     }
 
     [Fact]
+    public async Task AdbConnectionWorkflowRetriesPackageDetectionWithoutLaunching()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(1, string.Empty, string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(0, "1234\n", string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+            new AdbCommandResult(
+                0,
+                """{"devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
+                string.Empty));
+        runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47102", AdbCommandResult.Success);
+        var profilePath = Path.Combine(
+            Path.GetTempPath(),
+            "Avalonia.RemoteControl.Tests",
+            Guid.NewGuid().ToString("N"),
+            "connection-profile.json");
+        var workflow = new AdbConnectionWorkflow(
+            new AdbClient(runner),
+            new RecordingRemoteControlProbe(),
+            new FileRemoteControlProfileStore(profilePath));
+
+        var result = await workflow.ConnectAsync(new AdbConnectOptions
+        {
+            Serial = "emulator-5554",
+            PackageName = "com.example.app",
+            LaunchPackageIfStopped = false,
+            SaveProfile = false,
+            CleanupOnExit = false,
+            PackageStartTimeout = TimeSpan.FromSeconds(1),
+            PackageStartPollInterval = TimeSpan.FromMilliseconds(1),
+        });
+
+        Assert.False(result.PackageLaunched);
+        Assert.DoesNotContain(
+            runner.Commands,
+            command => command.Contains(" shell monkey ", StringComparison.Ordinal));
+        Assert.Equal(
+            [
+                "-s emulator-5554 shell pidof com.example.app",
+                "-s emulator-5554 shell pidof com.example.app",
+                "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+                "-s emulator-5554 forward tcp:47100 tcp:47102",
+            ],
+            runner.Commands);
+    }
+
+    [Fact]
+    public async Task AdbConnectionWorkflowTimesOutPackageDetectionWithoutLaunching()
+    {
+        const string pidofCommand = "-s emulator-5554 shell pidof com.example.app";
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(pidofCommand, new AdbCommandResult(1, string.Empty, string.Empty));
+        var workflow = new AdbConnectionWorkflow(
+            new AdbClient(runner),
+            new RecordingRemoteControlProbe(),
+            new FileRemoteControlProfileStore(
+                Path.Combine(
+                    Path.GetTempPath(),
+                    "Avalonia.RemoteControl.Tests",
+                    Guid.NewGuid().ToString("N"),
+                    "connection-profile.json")));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            workflow.ConnectAsync(new AdbConnectOptions
+            {
+                Serial = "emulator-5554",
+                PackageName = "com.example.app",
+                LaunchPackageIfStopped = false,
+                SaveProfile = false,
+                CleanupOnExit = false,
+                PackageStartTimeout = TimeSpan.FromMilliseconds(10),
+                PackageStartPollInterval = TimeSpan.FromMilliseconds(1),
+            }));
+
+        Assert.Contains(
+            "Android package 'com.example.app' is not running",
+            exception.Message,
+            StringComparison.Ordinal);
+        Assert.True(runner.Commands.Count(command => command == pidofCommand) >= 2);
+        Assert.All(runner.Commands, command => Assert.Equal(pidofCommand, command));
+        Assert.DoesNotContain(
+            runner.Commands,
+            command => command.Contains(" shell monkey ", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AdbConnectionWorkflowRetriesTransientEarlyClosedProbeUntilReady()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(0, "1234\n", string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+            new AdbCommandResult(
+                0,
+                """{"devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
+                string.Empty));
+        runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47102", AdbCommandResult.Success);
+        var probe = new SequencedRemoteControlProbe(
+            _ => Task.FromException<RemoteControlProbeResult>(
+                new InvalidOperationException(
+                    "Probe ended before capabilities were returned.",
+                    new System.IO.EndOfStreamException("early close"))),
+            _ => Task.FromResult(new RemoteControlProbeResult(
+                RemoteControlProtocol.DisplayVersion,
+                "remote-client",
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true)));
+        var workflow = new AdbConnectionWorkflow(
+            new AdbClient(runner),
+            probe,
+            new FileRemoteControlProfileStore(
+                Path.Combine(
+                    Path.GetTempPath(),
+                    "Avalonia.RemoteControl.Tests",
+                    Guid.NewGuid().ToString("N"),
+                    "connection-profile.json")));
+
+        var result = await workflow.ConnectAsync(new AdbConnectOptions
+        {
+            Serial = "emulator-5554",
+            PackageName = "com.example.app",
+            LaunchPackageIfStopped = false,
+            SaveProfile = false,
+            CleanupOnExit = false,
+            BridgeReadyTimeout = TimeSpan.FromSeconds(1),
+            BridgeReadyPollInterval = TimeSpan.FromMilliseconds(1),
+        });
+
+        Assert.Equal(2, probe.CallCount);
+        Assert.False(result.PackageLaunched);
+        Assert.False(result.ForwardRemoved);
+        Assert.DoesNotContain(
+            runner.Commands,
+            command => command.Contains(" shell monkey ", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AdbConnectionWorkflowPersistentEarlyClosedProbeTimesOutAndRemovesForward()
+    {
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(0, "1234\n", string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+            new AdbCommandResult(
+                0,
+                """{"devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
+                string.Empty));
+        runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47102", AdbCommandResult.Success);
+        runner.Respond("-s emulator-5554 forward --remove tcp:47100", AdbCommandResult.Success);
+        var probe = new SequencedRemoteControlProbe(
+            _ => Task.FromException<RemoteControlProbeResult>(
+                new InvalidOperationException(
+                    "Probe ended before capabilities were returned.",
+                    new System.IO.EndOfStreamException("early close"))));
+        var workflow = new AdbConnectionWorkflow(
+            new AdbClient(runner),
+            probe,
+            new FileRemoteControlProfileStore(
+                Path.Combine(
+                    Path.GetTempPath(),
+                    "Avalonia.RemoteControl.Tests",
+                    Guid.NewGuid().ToString("N"),
+                    "connection-profile.json")));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            workflow.ConnectAsync(new AdbConnectOptions
+            {
+                Serial = "emulator-5554",
+                PackageName = "com.example.app",
+                LaunchPackageIfStopped = false,
+                SaveProfile = false,
+                CleanupOnExit = true,
+                BridgeReadyTimeout = TimeSpan.FromMilliseconds(10),
+                BridgeReadyPollInterval = TimeSpan.FromMilliseconds(1),
+            }));
+
+        Assert.True(probe.CallCount >= 2);
+        Assert.Contains("did not become ready", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("marker-token", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("early close", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(
+            [
+                "-s emulator-5554 shell pidof com.example.app",
+                "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+                "-s emulator-5554 forward tcp:47100 tcp:47102",
+                "-s emulator-5554 forward --remove tcp:47100",
+            ],
+            runner.Commands);
+    }
+
+    [Fact]
+    public async Task AdbConnectionWorkflowCancelsBridgeReadinessWaitAndRemovesForward()
+    {
+        const string removeForwardCommand = "-s emulator-5554 forward --remove tcp:47100";
+        var runner = new RecordingAdbCommandRunner();
+        runner.Respond(
+            "-s emulator-5554 shell pidof com.example.app",
+            new AdbCommandResult(0, "1234\n", string.Empty));
+        runner.Respond(
+            "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+            new AdbCommandResult(
+                0,
+                """{"devicePort":47102,"token":"marker-token","bridgeProtocol":"arc-protobuf-v1"}""",
+                string.Empty));
+        runner.Respond("-s emulator-5554 forward tcp:47100 tcp:47102", AdbCommandResult.Success);
+        runner.Respond(removeForwardCommand, AdbCommandResult.Success);
+        var probe = new SequencedRemoteControlProbe(
+            _ => Task.FromException<RemoteControlProbeResult>(
+                new InvalidOperationException(
+                    "Probe ended before capabilities were returned.",
+                    new System.IO.EndOfStreamException("early close"))));
+        var workflow = new AdbConnectionWorkflow(
+            new AdbClient(runner),
+            probe,
+            new FileRemoteControlProfileStore(
+                Path.Combine(
+                    Path.GetTempPath(),
+                    "Avalonia.RemoteControl.Tests",
+                    Guid.NewGuid().ToString("N"),
+                    "connection-profile.json")));
+        using var cancellation = new CancellationTokenSource();
+        cancellation.CancelAfter(TimeSpan.FromMilliseconds(50));
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            workflow.ConnectAsync(
+                new AdbConnectOptions
+                {
+                    Serial = "emulator-5554",
+                    PackageName = "com.example.app",
+                    LaunchPackageIfStopped = false,
+                    SaveProfile = false,
+                    CleanupOnExit = true,
+                    BridgeReadyTimeout = TimeSpan.FromSeconds(30),
+                    BridgeReadyPollInterval = TimeSpan.FromSeconds(10),
+                },
+                cancellationToken: cancellation.Token));
+        elapsed.Stop();
+
+        Assert.True(probe.CallCount >= 1);
+        Assert.True(
+            elapsed.Elapsed < TimeSpan.FromSeconds(5),
+            $"Cancellation took {elapsed.Elapsed}, indicating the readiness delay did not observe the token.");
+        Assert.Equal(1, runner.Commands.Count(command => command == removeForwardCommand));
+        Assert.Equal(
+            [
+                "-s emulator-5554 shell pidof com.example.app",
+                "-s emulator-5554 shell run-as com.example.app cat files/avalonia-remote-control.json",
+                "-s emulator-5554 forward tcp:47100 tcp:47102",
+                removeForwardCommand,
+            ],
+            runner.Commands);
+        Assert.DoesNotContain(
+            runner.Commands,
+            command => command.Contains(" shell monkey ", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task AdbConnectionWorkflowMarkerTokenOverridesStaleSuppliedToken()
     {
         var runner = new RecordingAdbCommandRunner();
@@ -501,6 +773,40 @@ public sealed class RemoteControlAdbClientTests
             return Task.FromResult(responses.TryGetValue(command, out var queue) && queue.Count > 0
                 ? queue.Dequeue()
                 : new AdbCommandResult(1, string.Empty, $"No fake response for {command}"));
+        }
+    }
+
+    private sealed class SequencedRemoteControlProbe : IRemoteControlProbe
+    {
+        private readonly Queue<Func<CancellationToken, Task<RemoteControlProbeResult>>> responses;
+
+        public SequencedRemoteControlProbe(
+            params Func<CancellationToken, Task<RemoteControlProbeResult>>[] responses)
+        {
+            if (responses.Length == 0)
+            {
+                throw new ArgumentException("At least one probe response is required.", nameof(responses));
+            }
+
+            this.responses = new Queue<Func<CancellationToken, Task<RemoteControlProbeResult>>>(responses);
+        }
+
+        public int CallCount { get; private set; }
+
+        public Task<RemoteControlProbeResult> ProbeAsync(
+            Uri endpoint,
+            string token,
+            string transportProtocol,
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            cancellationToken.ThrowIfCancellationRequested();
+
+            Func<CancellationToken, Task<RemoteControlProbeResult>> response =
+                responses.Count > 1
+                    ? responses.Dequeue()
+                    : responses.Peek();
+            return response(cancellationToken);
         }
     }
 

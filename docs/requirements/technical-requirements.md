@@ -82,7 +82,7 @@
 
 - `TR-ACTION-INVOCATION-001`: Click invocation runs on the Avalonia UI dispatcher.
 - `TR-ACTION-INVOCATION-002`: Click invocation uses the visible center of the selected node by default.
-- `TR-ACTION-INVOCATION-003`: Command-control semantic invocation may be used when pointer event synthesis is not appropriate.
+- `TR-ACTION-INVOCATION-003`: Command-control semantic invocation may be used when pointer event synthesis is not appropriate. For `ToggleButton`, advance `IsChecked` on the Avalonia UI dispatcher before invoking an eligible command or click event; for `ComboBoxItem`, select the owning `ComboBox` item and close the dropdown under the dispatcher; preserve ordinary `Button` semantics and the action-policy gate.
 - `TR-ACTION-INVOCATION-004`: Unsupported drag/drop and arbitrary method invocation are out of v1 unless added through future requirements.
 - `TR-ACTION-INVOCATION-005`: Live remote input dispatches pointer, wheel, keyboard, and text events through the Avalonia UI dispatcher, maintains pointer state for drag sequences, and targets keyboard/text input to the focused element.
 
@@ -128,6 +128,10 @@
 - `TR-ADB-CONNECTIVITY-016`: A successful `avalonia-remote adb connect --keep-forward` session must save a user-scoped connection profile containing endpoint, token, and transport protocol so the desktop UI can attach to the kept forward using the marker-advertised transport.
 - `TR-ADB-CONNECTIVITY-017`: The Android bridge transport supports long-lived streaming responses for `WatchTree` and `WatchFrames` and ends streams on client cancellation or socket close.
 - `TR-ADB-CONNECTIVITY-018`: Package-marker ADB connect must detect a stopped Android package before forwarding, and bridge client probes must convert early closed bridge sockets into sanitized user-facing diagnostics instead of raw transport exceptions.
+  - `ac-1`: When the initial `pidof` check is empty or nonzero, package-marker ADB connect retries process detection within the configured package-start timeout before declaring the package stopped.
+  - `ac-2`: When `LaunchPackageIfStopped` is false, process-detection retries do not launch the Android package and forwarding begins only after a running process is observed.
+  - `ac-3`: After creating the ADB forward, connect retries transient bridge startup failures within a bounded readiness timeout and returns a sanitized failure if the bridge never becomes ready.
+  - `ac-4`: Bridge-readiness retry honors cancellation and preserves configured forward-cleanup behavior on terminal failure.
 - `TR-ADB-CONNECTIVITY-019`: The desktop client uses the same ADB discovery, package launch, marker read, `adb forward`, authenticated probe, profile save, and cleanup services as the CLI workflow; it defaults to keeping the forward active for the current desktop session and connects immediately after a successful probe.
 - `TR-ADB-CONNECTIVITY-020`: When the desktop client is configured for `arc-protobuf-v1`, a loopback endpoint, and a selected ADB device, the top Connect action creates or refreshes the ADB forward before probing the endpoint so users do not need an external script or separate Android Connect flow for explicit device-port sessions.
 

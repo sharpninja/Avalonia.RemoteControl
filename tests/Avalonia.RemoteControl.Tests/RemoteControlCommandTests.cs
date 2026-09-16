@@ -1,5 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Data;
+using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.RemoteControl.Server;
@@ -128,6 +131,116 @@ public sealed class RemoteControlCommandTests
 
         Assert.True(result.Succeeded);
         Assert.True(clicked);
+    }
+
+    [Fact]
+    [Trait("Requirement", "TEST-AVA-003")]
+    public async Task ClickInvocationTogglesExpanderHeaderWhenEnabled()
+    {
+        var expander = new Expander { Header = "Period" };
+        var root = new ToggleButton { IsChecked = false };
+        root.Bind(ToggleButton.IsCheckedProperty, new Binding(nameof(Expander.IsExpanded))
+        {
+            Source = expander,
+            Mode = BindingMode.TwoWay,
+        });
+        var clickCount = 0;
+        root.Click += (_, _) => clickCount++;
+        var provider = CreateSnapshotProvider();
+        var snapshot = await provider.CaptureSnapshotAsync(root);
+        var invoker = CreateActionInvoker(provider, new AvaloniaRemoteControlOptions { AllowRemoteActions = true });
+
+        var opened = await invoker.InvokeClickAsync(snapshot.Nodes[0].Id);
+        Assert.True(opened.Succeeded);
+        Assert.Equal(true, root.IsChecked);
+        Assert.True(expander.IsExpanded);
+        Assert.Equal(1, clickCount);
+
+        var closed = await invoker.InvokeClickAsync(snapshot.Nodes[0].Id);
+        Assert.True(closed.Succeeded);
+        Assert.Equal(false, root.IsChecked);
+        Assert.False(expander.IsExpanded);
+        Assert.Equal(2, clickCount);
+    }
+
+    [Fact]
+    [Trait("Requirement", "TEST-AVA-003")]
+    public async Task ClickInvocationDeniedToggleLeavesCheckedStateUnchanged()
+    {
+        var root = new ToggleButton { IsChecked = false };
+        var clickCount = 0;
+        root.Click += (_, _) => clickCount++;
+        var provider = CreateSnapshotProvider();
+        var snapshot = await provider.CaptureSnapshotAsync(root);
+        var invoker = CreateActionInvoker(provider, new AvaloniaRemoteControlOptions());
+
+        var result = await invoker.InvokeClickAsync(snapshot.Nodes[0].Id);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(false, root.IsChecked);
+        Assert.Equal(0, clickCount);
+    }
+
+    [AvaloniaFact]
+    [Trait("Requirement", "TEST-AVA-003")]
+    public async Task ClickInvocationSelectsVisibleComboBoxItemAndClosesDropdown()
+    {
+        var combo = new ComboBox { ItemsSource = new[] { "Current year", "Day" }, SelectedIndex = 0 };
+        var window = new Window { Width = 300, Height = 200, Content = combo };
+        window.Show();
+        try
+        {
+            combo.IsDropDownOpen = true;
+            window.UpdateLayout();
+            var day = Assert.IsType<ComboBoxItem>(combo.ContainerFromIndex(1));
+            var provider = CreateSnapshotProvider();
+            var snapshot = await provider.CaptureSnapshotAsync(day);
+            var itemNodes = snapshot.Nodes.Where(node => node.TypeName == nameof(ComboBoxItem)).ToArray();
+            Assert.Equal(2, itemNodes.Length);
+            var nodeId = itemNodes[1].Id;
+            var invoker = CreateActionInvoker(provider, new AvaloniaRemoteControlOptions { AllowRemoteActions = true });
+
+            var result = await invoker.InvokeClickAsync(nodeId);
+
+            Assert.True(result.Succeeded);
+            Assert.Equal(1, combo.SelectedIndex);
+            Assert.False(combo.IsDropDownOpen);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    [Trait("Requirement", "TEST-AVA-003")]
+    public async Task ClickInvocationDeniedComboBoxItemLeavesSelectionUnchanged()
+    {
+        var combo = new ComboBox { ItemsSource = new[] { "Current year", "Day" }, SelectedIndex = 0 };
+        var window = new Window { Width = 300, Height = 200, Content = combo };
+        window.Show();
+        try
+        {
+            combo.IsDropDownOpen = true;
+            window.UpdateLayout();
+            var day = Assert.IsType<ComboBoxItem>(combo.ContainerFromIndex(1));
+            var provider = CreateSnapshotProvider();
+            var snapshot = await provider.CaptureSnapshotAsync(day);
+            var itemNodes = snapshot.Nodes.Where(node => node.TypeName == nameof(ComboBoxItem)).ToArray();
+            Assert.Equal(2, itemNodes.Length);
+            var nodeId = itemNodes[1].Id;
+            var invoker = CreateActionInvoker(provider, new AvaloniaRemoteControlOptions());
+
+            var result = await invoker.InvokeClickAsync(nodeId);
+
+            Assert.False(result.Succeeded);
+            Assert.Equal(0, combo.SelectedIndex);
+            Assert.True(combo.IsDropDownOpen);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using Avalonia.RemoteControl.Server.Snapshots;
 using Avalonia.RemoteControl.Server.Threading;
 using Microsoft.Extensions.Logging;
@@ -83,6 +84,52 @@ public sealed class RemoteControlActionInvoker
                 nodeId,
                 clientIdentity);
             return new RemoteControlCommandResult(false, "Node is no longer available.");
+        }
+
+        if (control is Avalonia.Controls.ComboBoxItem item)
+        {
+            if (!item.IsEnabled || !item.IsVisible)
+            {
+                return new RemoteControlCommandResult(false, "Combo box item is unavailable.");
+            }
+
+            var combo = item.GetLogicalAncestors().OfType<ComboBox>().FirstOrDefault();
+            if (combo is null)
+            {
+                return new RemoteControlCommandResult(false, "Owning combo box is unavailable.");
+            }
+
+            item.IsSelected = true;
+            combo.IsDropDownOpen = false;
+            logger.LogInformation(
+                "Remote combo selection succeeded for node {NodeId} from {ClientIdentity}",
+                nodeId,
+                clientIdentity);
+            return new RemoteControlCommandResult(true, "Click invoked.");
+        }
+
+        if (control is Avalonia.Controls.Primitives.ToggleButton toggle)
+        {
+            if (toggle.Command is not null && !toggle.Command.CanExecute(toggle.CommandParameter))
+            {
+                return new RemoteControlCommandResult(false, "Toggle command cannot execute.");
+            }
+
+            toggle.IsChecked = toggle.IsChecked != true;
+            if (toggle.Command is not null)
+            {
+                toggle.Command.Execute(toggle.CommandParameter);
+            }
+            else
+            {
+                toggle.RaiseEvent(new RoutedEventArgs(Avalonia.Controls.Button.ClickEvent));
+            }
+
+            logger.LogInformation(
+                "Remote toggle click succeeded for node {NodeId} from {ClientIdentity}",
+                nodeId,
+                clientIdentity);
+            return new RemoteControlCommandResult(true, "Click invoked.");
         }
 
         if (control is Avalonia.Controls.Button button)

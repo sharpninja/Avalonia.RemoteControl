@@ -1,3 +1,6 @@
+using System.IO;
+using System.Net.Http;
+using System.Net.Sockets;
 using Avalonia.RemoteControl.Client.Diagnostics;
 using Avalonia.RemoteControl.Client.Profiles;
 using Avalonia.RemoteControl.Protocol;
@@ -57,17 +60,13 @@ public sealed class AdbConnectionWorkflow
             if (!await adbClient.IsPackageRunningAsync(options.Serial, packageName, cancellationToken)
                     .ConfigureAwait(false))
             {
-                if (!options.LaunchPackageIfStopped)
+                if (options.LaunchPackageIfStopped)
                 {
-                    throw new InvalidOperationException(
-                        $"Android package '{packageName}' is not running on device '{options.Serial}'. " +
-                        "Launch the app, wait for the Avalonia.RemoteControl bridge to start, and retry.");
+                    progress?.Report($"Launching package {packageName}.");
+                    await adbClient.LaunchPackageAsync(options.Serial, packageName, cancellationToken)
+                        .ConfigureAwait(false);
+                    packageLaunched = true;
                 }
-
-                progress?.Report($"Launching package {packageName}.");
-                await adbClient.LaunchPackageAsync(options.Serial, packageName, cancellationToken)
-                    .ConfigureAwait(false);
-                packageLaunched = true;
 
                 if (!await adbClient.WaitForPackageRunningAsync(
                         options.Serial,
@@ -76,6 +75,13 @@ public sealed class AdbConnectionWorkflow
                         options.PackageStartPollInterval,
                         cancellationToken).ConfigureAwait(false))
                 {
+                    if (!options.LaunchPackageIfStopped)
+                    {
+                        throw new InvalidOperationException(
+                            $"Android package '{packageName}' is not running on device '{options.Serial}'. " +
+                            "Launch the app, wait for the Avalonia.RemoteControl bridge to start, and retry.");
+                    }
+
                     throw new InvalidOperationException(
                         $"Android package '{packageName}' did not start on device '{options.Serial}'.");
                 }
@@ -127,10 +133,12 @@ public sealed class AdbConnectionWorkflow
         try
         {
             progress?.Report("Probing forwarded remote-control endpoint.");
-            var capabilities = await remoteControlProbe.ProbeAsync(
+            var capabilities = await ProbeUntilReadyAsync(
                 forward.Endpoint,
                 token,
                 transportProtocol,
+                options.BridgeReadyTimeout,
+                options.BridgeReadyPollInterval,
                 cancellationToken).ConfigureAwait(false);
 
             var profile = new RemoteControlConnectionProfile
@@ -175,13 +183,88 @@ public sealed class AdbConnectionWorkflow
         {
             if (options.CleanupOnExit)
             {
-                await adbClient.RemoveForwardAsync(options.Serial, options.HostPort, cancellationToken)
+                await adbClient.RemoveForwardAsync(
+                        options.Serial,
+                        options.HostPort,
+                        CancellationToken.None)
                     .ConfigureAwait(false);
             }
 
             throw;
         }
     }
+
+    private async Task<RemoteControlProbeResult> ProbeUntilReadyAsync(
+        Uri endpoint,
+        string token,
+        string transportProtocol,
+        TimeSpan timeout,
+        TimeSpan pollInterval,
+        CancellationToken cancellationToken)
+    {
+        using var readinessCancellation =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        readinessCancellation.CancelAfter(timeout);
+
+        while (true)
+        {
+            try
+            {
+                return await remoteControlProbe.ProbeAsync(
+                        endpoint,
+                        token,
+                        transportProtocol,
+                        readinessCancellation.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (OperationCanceledException) when (readinessCancellation.IsCancellationRequested)
+            {
+                throw CreateBridgeNotReadyException();
+            }
+            catch (Exception exception) when (IsTransientBridgeStartupFailure(exception))
+            {
+            }
+
+            try
+            {
+                await Task.Delay(pollInterval, readinessCancellation.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (OperationCanceledException) when (readinessCancellation.IsCancellationRequested)
+            {
+                throw CreateBridgeNotReadyException();
+            }
+        }
+    }
+
+    private static bool IsTransientBridgeStartupFailure(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is EndOfStreamException
+                or IOException
+                or SocketException
+                or HttpRequestException
+                or TimeoutException
+                or OperationCanceledException)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static InvalidOperationException CreateBridgeNotReadyException() =>
+        new("The forwarded remote-control endpoint did not become ready within the configured timeout.");
 
     private static void ValidatePort(int port, string parameterName)
     {

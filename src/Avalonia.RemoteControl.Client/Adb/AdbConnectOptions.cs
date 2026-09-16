@@ -61,4 +61,14 @@ public sealed record AdbConnectOptions
     /// Gets or sets the polling interval used while waiting for a launched package.
     /// </summary>
     public TimeSpan PackageStartPollInterval { get; init; } = TimeSpan.FromMilliseconds(500);
+
+    /// <summary>
+    /// Gets or sets the maximum time to wait for the forwarded remote-control endpoint to become ready.
+    /// </summary>
+    public TimeSpan BridgeReadyTimeout { get; init; } = TimeSpan.FromSeconds(15);
+
+    /// <summary>
+    /// Gets or sets the polling interval used while waiting for the forwarded remote-control endpoint.
+    /// </summary>
+    public TimeSpan BridgeReadyPollInterval { get; init; } = TimeSpan.FromMilliseconds(500);
 }

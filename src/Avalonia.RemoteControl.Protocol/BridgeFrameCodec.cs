@@ -16,7 +16,7 @@ public static class BridgeFrameCodec
     /// <summary>
     /// Default maximum bridge frame payload size.
     /// </summary>
-    public const int DefaultMaxFrameLength = 1024 * 1024;
+    public const int DefaultMaxFrameLength = 8 * 1024 * 1024;
 
     /// <summary>
     /// Encodes a protobuf message as a length-prefixed bridge frame.

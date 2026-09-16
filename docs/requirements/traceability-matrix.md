@@ -180,12 +180,15 @@ Tests/evidence:
 - `TEST-AVA-002`
 - `TEST-AVA-003`
 - `TEST-AVA-004`
+
 - `TEST-GRPC-004`
 - `TEST-GRPC-006`
 - `TEST-GRPC-007`
 - `TEST-SEC-005`
 - `TEST-SEC-006`
 - `TEST-SEC-007`
+
+`FR-ACTION-001` -> `TR-ACTION-INVOCATION-003` -> `TEST-AVA-003` covers ToggleButton/Expander header and ComboBoxItem visual-tree clicks. Toggle RED: 1 failed, 1 safeguard passed; focused GREEN: 3 passed. ComboBoxItem RED: 1 selection failure, 1 denied-action safeguard passed; focused GREEN with toggle and ordinary Button: 4 passed. Physical GigDriving acceptance is an authenticated Avalonia.RemoteControl visual-tree click that opens the Profit period selector and selects each Profit range on Motorola Edge; no coordinate action is substituted.
 
 Implemented evidence:
 
@@ -365,7 +368,8 @@ Implemented evidence:
 
 - `RemoteControlAdbClientTests` covers `adb devices -l` parsing, ADB device listing, serial-specific port forwarding, forward cleanup, package marker discovery, and CLI connect cleanup behavior.
 - `RemoteControlAdbClientTests` covers saving a transport-aware default profile after `adb connect --keep-forward`.
-- `RemoteControlAdbClientTests` covers package-marker connect refusing to create a forward when `pidof` reports the package is stopped.
+- `RemoteControlAdbClientTests` covers bounded package-process detection without an unwanted launch through `AdbConnectionWorkflowRetriesPackageDetectionWithoutLaunching` and `AdbConnectionWorkflowTimesOutPackageDetectionWithoutLaunching`.
+- `RemoteControlAdbClientTests` covers bounded bridge-readiness retry, sanitized timeout, caller cancellation, and forward cleanup through `AdbConnectionWorkflowRetriesTransientEarlyClosedProbeUntilReady`, `AdbConnectionWorkflowPersistentEarlyClosedProbeTimesOutAndRemovesForward`, and `AdbConnectionWorkflowCancelsBridgeReadinessWaitAndRemovesForward`.
 - `RemoteControlAdbClientTests` covers the reusable ADB connection workflow launching a stopped package, waiting for `pidof`, discovering the marker, creating the forward, probing capabilities, and saving a transport-aware profile for the desktop client.
 - `RemoteControlAdbClientTests` covers explicit selected-device bridge forwarding without marker discovery, including saved serial, host port, device port, adb mode, and `arc-protobuf-v1` profile metadata.
 - `RemoteControlBridgeTcpListenerTests` covers closed bridge sockets being converted to a clean diagnostic instead of leaking `EndOfStreamException`.

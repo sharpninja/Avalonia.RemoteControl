@@ -66,7 +66,7 @@ public sealed class RemoteControlBridgeRequestHandler
         {
             return request.Method switch
             {
-                BridgeMethod.GetCapabilities => HandleGetCapabilities(request),
+                BridgeMethod.GetCapabilities => HandleGetCapabilities(request, auth.ClientIdentity),
                 BridgeMethod.GetSnapshot => await HandleGetSnapshotAsync(request, cancellationToken).ConfigureAwait(false),
                 BridgeMethod.InvokeClick => await HandleInvokeClickAsync(request, auth.ClientIdentity, cancellationToken).ConfigureAwait(false),
                 BridgeMethod.InvokeFocus => await HandleInvokeFocusAsync(request, auth.ClientIdentity, cancellationToken).ConfigureAwait(false),
@@ -239,10 +239,12 @@ public sealed class RemoteControlBridgeRequestHandler
         }
     }
 
-    private BridgeResponse HandleGetCapabilities(BridgeRequest request)
+    private BridgeResponse HandleGetCapabilities(BridgeRequest request, string authenticatedClientIdentity)
     {
         GetCapabilitiesRequest.Parser.ParseFrom(request.Payload);
-        return Success(request, runtime.GetCapabilities().ToProtocol().ToByteString());
+        var capabilities = runtime.GetCapabilities().ToProtocol();
+        capabilities.AuthenticatedClientIdentity = authenticatedClientIdentity;
+        return Success(request, capabilities.ToByteString());
     }
 
     private async ValueTask<BridgeResponse> HandleGetSnapshotAsync(
