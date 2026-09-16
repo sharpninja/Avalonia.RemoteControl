@@ -18,6 +18,7 @@ using Avalonia.RemoteControl.Protocol.V1;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using System.Windows.Input;
 
 namespace Avalonia.RemoteControl.Tests;
 
@@ -131,6 +132,27 @@ public sealed class RemoteControlCommandTests
 
         Assert.True(result.Succeeded);
         Assert.True(clicked);
+    }
+
+    [Fact]
+    [Trait("Requirement", "TEST-AVA-003")]
+    public async Task ClickInvocationRunsButtonCommandAndRaisesClickEvent()
+    {
+        var command = new CountingCommand();
+        var clickCount = 0;
+        var root = new Button { Command = command };
+        root.Click += (_, _) => clickCount++;
+        var provider = CreateSnapshotProvider();
+        var snapshot = await provider.CaptureSnapshotAsync(root);
+        var invoker = CreateActionInvoker(
+            provider,
+            new AvaloniaRemoteControlOptions { AllowRemoteActions = true });
+
+        var result = await invoker.InvokeClickAsync(snapshot.Nodes[0].Id);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(1, command.ExecuteCount);
+        Assert.Equal(1, clickCount);
     }
 
     [Fact]
@@ -552,6 +574,20 @@ public sealed class RemoteControlCommandTests
                 1,
                 DateTimeOffset.UtcNow));
         }
+    }
+
+    private sealed class CountingCommand : ICommand
+    {
+        public int ExecuteCount { get; private set; }
+
+        public event EventHandler? CanExecuteChanged;
+
+        public bool CanExecute(object? parameter) => true;
+
+        public void Execute(object? parameter) => ExecuteCount++;
+
+        public void RaiseCanExecuteChanged() =>
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private sealed class SensitiveActionTestControl : Control

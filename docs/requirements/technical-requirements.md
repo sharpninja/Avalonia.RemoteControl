@@ -82,7 +82,7 @@
 
 - `TR-ACTION-INVOCATION-001`: Click invocation runs on the Avalonia UI dispatcher.
 - `TR-ACTION-INVOCATION-002`: Click invocation uses the visible center of the selected node by default.
-- `TR-ACTION-INVOCATION-003`: Command-control semantic invocation may be used when pointer event synthesis is not appropriate. For `ToggleButton`, advance `IsChecked` on the Avalonia UI dispatcher before invoking an eligible command or click event; for `ComboBoxItem`, select the owning `ComboBox` item and close the dropdown under the dispatcher; preserve ordinary `Button` semantics and the action-policy gate.
+- `TR-ACTION-INVOCATION-003`: Command-control semantic invocation may be used when pointer event synthesis is not appropriate. For `ToggleButton`, advance `IsChecked` on the Avalonia UI dispatcher before invoking an eligible command or click event; for `ComboBoxItem`, select the owning `ComboBox` item and close the dropdown under the dispatcher; for an ordinary `Button` with a `Command`, execute the command exactly once and then raise the `Click` routed event exactly once without re-executing the command; preserve the action-policy gate.
 - `TR-ACTION-INVOCATION-004`: Unsupported drag/drop and arbitrary method invocation are out of v1 unless added through future requirements.
 - `TR-ACTION-INVOCATION-005`: Live remote input dispatches pointer, wheel, keyboard, and text events through the Avalonia UI dispatcher, maintains pointer state for drag sequences, and targets keyboard/text input to the focused element.
 

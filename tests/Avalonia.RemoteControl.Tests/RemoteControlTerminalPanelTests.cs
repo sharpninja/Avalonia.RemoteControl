@@ -19,6 +19,28 @@ public sealed class RemoteControlTerminalPanelTests
         File.WriteAllText(Path.Combine(directory, ".git", "HEAD"), "ref: refs/heads/main\n");
     }
 
+    private static string CreateIsolatedWorkspaceRoot()
+    {
+        string baseDirectory = Environment.GetFolderPath(
+            Environment.SpecialFolder.LocalApplicationData);
+        if (string.IsNullOrWhiteSpace(baseDirectory))
+        {
+            baseDirectory = Environment.GetFolderPath(
+                Environment.SpecialFolder.UserProfile);
+        }
+
+        if (string.IsNullOrWhiteSpace(baseDirectory))
+        {
+            baseDirectory = Path.GetTempPath();
+        }
+
+        return Path.Combine(
+            baseDirectory,
+            "Avalonia.RemoteControl.Tests",
+            "arc-workspace-roots",
+            Guid.NewGuid().ToString("N"));
+    }
+
     [Fact]
     public void TerminalPanelViewModelDefaultsToInteractiveShell()
     {
@@ -67,7 +89,7 @@ public sealed class RemoteControlTerminalPanelTests
     [Fact]
     public void TerminalPanelViewModelResolvesStaleWorkspaceFolderToGitCheckout()
     {
-        var root = Path.Combine(Path.GetTempPath(), "arc-workspace-roots", Guid.NewGuid().ToString("N"));
+        var root = CreateIsolatedWorkspaceRoot();
         var workspaceRoot = Path.Combine(root, "github");
         var staleWorkspace = Path.Combine(root, "stale", "Avalonia.RemoteControl");
         var realWorkspace = Path.Combine(workspaceRoot, "Avalonia.RemoteControl");
@@ -93,7 +115,7 @@ public sealed class RemoteControlTerminalPanelTests
     [Fact]
     public void TerminalPanelViewModelRedirectsStaleFolderDespiteAncestorGitDirectory()
     {
-        var root = Path.Combine(Path.GetTempPath(), "arc-workspace-roots", Guid.NewGuid().ToString("N"));
+        var root = CreateIsolatedWorkspaceRoot();
         // Plant a stray/invalid .git directory in an ancestor (as a home-dir git folder would appear)
         // so IsInsideGitRepository would short-circuit if the redirect did not take precedence.
         Directory.CreateDirectory(Path.Combine(root, ".git"));

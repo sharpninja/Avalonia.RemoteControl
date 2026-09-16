@@ -18,7 +18,7 @@
 
 ## Remote Actions
 
-- `FR-ACTION-001`: A connected client can invoke a basic click on an approved clickable target. Acceptance: a visual-tree click on a `ToggleButton`, including an Expander header, changes its checked/expanded state once and invokes its eligible command or click handler; a visual-tree click on a visible `ComboBoxItem` selects that item in its owning `ComboBox` and closes the dropdown; denied actions leave state and selection unchanged.
+- `FR-ACTION-001`: A connected client can invoke a basic click on an approved clickable target. Acceptance: a visual-tree click on a `ToggleButton`, including an Expander header, changes its checked/expanded state once and invokes its eligible command or click handler; a visual-tree click on a visible `ComboBoxItem` selects that item in its owning `ComboBox` and closes the dropdown; a visual-tree click on an ordinary `Button` with a `Command` executes that command exactly once and raises the `Click` event exactly once; denied actions leave state and selection unchanged.
 - `FR-ACTION-002`: A connected client can request focus for a focusable target.
 - `FR-ACTION-003`: Stale node IDs produce a recoverable client error and trigger a refresh path.
 - `FR-ACTION-004`: Unsupported actions are reported as unsupported with a reason.

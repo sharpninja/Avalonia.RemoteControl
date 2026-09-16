@@ -142,6 +142,7 @@ public sealed class RemoteControlActionInvoker
                 }
 
                 button.Command.Execute(button.CommandParameter);
+                button.RaiseEvent(new RoutedEventArgs(Avalonia.Controls.Button.ClickEvent));
             }
             else
             {

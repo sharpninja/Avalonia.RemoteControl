@@ -26,7 +26,7 @@
 
 - `TEST-AVA-001`: Headless Avalonia tests prove dispatcher-safe tree capture.
 - `TEST-AVA-002`: Headless Avalonia tests prove live update signaling after layout/state changes.
-- `TEST-AVA-003`: Headless Avalonia tests prove click/focus invocation for supported controls, including a `ToggleButton`/Expander header whose remote click changes checked/expanded state once, an eligible handler that runs once, a visible `ComboBoxItem` whose remote click selects the parent `ComboBox` item and closes its dropdown, and denied actions that leave state and selection unchanged.
+- `TEST-AVA-003`: Headless Avalonia tests prove click/focus invocation for supported controls, including a `ToggleButton`/Expander header whose remote click changes checked/expanded state once, an eligible handler that runs once, a visible `ComboBoxItem` whose remote click selects the parent `ComboBox` item and closes its dropdown, an ordinary `Button` with a `Command` whose remote click executes the command once and raises `Click` once, and denied actions that leave state and selection unchanged.
 - `TEST-AVA-004`: Headless Avalonia tests prove safe property mutation on sample controls.
 - `TEST-AVA-005`: Headless Avalonia tests prove dispatcher-safe frame capture, max size rejection, and frame stream cancellation.
 - `TEST-AVA-006`: Headless Avalonia tests prove pointer, wheel, keyboard, and text input dispatch to the remote root or focused control.

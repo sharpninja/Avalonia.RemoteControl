@@ -188,7 +188,7 @@ Tests/evidence:
 - `TEST-SEC-006`
 - `TEST-SEC-007`
 
-`FR-ACTION-001` -> `TR-ACTION-INVOCATION-003` -> `TEST-AVA-003` covers ToggleButton/Expander header and ComboBoxItem visual-tree clicks. Toggle RED: 1 failed, 1 safeguard passed; focused GREEN: 3 passed. ComboBoxItem RED: 1 selection failure, 1 denied-action safeguard passed; focused GREEN with toggle and ordinary Button: 4 passed. Physical GigDriving acceptance is an authenticated Avalonia.RemoteControl visual-tree click that opens the Profit period selector and selects each Profit range on Motorola Edge; no coordinate action is substituted.
+`FR-ACTION-001` -> `TR-ACTION-INVOCATION-003` -> `TEST-AVA-003` covers ToggleButton/Expander header, ComboBoxItem, and ordinary command-backed Button visual-tree clicks. Toggle RED: 1 failed, 1 safeguard passed; focused GREEN: 3 passed. ComboBoxItem RED: 1 selection failure, 1 denied-action safeguard passed; focused GREEN with toggle and ordinary Button: 4 passed. Command-backed Button RED: the command ran but the Click handler count remained 0; focused GREEN: command count 1 and Click count 1. Physical GigDriving acceptance is authenticated Avalonia.RemoteControl visual-tree navigation that closes the shell drawer through its command-backed Button and captures drawer-free Fold 4 finance pages, plus visual-tree clicks that open the Profit period selector and select each Profit range on Motorola Edge; no coordinate action is substituted.
 
 Implemented evidence:
 
